@@ -1,0 +1,28 @@
+{
+  "name": "maanak-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MAANAK (मानक) — Automated OIML R-76 NAWI Test Report & Metrological Compliance Platform",
+  "packageManager": "pnpm@10.12.2",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
+    "db:seed": "turbo run db:seed",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "turbo": "^2.11.2",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,12 +1,14 @@
 # MAANAK (मानक) — Database Schema & Data Model Specification
+
 **Complete PostgreSQL Schema & Metrological Data Model Specification**  
 **Problem Statement:** SIH26035 | **System Name:** MAANAK (मानक)  
-**Document Version:** 2.0.0 | **Status:** Implementation-Ready Database Specification  
+**Document Version:** 2.0.0 | **Status:** Implementation-Ready Database Specification
 
 ---
 
 > [!IMPORTANT]
 > **Authoritative Developer Directives:**
+>
 > 1. **Strict Documentation Adherence**: All database schemas, Prisma models, migrations, and queries must follow this document strictly.
 > 2. **Node.js & Prisma Stack**: Use **Prisma ORM (Latest Stable)** with Node.js 20+ LTS / 22 LTS to manage PostgreSQL 16 schema migrations and types.
 > 3. **Latest Stable Packages**: Always install and use the latest stable releases of all workspace packages.
@@ -33,38 +35,38 @@ To guarantee legal defensibility, auditability, and longevity, the schema adhere
 
 ## 2. Complete Entity & Table Summary
 
-| Domain Category | Table Name | Description & Metrological Purpose |
-| :--- | :--- | :--- |
-| **Identity & RBAC** | `laboratories` | RRSL and state legal metrology testing facilities. |
-| | `roles` | System roles (`ROLE_INSPECTOR`, `ROLE_REVIEWER`, `ROLE_DIRECTOR`, `ROLE_ADMIN`). |
-| | `users` | User credentials, lab affiliation, and X.509 PKI certificate mappings. |
-| | `user_sessions` | JWT authentication sessions and active user security contexts. |
-| **Master Data** | `accuracy_classes` | OIML R-76 scale accuracy classes (Class I, II, III, IIII). |
-| | `units_of_measure` | SI units and legal units of mass (kg, g, mg, t, ct). |
-| | `reference_standards` | Physical standard weight sets (Class E2, F1, M1, M2). |
-| | `calibration_certificates` | NABL calibration certificates for standard weights with expanded uncertainty ($U$). |
-| **Standards-as-Code** | `rule_packs` | Regulatory standard definition metadata (e.g. OIML R-76). |
-| | `rule_pack_versions` | Dynamic versioned JSONB logic rules (Table 3, Table 6 MPE, equations). |
-| **Instrument Intake** | `manufacturers` | Scale manufacturers, importers, and applicants under Section 22. |
-| | `instrument_models` | NAWI pattern/model specifications ($Max, Min, e, d$, Class). |
-| | `model_partial_ranges` | Multi-interval / multiple-range partial scale parameters ($W_1, W_2, e_1, e_2$). |
-| | `instrument_units` | Physical individual weighing scale under test (serial number, nameplate photo). |
-| **Test Sessions & Plans** | `test_plans` | Standard test sequence schedules generated for an instrument model. |
-| | `test_plan_items` | Individual test clauses (A.4.4 Weighing, A.4.7 Eccentricity, A.4.11 Creep). |
-| | `test_sessions` | Pattern evaluation test session execution instance. |
-| | `session_environmental_logs` | Ambient temperature ($T$), relative humidity (%RH), and barometric pressure. |
-| **Observations & Math** | `raw_observations` | Immutable bench observations ($L, I, \Delta L, I_0$, Vernier weights). |
-| | `observation_weights_used` | Many-to-many link mapping specific standard weights to observation runs. |
-| | `calculation_runs` | Execution container for deterministic R-76 calculation runs. |
-| | `calculation_trace_items` | Intermediate mathematical step derivations ($P, E, E_0, E_c, 	ext{MPE}$, Pass/Fail). |
-| **Reviews & Signatures** | `review_audits` | Senior officer peer review logs, anomaly flags, and correction assignments. |
-| | `digital_signatures` | X.509 PKI / DSC digital signature metadata and PDF hash seals. |
-| **Reports & Evidence** | `reports` | Generated OIML R 76-2 pattern evaluation reports. |
-| | `report_versions` | PDF/Word document versions, storage paths, and SHA-256 binary hashes. |
-| | `evidence_attachments` | Nameplate photos, sealing diagrams, PCB schematics, EXIF metadata. |
-| **Audit & Sync** | `provenance_nodes` | WELMEC 7.2 SHA-256 cryptographic provenance hash chain nodes. |
-| | `audit_logs` | System security audit trail logs for compliance auditing. |
-| | `offline_sync_queue` | PWA offline bench execution sync queue and conflict resolution logs. |
+| Domain Category           | Table Name                   | Description & Metrological Purpose                                                  |
+| :------------------------ | :--------------------------- | :---------------------------------------------------------------------------------- |
+| **Identity & RBAC**       | `laboratories`               | RRSL and state legal metrology testing facilities.                                  |
+|                           | `roles`                      | System roles (`ROLE_INSPECTOR`, `ROLE_REVIEWER`, `ROLE_DIRECTOR`, `ROLE_ADMIN`).    |
+|                           | `users`                      | User credentials, lab affiliation, and X.509 PKI certificate mappings.              |
+|                           | `user_sessions`              | JWT authentication sessions and active user security contexts.                      |
+| **Master Data**           | `accuracy_classes`           | OIML R-76 scale accuracy classes (Class I, II, III, IIII).                          |
+|                           | `units_of_measure`           | SI units and legal units of mass (kg, g, mg, t, ct).                                |
+|                           | `reference_standards`        | Physical standard weight sets (Class E2, F1, M1, M2).                               |
+|                           | `calibration_certificates`   | NABL calibration certificates for standard weights with expanded uncertainty ($U$). |
+| **Standards-as-Code**     | `rule_packs`                 | Regulatory standard definition metadata (e.g. OIML R-76).                           |
+|                           | `rule_pack_versions`         | Dynamic versioned JSONB logic rules (Table 3, Table 6 MPE, equations).              |
+| **Instrument Intake**     | `manufacturers`              | Scale manufacturers, importers, and applicants under Section 22.                    |
+|                           | `instrument_models`          | NAWI pattern/model specifications ($Max, Min, e, d$, Class).                        |
+|                           | `model_partial_ranges`       | Multi-interval / multiple-range partial scale parameters ($W_1, W_2, e_1, e_2$).    |
+|                           | `instrument_units`           | Physical individual weighing scale under test (serial number, nameplate photo).     |
+| **Test Sessions & Plans** | `test_plans`                 | Standard test sequence schedules generated for an instrument model.                 |
+|                           | `test_plan_items`            | Individual test clauses (A.4.4 Weighing, A.4.7 Eccentricity, A.4.11 Creep).         |
+|                           | `test_sessions`              | Pattern evaluation test session execution instance.                                 |
+|                           | `session_environmental_logs` | Ambient temperature ($T$), relative humidity (%RH), and barometric pressure.        |
+| **Observations & Math**   | `raw_observations`           | Immutable bench observations ($L, I, \Delta L, I_0$, Vernier weights).              |
+|                           | `observation_weights_used`   | Many-to-many link mapping specific standard weights to observation runs.            |
+|                           | `calculation_runs`           | Execution container for deterministic R-76 calculation runs.                        |
+|                           | `calculation_trace_items`    | Intermediate mathematical step derivations ($P, E, E_0, E_c, 	ext{MPE}$, Pass/Fail). |
+| **Reviews & Signatures**  | `review_audits`              | Senior officer peer review logs, anomaly flags, and correction assignments.         |
+|                           | `digital_signatures`         | X.509 PKI / DSC digital signature metadata and PDF hash seals.                      |
+| **Reports & Evidence**    | `reports`                    | Generated OIML R 76-2 pattern evaluation reports.                                   |
+|                           | `report_versions`            | PDF/Word document versions, storage paths, and SHA-256 binary hashes.               |
+|                           | `evidence_attachments`       | Nameplate photos, sealing diagrams, PCB schematics, EXIF metadata.                  |
+| **Audit & Sync**          | `provenance_nodes`           | WELMEC 7.2 SHA-256 cryptographic provenance hash chain nodes.                       |
+|                           | `audit_logs`                 | System security audit trail logs for compliance auditing.                           |
+|                           | `offline_sync_queue`         | PWA offline bench execution sync queue and conflict resolution logs.                |
 
 ---
 
@@ -75,22 +77,22 @@ erDiagram
     laboratories ||--o{ users : "employs"
     laboratories ||--o{ reference_standards : "owns"
     roles ||--o{ users : "assigned_to"
-    
+
     manufacturers ||--o{ instrument_models : "manufactures"
     accuracy_classes ||--o{ instrument_models : "classifies"
     instrument_models ||--o{ model_partial_ranges : "defines_multi_range"
     instrument_models ||--o{ instrument_units : "instantiates"
     instrument_models ||--o{ test_plans : "has_default_plan"
-    
+
     reference_standards ||--o{ calibration_certificates : "calibrated_by"
-    
+
     rule_packs ||--o{ rule_pack_versions : "contains_versions"
-    
+
     users ||--o{ test_sessions : "conducts_as_officer"
     instrument_units ||--o{ test_sessions : "undergoes"
     test_plans ||--o{ test_sessions : "guides"
     rule_pack_versions ||--o{ test_sessions : "governs_math"
-    
+
     test_sessions ||--o{ session_environmental_logs : "records_environment"
     test_sessions ||--o{ raw_observations : "captures"
     test_sessions ||--o{ calculation_runs : "executes"
@@ -98,16 +100,16 @@ erDiagram
     test_sessions ||--o{ digital_signatures : "signed_by"
     test_sessions ||--o{ reports : "generates"
     test_sessions ||--o{ evidence_attachments : "attaches"
-    
+
     test_plan_items ||--o{ raw_observations : "structures"
     raw_observations ||--o{ observation_weights_used : "uses_weights"
     calibration_certificates ||--o{ observation_weights_used : "validates"
-    
+
     raw_observations ||--o{ calculation_trace_items : "inputs_to"
     calculation_runs ||--o{ calculation_trace_items : "contains"
-    
+
     reports ||--o{ report_versions : "has_versions"
-    
+
     test_sessions ||--o{ provenance_nodes : "generates_hashes"
 ```
 
@@ -118,7 +120,9 @@ erDiagram
 ### 4.1 Identity & RBAC Domain
 
 #### `laboratories`
+
 Stores testing facility metadata (RRSLs, State Central Laboratories).
+
 ```sql
 CREATE TABLE laboratories (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -141,7 +145,9 @@ CREATE TABLE laboratories (
 ```
 
 #### `roles`
+
 Defines system roles and permission sets.
+
 ```sql
 CREATE TABLE roles (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -154,7 +160,9 @@ CREATE TABLE roles (
 ```
 
 #### `users`
+
 System user accounts, lab affiliation, and X.509 PKI certificate links.
+
 ```sql
 CREATE TABLE users (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -180,7 +188,9 @@ CREATE TABLE users (
 ### 4.2 Master & Reference Data Domain
 
 #### `accuracy_classes`
+
 OIML R-76 scale accuracy classes.
+
 ```sql
 CREATE TABLE accuracy_classes (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -194,7 +204,9 @@ CREATE TABLE accuracy_classes (
 ```
 
 #### `reference_standards`
+
 Physical standard weight sets owned by testing laboratories.
+
 ```sql
 CREATE TABLE reference_standards (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -212,7 +224,9 @@ CREATE TABLE reference_standards (
 ```
 
 #### `calibration_certificates`
+
 NABL accreditation calibration certificates for standard weight sets.
+
 ```sql
 CREATE TABLE calibration_certificates (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -238,7 +252,9 @@ CREATE TABLE calibration_certificates (
 ### 4.3 Standards-as-Code Rules Domain
 
 #### `rule_packs`
+
 Metadata container for regulatory standards.
+
 ```sql
 CREATE TABLE rule_packs (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -251,7 +267,9 @@ CREATE TABLE rule_packs (
 ```
 
 #### `rule_pack_versions`
+
 Dynamic, versioned JSONB logic rules storing Table 3, Table 6 MPE brackets, equations, and testing parameters.
+
 ```sql
 CREATE TABLE rule_pack_versions (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -261,13 +279,13 @@ CREATE TABLE rule_pack_versions (
     effective_until     DATE, -- NULL if currently active
     is_active           BOOLEAN NOT NULL DEFAULT FALSE,
     rule_schema_version VARCHAR(20) NOT NULL DEFAULT '1.0',
-    
+
     -- Dynamic JSONB rule structures
     table_3_classification_json JSONB NOT NULL, -- Min/Max n, Min capacity rules per class
     table_6_mpe_brackets_json   JSONB NOT NULL, -- Step-bracket boundaries in scale divisions 'e'
     formula_definitions_json    JSONB NOT NULL, -- Math definitions: P, E, E0, Ec, drift rate
     environmental_limits_json   JSONB NOT NULL, -- Temp range, max drift rate (5 K/h), humidity
-    
+
     created_by_user_id  UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_rule_version UNIQUE (rule_pack_id, version_tag)
@@ -279,7 +297,9 @@ CREATE TABLE rule_pack_versions (
 ### 4.4 Instrument & Model Intake Domain
 
 #### `manufacturers`
+
 Manufacturers, importers, and legal applicants submitting models under Section 22.
+
 ```sql
 CREATE TABLE manufacturers (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -301,7 +321,9 @@ CREATE TABLE manufacturers (
 ```
 
 #### `instrument_models`
+
 NAWI model technical specifications ($Max, Min, e, d$, Class, multi-interval config).
+
 ```sql
 CREATE TABLE instrument_models (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -311,7 +333,7 @@ CREATE TABLE instrument_models (
     pattern_designation VARCHAR(100) NOT NULL UNIQUE, -- Official pattern approval model ID
     instrument_type     VARCHAR(100) NOT NULL, -- e.g. 'Counter Scale', 'Bench Scale', 'Weighbridge'
     weighing_principle  VARCHAR(100) NOT NULL, -- e.g. 'Electronic Strain Gauge Load Cell'
-    
+
     -- Metrological Specs (Primary / Single Range)
     max_capacity        NUMERIC(16,8) NOT NULL, -- Max
     min_capacity        NUMERIC(16,8) NOT NULL, -- Min
@@ -319,22 +341,22 @@ CREATE TABLE instrument_models (
     actual_scale_interval_d       NUMERIC(16,8) NOT NULL, -- d
     scale_division_count_n        INT NOT NULL,          -- n = Max / e
     unit_of_measure     VARCHAR(10) NOT NULL DEFAULT 'kg',
-    
+
     -- Range & Interval Architecture Flags
     is_multi_interval   BOOLEAN NOT NULL DEFAULT FALSE, -- Multi-interval instrument
     is_multiple_range   BOOLEAN NOT NULL DEFAULT FALSE, -- Multiple range instrument
     number_of_partial_ranges INT NOT NULL DEFAULT 1 CHECK (number_of_partial_ranges BETWEEN 1 AND 3),
-    
+
     -- Technical Operating Specs
     temp_range_min_c    NUMERIC(4,1) NOT NULL DEFAULT -10.0, -- Default OIML R-76 Tmin
     temp_range_max_c    NUMERIC(4,1) NOT NULL DEFAULT 40.0,  -- Default OIML R-76 Tmax
     power_supply_voltage_nominal NUMERIC(5,1) NOT NULL DEFAULT 230.0, -- Volts AC
     power_supply_frequency_hz    NUMERIC(4,1) NOT NULL DEFAULT 50.0,  -- Hz
-    
+
     firmware_version_id VARCHAR(100) NOT NULL, -- Legal software ID / checksum
     created_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
+
     CONSTRAINT chk_model_capacities CHECK (max_capacity > min_capacity AND min_capacity >= 0),
     CONSTRAINT chk_model_intervals CHECK (verification_scale_interval_e >= actual_scale_interval_d AND actual_scale_interval_d > 0),
     CONSTRAINT chk_model_temp CHECK (temp_range_max_c > temp_range_min_c)
@@ -342,7 +364,9 @@ CREATE TABLE instrument_models (
 ```
 
 #### `model_partial_ranges`
+
 Partial weighing ranges ($W_1, W_2, W_3$) for multi-interval / multiple-range scales per Clause 3.3.
+
 ```sql
 CREATE TABLE model_partial_ranges (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -353,7 +377,7 @@ CREATE TABLE model_partial_ranges (
     verification_scale_interval_e_i NUMERIC(16,8) NOT NULL, -- e_i
     actual_scale_interval_d_i       NUMERIC(16,8) NOT NULL, -- d_i
     scale_division_count_n_i        INT NOT NULL,          -- n_i = Max_i / e_i
-    
+
     CONSTRAINT uq_model_range INDEX UNIQUE (instrument_model_id, range_index),
     CONSTRAINT chk_partial_capacities CHECK (max_capacity_i > min_capacity_i AND min_capacity_i >= 0),
     CONSTRAINT chk_partial_intervals CHECK (verification_scale_interval_e_i >= actual_scale_interval_d_i AND actual_scale_interval_d_i > 0)
@@ -361,7 +385,9 @@ CREATE TABLE model_partial_ranges (
 ```
 
 #### `instrument_units`
+
 Physical individual scale submitted for type evaluation.
+
 ```sql
 CREATE TABLE instrument_units (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -381,7 +407,9 @@ CREATE TABLE instrument_units (
 ### 4.5 Test Sessions & Execution Domain
 
 #### `test_plans`
+
 Template test sequence schedule for an instrument model.
+
 ```sql
 CREATE TABLE test_plans (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -393,7 +421,9 @@ CREATE TABLE test_plans (
 ```
 
 #### `test_plan_items`
+
 Individual test clause details (Forms 1–14).
+
 ```sql
 CREATE TABLE test_plan_items (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -408,7 +438,9 @@ CREATE TABLE test_plan_items (
 ```
 
 #### `test_sessions`
+
 Pattern evaluation test session execution container.
+
 ```sql
 CREATE TABLE test_sessions (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -419,26 +451,28 @@ CREATE TABLE test_sessions (
     test_plan_id        UUID NOT NULL REFERENCES test_plans(id) ON DELETE RESTRICT,
     rule_pack_version_id UUID NOT NULL REFERENCES rule_pack_versions(id) ON DELETE RESTRICT,
     testing_officer_id  UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    
+
     -- Session Lifecycle State
-    status              VARCHAR(50) NOT NULL DEFAULT 'DRAFT' 
+    status              VARCHAR(50) NOT NULL DEFAULT 'DRAFT'
                         CHECK (status IN ('DRAFT', 'BENCH_IN_PROGRESS', 'CALCULATIONS_COMPLETE', 'UNDER_REVIEW', 'REQUIRES_RETEST', 'APPROVED', 'REJECTED')),
-    
+
     started_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at        TIMESTAMPTZ,
-    
+
     -- Sync Metadata
     sync_status         VARCHAR(20) NOT NULL DEFAULT 'SYNCED' CHECK (sync_status IN ('PENDING', 'SYNCED', 'CONFLICT')),
     device_id           VARCHAR(100),
     server_synced_at    TIMESTAMPTZ,
-    
+
     created_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
 #### `session_environmental_logs`
+
 Ambient climate observations logged during testing (Clause A.5.3.2).
+
 ```sql
 CREATE TABLE session_environmental_logs (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -447,11 +481,11 @@ CREATE TABLE session_environmental_logs (
     temperature_c       NUMERIC(4,2) NOT NULL, -- Ambient temp in °C
     relative_humidity_percent NUMERIC(5,2) NOT NULL, -- %RH
     barometric_pressure_hpa NUMERIC(6,2), -- hPa / mbar
-    
+
     -- Automated Drift Checking
     temp_drift_rate_c_per_hr NUMERIC(4,2), -- Calculated thermal drift rate °C/h
     is_temp_stable      BOOLEAN NOT NULL DEFAULT TRUE, -- TRUE if drift <= 5.0 °C/h
-    
+
     CONSTRAINT chk_env_temp CHECK (temperature_c BETWEEN -30.0 AND 70.0),
     CONSTRAINT chk_env_humidity CHECK (relative_humidity_percent BETWEEN 0.0 AND 100.0)
 );
@@ -462,39 +496,43 @@ CREATE TABLE session_environmental_logs (
 ### 4.6 Observations & Calculations Domain
 
 #### `raw_observations`
+
 Immutable bench measurement observations ($L, I, \Delta L, I_0$, position).
+
 ```sql
 CREATE TABLE raw_observations (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     local_id            UUID UNIQUE, -- Offline client UUID
     test_session_id     UUID NOT NULL REFERENCES test_sessions(id) ON DELETE CASCADE,
     test_plan_item_id   UUID NOT NULL REFERENCES test_plan_items(id) ON DELETE RESTRICT,
-    
+
     sequence_number     INT NOT NULL, -- Test step sequence
     test_clause         VARCHAR(20) NOT NULL, -- e.g. 'A.4.4'
     load_run_direction  VARCHAR(20) NOT NULL CHECK (load_run_direction IN ('ASCENDING', 'DESCENDING', 'NOT_APPLICABLE')),
-    
+
     -- Raw Measurement Values (Fixed-Point NUMERIC)
     target_load_l       NUMERIC(16,8) NOT NULL, -- Applied reference load L
     displayed_indication_i NUMERIC(16,8) NOT NULL, -- Scale reading I
     changeover_weight_dl NUMERIC(16,8) NOT NULL DEFAULT 0.0, -- Added Vernier weights ΔL
     zero_indication_i0  NUMERIC(16,8) NOT NULL DEFAULT 0.0, -- Zero load indication I0
-    
+
     -- Positional & Temporal Metadata
     eccentricity_position INT CHECK (eccentricity_position BETWEEN 1 AND 5), -- Quadrant position (1-5)
     elapsed_time_minutes NUMERIC(6,2), -- For Creep test (e.g. 0.0, 15.0, 30.0 min)
     active_partial_range_index INT NOT NULL DEFAULT 1 CHECK (active_partial_range_index BETWEEN 1 AND 3),
-    
+
     recorded_at         TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Raw observations are write-once
     CONSTRAINT uq_obs_sequence UNIQUE (test_session_id, test_plan_item_id, sequence_number)
 );
 ```
 
 #### `observation_weights_used`
+
 Junction table linking standard weight certificates to specific raw observation runs for NABL 129 validation.
+
 ```sql
 CREATE TABLE observation_weights_used (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -505,7 +543,9 @@ CREATE TABLE observation_weights_used (
 ```
 
 #### `calculation_runs`
+
 Execution container for deterministic mathematical evaluation runs.
+
 ```sql
 CREATE TABLE calculation_runs (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -513,7 +553,7 @@ CREATE TABLE calculation_runs (
     rule_pack_version_id UUID NOT NULL REFERENCES rule_pack_versions(id) ON DELETE RESTRICT,
     executed_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     executed_at         TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Session-Level Compliance Result
     overall_compliance_status VARCHAR(20) NOT NULL CHECK (overall_compliance_status IN ('PASS', 'FAIL')),
     total_points_evaluated INT NOT NULL,
@@ -523,24 +563,26 @@ CREATE TABLE calculation_runs (
 ```
 
 #### `calculation_trace_items`
+
 Derived mathematical intermediate step values ($P, E, E_0, E_c, 	ext{MPE}$, Pass/Fail status) and step derivation logs.
+
 ```sql
 CREATE TABLE calculation_trace_items (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     calculation_run_id  UUID NOT NULL REFERENCES calculation_runs(id) ON DELETE CASCADE,
     raw_observation_id  UUID NOT NULL REFERENCES raw_observations(id) ON DELETE CASCADE,
-    
+
     -- Calculated Values (Fixed-Point NUMERIC)
     pre_rounding_indication_p NUMERIC(16,8) NOT NULL, -- P = I + 0.5e - ΔL
     raw_error_e               NUMERIC(16,8) NOT NULL, -- E = P - L
     zero_error_e0             NUMERIC(16,8) NOT NULL DEFAULT 0.0, -- E0
     corrected_intrinsic_error_ec NUMERIC(16,8) NOT NULL, -- Ec = E - E0
-    
+
     -- MPE Tolerance Step-Bracket Comparison
     mpe_limit_applied         NUMERIC(16,8) NOT NULL, -- Applicable MPE tolerance (e.g. ±0.5e)
     mpe_bracket_category      VARCHAR(50) NOT NULL, -- e.g. '0 <= m <= 500e'
     compliance_status         VARCHAR(10) NOT NULL CHECK (compliance_status IN ('PASS', 'FAIL')),
-    
+
     -- Complete Derivation Step Log
     step_derivation_tree_json JSONB NOT NULL, -- Step-by-step math string array for UI tooltips
     created_at                TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -552,7 +594,9 @@ CREATE TABLE calculation_trace_items (
 ### 4.7 Reviews, Approvals & Provenance Domain
 
 #### `review_audits`
+
 Senior metrologist peer review logs and anomaly audit flags.
+
 ```sql
 CREATE TABLE review_audits (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -561,7 +605,7 @@ CREATE TABLE review_audits (
     review_stage        VARCHAR(50) NOT NULL CHECK (review_stage IN ('SECOND_LEVEL_REVIEW', 'DIRECTOR_APPROVAL')),
     decision            VARCHAR(50) NOT NULL CHECK (decision IN ('APPROVED', 'FLAGGED_FOR_CORRECTION', 'REJECTED')),
     comments            TEXT,
-    
+
     -- Anomaly Audit Output Flags
     automated_anomaly_flags_json JSONB NOT NULL DEFAULT '[]'::jsonb,
     reviewed_at         TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -569,26 +613,30 @@ CREATE TABLE review_audits (
 ```
 
 #### `digital_signatures`
+
 X.509 PKI digital signature metadata and PDF binary seal hashes.
+
 ```sql
 CREATE TABLE digital_signatures (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     test_session_id     UUID NOT NULL REFERENCES test_sessions(id) ON DELETE RESTRICT,
     signer_user_id      UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     signer_role         VARCHAR(50) NOT NULL, -- 'ROLE_DIRECTOR'
-    
+
     -- Cryptographic Signature Metadata
     pdf_binary_hash_sha256 VARCHAR(64) NOT NULL, -- SHA-256 hash of output PDF
     x509_certificate_serial VARCHAR(100) NOT NULL,
     pki_signature_value_base64 TEXT NOT NULL, -- CMS / PKCS#7 signature string
     timestamp_token_base64     TEXT, -- RFC 3161 cryptographic timestamp token
-    
+
     signed_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
 #### `reports`
+
 Generated OIML R 76-2 pattern evaluation report instances.
+
 ```sql
 CREATE TABLE reports (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -603,7 +651,9 @@ CREATE TABLE reports (
 ```
 
 #### `report_versions`
+
 Generated PDF and Word document file versions and binary hashes.
+
 ```sql
 CREATE TABLE report_versions (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -620,7 +670,9 @@ CREATE TABLE report_versions (
 ```
 
 #### `evidence_attachments`
+
 Nameplate photographs, sealing diagrams, circuit schematics, and EXIF metadata.
+
 ```sql
 CREATE TABLE evidence_attachments (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -630,32 +682,34 @@ CREATE TABLE evidence_attachments (
     file_storage_path   TEXT NOT NULL,
     mime_type           VARCHAR(100) NOT NULL,
     file_hash_sha256    VARCHAR(64) NOT NULL, -- Image hash for tamper protection
-    
+
     -- EXIF & Camera Metadata
     exif_timestamp      TIMESTAMPTZ,
     exif_latitude       NUMERIC(9,6),
     exif_longitude      NUMERIC(9,6),
     ocr_extracted_text_json JSONB, -- Extracted nameplate text ($Max, Min, e, d$)
-    
+
     uploaded_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
 #### `provenance_nodes`
+
 WELMEC Guide 7.2 Extension L cryptographic provenance SHA-256 hash graph.
+
 ```sql
 CREATE TABLE provenance_nodes (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     test_session_id     UUID NOT NULL REFERENCES test_sessions(id) ON DELETE CASCADE,
     node_sequence       INT NOT NULL, -- Node 1, 2, 3...
     node_type           VARCHAR(50) NOT NULL, -- 'SESSION_INIT', 'OBSERVATION_LOG', 'CALCULATION_RUN', 'REVIEW_AUDIT', 'PDF_SIGN'
-    
+
     -- Cryptographic Hash Graph Links
     previous_node_hash_sha256 VARCHAR(64) NOT NULL, -- Hash of node N-1
     payload_hash_sha256       VARCHAR(64) NOT NULL, -- SHA-256(Node JSON payload)
     current_node_hash_sha256  VARCHAR(64) NOT NULL, -- SHA-256(PreviousHash + PayloadHash)
-    
+
     created_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_session_provenance_seq UNIQUE (test_session_id, node_sequence)
 );
@@ -675,7 +729,7 @@ CREATE TABLE offline_sync_queue (
     operation_type      VARCHAR(10) NOT NULL CHECK (operation_type IN ('INSERT', 'UPDATE', 'DELETE')),
     payload_json        JSONB NOT NULL,
     client_timestamp    TIMESTAMPTZ NOT NULL,
-    
+
     -- Sync Queue Status
     sync_status         VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (sync_status IN ('PENDING', 'SUCCESS', 'CONFLICT_FAILED')),
     retry_count         INT NOT NULL DEFAULT 0,
@@ -806,9 +860,10 @@ CREATE POLICY lab_isolation_policy ON test_sessions
 ## 9. Migration & Versioning Strategy
 
 Database DDL migrations are managed using **Prisma Migrate / Version-Controlled SQL Migrations**:
-* Migration scripts are version-controlled via Prisma (`prisma/migrations/`).
-* DDL changes **never drop columns** containing historical observation or calculation data.
-* Regulatory rule changes do **NOT** require DDL migrations — they are ingested as new immutable records in `rule_pack_versions`.
+
+- Migration scripts are version-controlled via Prisma (`prisma/migrations/`).
+- DDL changes **never drop columns** containing historical observation or calculation data.
+- Regulatory rule changes do **NOT** require DDL migrations — they are ingested as new immutable records in `rule_pack_versions`.
 
 ---
 

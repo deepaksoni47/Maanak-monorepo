@@ -1,0 +1,22 @@
+{
+  "name": "@maanak/report-generator",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "tsc --noEmit",
+    "lint": "prettier --check \"src/**/*.ts\"",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@maanak/types": "workspace:*",
+    "docx": "^9.2.0",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

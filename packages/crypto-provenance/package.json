@@ -1,0 +1,23 @@
+{
+  "name": "@maanak/crypto-provenance",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "tsc --noEmit",
+    "lint": "prettier --check \"src/**/*.ts\"",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@maanak/types": "workspace:*",
+    "@peculiar/x509": "^1.13.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5",
+    "typescript": "^7.0.2"
+  }
+}

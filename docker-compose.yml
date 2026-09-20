@@ -1,0 +1,67 @@
+name: maanak
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: maanak-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-maanak_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-maanak_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-maanak_dev}
+    volumes:
+      - maanak_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-maanak_user} -d ${POSTGRES_DB:-maanak_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - maanak-network
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: maanak-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-maanak_user}:${POSTGRES_PASSWORD:-maanak_pass}@postgres:5432/${POSTGRES_DB:-maanak_dev}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-maanak_jwt_super_secret_key_2026_dev}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - maanak-network
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: maanak-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    depends_on:
+      - api
+    networks:
+      - maanak-network
+
+volumes:
+  maanak_pgdata:
+    driver: local
+
+networks:
+  maanak-network:
+    driver: bridge
