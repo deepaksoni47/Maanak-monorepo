@@ -2,10 +2,11 @@
   "name": "@maanak/rules-engine",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node --input-type=module -e \"import fs from 'node:fs'; fs.cpSync('src/rules', 'dist/rules', { recursive: true, filter: src => !src.endsWith('.ts') });\"",
     "dev": "tsc --watch",
     "lint": "prettier --check \"src/**/*.ts\"",
     "test": "node --test dist/**/*.test.js",
@@ -17,6 +18,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/node": "^26.6.2",
     "typescript": "^7.0.2"
   }
 }

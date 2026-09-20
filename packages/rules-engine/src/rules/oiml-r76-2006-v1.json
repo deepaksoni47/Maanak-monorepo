@@ -1,0 +1,174 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "oiml-r76-2006-v1",
+  "standard": "OIML R 76-1:2006",
+  "title": "Non-automatic weighing instruments - Part 1: Metrological and technical requirements",
+  "version": "1.0.0",
+  "effectiveFrom": "2006-10-01",
+  "issuingBody": "OIML",
+  "description": "Official OIML R 76-1:2006 Standards-as-Code Rule Pack defining Table 3 classification limits, Table 6 initial verification MPE step brackets, and NABL 129 uncertainty constraints.",
+  "table3Classification": {
+    "I": [
+      {
+        "minVerificationScaleInterval": "0.000001",
+        "minVerificationScaleIntervalUnit": "kg",
+        "minVerificationScaleDivisionsN": 50000,
+        "maxVerificationScaleDivisionsN": null,
+        "minCapacityFactorE": 100
+      }
+    ],
+    "II": [
+      {
+        "minVerificationScaleInterval": "0.000001",
+        "maxVerificationScaleInterval": "0.00005",
+        "minVerificationScaleIntervalUnit": "kg",
+        "minVerificationScaleDivisionsN": 100,
+        "maxVerificationScaleDivisionsN": 100000,
+        "minCapacityFactorE": 20
+      },
+      {
+        "minVerificationScaleInterval": "0.0001",
+        "minVerificationScaleIntervalUnit": "kg",
+        "minVerificationScaleDivisionsN": 5000,
+        "maxVerificationScaleDivisionsN": 100000,
+        "minCapacityFactorE": 50
+      }
+    ],
+    "III": [
+      {
+        "minVerificationScaleInterval": "0.0001",
+        "maxVerificationScaleInterval": "0.002",
+        "minVerificationScaleIntervalUnit": "kg",
+        "minVerificationScaleDivisionsN": 100,
+        "maxVerificationScaleDivisionsN": 10000,
+        "minCapacityFactorE": 20
+      },
+      {
+        "minVerificationScaleInterval": "0.005",
+        "minVerificationScaleIntervalUnit": "kg",
+        "minVerificationScaleDivisionsN": 500,
+        "maxVerificationScaleDivisionsN": 10000,
+        "minCapacityFactorE": 20
+      }
+    ],
+    "IIII": [
+      {
+        "minVerificationScaleInterval": "0.005",
+        "minVerificationScaleIntervalUnit": "kg",
+        "minVerificationScaleDivisionsN": 100,
+        "maxVerificationScaleDivisionsN": 1000,
+        "minCapacityFactorE": 10
+      }
+    ]
+  },
+  "table6MpeBrackets": {
+    "initialVerification": {
+      "I": [
+        { "minMInDivisions": 0, "maxMInDivisions": 50000, "mpeFactorE": "0.5" },
+        {
+          "minMInDivisions": 50000,
+          "maxMInDivisions": 200000,
+          "mpeFactorE": "1.0"
+        },
+        {
+          "minMInDivisions": 200000,
+          "maxMInDivisions": null,
+          "mpeFactorE": "1.5"
+        }
+      ],
+      "II": [
+        { "minMInDivisions": 0, "maxMInDivisions": 5000, "mpeFactorE": "0.5" },
+        {
+          "minMInDivisions": 5000,
+          "maxMInDivisions": 20000,
+          "mpeFactorE": "1.0"
+        },
+        {
+          "minMInDivisions": 20000,
+          "maxMInDivisions": 100000,
+          "mpeFactorE": "1.5"
+        }
+      ],
+      "III": [
+        { "minMInDivisions": 0, "maxMInDivisions": 500, "mpeFactorE": "0.5" },
+        {
+          "minMInDivisions": 500,
+          "maxMInDivisions": 2000,
+          "mpeFactorE": "1.0"
+        },
+        {
+          "minMInDivisions": 2000,
+          "maxMInDivisions": 10000,
+          "mpeFactorE": "1.5"
+        }
+      ],
+      "IIII": [
+        { "minMInDivisions": 0, "maxMInDivisions": 50, "mpeFactorE": "0.5" },
+        { "minMInDivisions": 50, "maxMInDivisions": 200, "mpeFactorE": "1.0" },
+        { "minMInDivisions": 200, "maxMInDivisions": 1000, "mpeFactorE": "1.5" }
+      ]
+    },
+    "inService": {
+      "I": [
+        { "minMInDivisions": 0, "maxMInDivisions": 50000, "mpeFactorE": "1.0" },
+        {
+          "minMInDivisions": 50000,
+          "maxMInDivisions": 200000,
+          "mpeFactorE": "2.0"
+        },
+        {
+          "minMInDivisions": 200000,
+          "maxMInDivisions": null,
+          "mpeFactorE": "3.0"
+        }
+      ],
+      "II": [
+        { "minMInDivisions": 0, "maxMInDivisions": 5000, "mpeFactorE": "1.0" },
+        {
+          "minMInDivisions": 5000,
+          "maxMInDivisions": 20000,
+          "mpeFactorE": "2.0"
+        },
+        {
+          "minMInDivisions": 20000,
+          "maxMInDivisions": 100000,
+          "mpeFactorE": "3.0"
+        }
+      ],
+      "III": [
+        { "minMInDivisions": 0, "maxMInDivisions": 500, "mpeFactorE": "1.0" },
+        {
+          "minMInDivisions": 500,
+          "maxMInDivisions": 2000,
+          "mpeFactorE": "2.0"
+        },
+        {
+          "minMInDivisions": 2000,
+          "maxMInDivisions": 10000,
+          "mpeFactorE": "3.0"
+        }
+      ],
+      "IIII": [
+        { "minMInDivisions": 0, "maxMInDivisions": 50, "mpeFactorE": "1.0" },
+        { "minMInDivisions": 50, "maxMInDivisions": 200, "mpeFactorE": "2.0" },
+        { "minMInDivisions": 200, "maxMInDivisions": 1000, "mpeFactorE": "3.0" }
+      ]
+    }
+  },
+  "environmentalConstraints": {
+    "maxTemperatureDriftRateCPerHour": 5.0,
+    "defaultOperatingTempMinC": -10.0,
+    "defaultOperatingTempMaxC": 40.0,
+    "relativeHumidityMinPercent": 0.0,
+    "relativeHumidityMaxPercent": 85.0
+  },
+  "metrologicalRules": {
+    "nabl129MaxUncertaintyToMpeRatio": "0.33333333",
+    "repeatabilityToleranceFactor": "1.0",
+    "creep30MinToleranceFactorE": "0.5",
+    "creep15To30MinToleranceFactorE": "0.2",
+    "zeroReturnToleranceFactorE": "0.5",
+    "eccentricityToleranceFactor": "1.0",
+    "discriminationLoadMultiplierD": "1.4"
+  }
+}

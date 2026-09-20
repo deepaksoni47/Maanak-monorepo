@@ -16,6 +16,8 @@
 > 4. **Mandatory Mobile Phone Responsiveness**: All UI portals, screens, forms, tables, and workflows **must be fully responsive on mobile phones (smartphones 360px–430px)** as well as tablets and desktops.
 > 5. **Lucide React Icons**: All UI iconography across desktop, tablet, and mobile PWA clients must use **`lucide-react`** (latest stable).
 > 6. **Zero Floating Point Errors**: Decimal calculations ($P, E, E_0, E_c, \text{MPE}$) must strictly use `decimal.js` for arbitrary precision arithmetic.
+> 7. **Mandatory Skeleton Loaders (No Generic Spinners)**: All UI loading states must strictly use animated skeleton loaders (`bg-muted/60 animate-pulse rounded-2xl`) matching exact layout geometry to prevent Cumulative Layout Shift (CLS). Generic loading spinners and blank screens are strictly prohibited.
+> 8. **Dynamic Page Titles & Route Metadata**: Every route and view must declare a dynamic document title (`<Page Title> | MAANAK (मानक) — OIML R-76 Legal Metrology`) and dynamic breadcrumb hierarchy.
 
 ---
 

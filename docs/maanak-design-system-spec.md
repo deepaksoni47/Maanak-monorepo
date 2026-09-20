@@ -15,6 +15,8 @@
 > 3. **Mandatory Mobile Phone Responsiveness**: **EVERY SINGLE SCREEN, COMPONENT, AND DASHBOARD MUST BE FULLY RESPONSIVE FOR MOBILE PHONES (smartphones 360px–430px)** as well as tablets and desktops. No horizontal viewport overflow; tables must collapse to mobile stacked cards or swipeable horizontal scroll containers; navigation must adapt to bottom bars/drawers; touch targets must be $\ge 48\text{px}$.
 > 4. **Lucide React Icons**: All UI iconography across desktop, tablet, and mobile phone clients must exclusively use **`lucide-react`** (latest stable).
 > 5. **Modern Design Aesthetics**: Render crisp, high-density metrological tables, rounded pill buttons (`--radius: 1.3rem`), and Twitter Sky Blue active state highlights.
+> 6. **Mandatory Skeleton Loaders (No Generic Spinners)**: All loading states across pages, data tables, metrics KPI grids, observation cards, and form containers **must strictly use animated skeleton loaders** (`<Skeleton className="animate-pulse bg-muted/60 rounded-2xl" />`) matching the exact geometry of the loading content to eliminate Cumulative Layout Shift (CLS). Generic loading spinners, spinner overlays, or blank loading screens are strictly prohibited.
+> 7. **Dynamic Page Titles & Route Metadata Architecture**: Every single page, sub-route, and view must declare a **dynamic document title** formatted systematically: `<Page Title> | MAANAK (मानक) — OIML R-76 Legal Metrology` (e.g. `Dashboard & Lab Analytics | MAANAK (मानक)`, `Test Session TS-2026-0089 — Bench Execution | MAANAK (मानक)`, `Public Verification — e3b0c442... | MAANAK (मानक)`). Route headers must also include dynamic breadcrumb navigation with the active page title clearly identified.
 
 ---
 
@@ -336,6 +338,16 @@ To maintain high contrast and metrological legal accuracy, status states follow 
 - **Header**: `bg-card text-muted-foreground font-semibold uppercase tracking-wider border-b border-border`.
 - **Alternating Rows**: `odd:bg-background even:bg-card/50 hover:bg-accent/50 transition-colors`.
 
+### 7.4 Skeleton Loading Components (`<Skeleton>`)
+
+- **Base Class**: `animate-pulse bg-muted/60 rounded-2xl`
+- **Zero Spinners Rule**: Spinners (`<Loader2 className="animate-spin" />`) are prohibited for content loading. Use dedicated geometry-matching skeleton primitives:
+  - `TableSkeleton`: Simulates table rows and headers to avoid shift.
+  - `MetricCardSkeleton`: Preserves $112\text{px}$ stat card dimensions.
+  - `BenchCardSkeleton`: Matches mobile observation cards ($I, \Delta L, P, E_c$).
+  - `FormSkeleton`: Matches input fields and label shapes.
+  - `ReportPreviewSkeleton`: Matches multi-page document layout.
+
 ---
 
 ## 8. Major Application Screen Specifications
@@ -419,14 +431,86 @@ To maintain high contrast and metrological legal accuracy, status states follow 
 
 ### 9.1 Component State Matrix
 
-| State Type                       | UI Presentation & Layout                                                                                                       | Interactive Behavior                                                             |
-| :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------- |
-| **Empty Table / List**           | Center-aligned card shell with Lucide icon (`<Inbox>` or `<Scale>`), muted description text ("No active test sessions found"). | Includes a primary Sky Blue button ("+ Start New NAWI Evaluation").              |
-| **Skeleton Loading**             | Animated pulse skeletons (`bg-muted/50 animate-pulse rounded-2xl`) matching table rows and metric cards.                       | Prevents layout shift while fetching REST API data or offline IndexedDB records. |
-| **NABL Uncertainty Error Alert** | High-contrast amber alert card (`bg-amber-500/10 border-amber-500/30 text-amber-600`) with `<AlertTriangle>` icon.             | Disables bench input field until a compliant standard weight is selected.        |
-| **Digital Signing Confirmation** | `<Dialog>` modal overlay displaying report summary, SHA-256 hash preview, and PIN entry field.                                 | Requires explicit PIN entry before invoking X.509 PKI signing key.               |
+| State Type                       | UI Presentation & Layout                                                                                                       | Interactive Behavior                                                                             |
+| :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------- |
+| **Empty Table / List**           | Center-aligned card shell with Lucide icon (`<Inbox>` or `<Scale>`), muted description text ("No active test sessions found"). | Includes a primary Sky Blue button ("+ Start New NAWI Evaluation").                              |
+| **Skeleton Loading**             | Animated pulse skeletons (`bg-muted/60 animate-pulse rounded-2xl`) matching exact component geometry and dimensions.           | Eliminates Cumulative Layout Shift (CLS) while fetching REST API data or offline records.       |
+| **NABL Uncertainty Error Alert** | High-contrast amber alert card (`bg-amber-500/10 border-amber-500/30 text-amber-600`) with `<AlertTriangle>` icon.             | Disables bench input field until a compliant standard weight is selected.                        |
+| **Digital Signing Confirmation** | `<Dialog>` modal overlay displaying report summary, SHA-256 hash preview, and PIN entry field.                                 | Requires explicit PIN entry before invoking X.509 PKI signing key.                               |
 
 ---
+
+### 9.2 Mandatory Skeleton Loading Architecture (No Generic Spinners)
+
+To ensure an enterprise-grade, polished user experience without layout shifts, **generic spinners (e.g., spinning circle icons, full-screen spinner overlays, or "Loading..." text placeholders) are strictly prohibited**. All asynchronous data fetching must render contextual skeleton components matching the exact layout of the target data:
+
+1. **`TableSkeleton` (Data Tables & Bench Lists)**:
+   - Renders a table header followed by 5–8 pulsating row skeletons.
+   - Each cell uses a rounded pill skeleton (`h-4 bg-muted/60 rounded-full animate-pulse`) sized to the column width (e.g., `w-24` for serial numbers, `w-16` for accuracy class pills, `w-12` for status badges).
+2. **`MetricCardSkeleton` (KPI Dashboard Grids)**:
+   - Preserves the exact $112\text{px}$ card height with a header line skeleton (`h-3 w-28 rounded-full`), a large number skeleton (`h-8 w-20 rounded-xl mt-2`), and a subtitle trend skeleton (`h-2.5 w-36 rounded-full mt-2`).
+3. **`BenchCardSkeleton` (Mobile Observation Cards)**:
+   - Skeletons for the load point header pill (`h-6 w-32 rounded-full`), input fields (`h-12 w-full rounded-2xl`), and derivation calculation box (`h-20 w-full rounded-2xl`).
+4. **`FormSkeleton` (Intake & Configuration Pages)**:
+   - Skeletons for label text (`h-3.5 w-24 rounded-full mb-1.5`) and input controls (`h-12 w-full rounded-2xl`).
+5. **`ReportPreviewSkeleton` (OIML R 76-2 Multi-Page Preview)**:
+   - Renders a multi-page A4 document shell with pulsating tabular blocks, vector curve axes, and signature box placeholders.
+
+```tsx
+// Example Skeleton implementation conforming to Twitter theme
+export function MetricCardSkeleton() {
+  return (
+    <div className="rounded-3xl border border-border bg-card p-5 shadow-xs animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="h-3.5 w-28 bg-muted/70 rounded-full" />
+        <div className="h-8 w-8 bg-muted/60 rounded-xl" />
+      </div>
+      <div className="mt-4 h-8 w-24 bg-muted/80 rounded-xl" />
+      <div className="mt-2 h-3 w-36 bg-muted/50 rounded-full" />
+    </div>
+  );
+}
+```
+
+---
+
+### 9.3 Dynamic Document Title & Route Metadata Architecture
+
+Every screen and route in the MAANAK platform must provide clear contextual orientation by dynamically updating the browser tab title and breadcrumbs.
+
+#### 1. Next.js Root Title Template (`apps/web/src/app/layout.tsx`)
+```typescript
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s | MAANAK (मानक) — OIML R-76 Legal Metrology",
+    default: "MAANAK (मानक) — OIML R-76 Legal Metrology Workbench",
+  },
+  description:
+    "Government Platform for Generation of Test Reports & Pattern Evaluation Compliance Verification for Non-Automatic Weighing Instruments per OIML R-76.",
+};
+```
+
+#### 2. Route-Specific Dynamic Metadata Standards
+- **Dashboard (`/dashboard`)**:  
+  `title: "Dashboard & Lab Analytics"` $\to$ `Dashboard & Lab Analytics | MAANAK (मानक) — OIML R-76 Legal Metrology`
+- **Instrument Intake (`/instruments/new`)**:  
+  `title: "Instrument Intake & Model Approval"` $\to$ `Instrument Intake & Model Approval | MAANAK (मानक) — OIML R-76 Legal Metrology`
+- **Bench Execution (`/bench/[sessionId]`)**:  
+  Dynamic title based on the active test session:  
+  `title: "Session TS-2026-RRSL-0089 — Form 1 Weighing Bench"`
+- **NABL Weight Pre-Check (`/bench/[sessionId]/weights`)**:  
+  `title: "NABL 129 Standard Weight Uncertainty Pre-Check"`
+- **Reviewer Anomaly Audit (`/reviews/[sessionId]`)**:  
+  `title: "Reviewer Audit & Anomaly Detection — TS-2026-0089"`
+- **Official Report Preview (`/reports/[reportId]`)**:  
+  `title: "Official OIML R 76-2 Pattern Evaluation Report"`
+- **Public QR Verification (`/verify/[hash]`)**:  
+  `title: "Certificate Verification — SHA-256 Hash Seal"`
+
+#### 3. Dynamic Breadcrumb Header
+Every page shell renders a breadcrumb trail (`<Breadcrumb>`) at the top of the main content area reflecting the hierarchy (e.g., `Home > Test Sessions > TS-2026-RRSL-0089 > Form 1 Weighing`) with `aria-current="page"` on the active title.
 
 ## 10. Mandatory Mobile Phone & Multi-Device Responsiveness (a11y & Ergonomics)
 
@@ -512,6 +596,8 @@ To maintain high contrast and metrological legal accuracy, status states follow 
 |  ✓ DO use `--radius: 1.3rem` pill rounding (`rounded-2xl`, `rounded-3xl`) across interactive elements.|
 |  ✓ DO append explicit metric units (`kg`, `g`, `°C`, `hPa`) to every measurement display.         |
 |  ✓ DO wrap intermediate calculation cells in `<Tooltip>` components showing derivation steps.     |
+|  ✓ DO use contextual Skeleton Loaders matching component geometry instead of generic spinners.    |
+|  ✓ DO export dynamic document titles and breadcrumbs for every route and active session instance. |
 |                                                                                                   |
 | DON'T:                                                                                            |
 |  ❌ DON'T introduce hardcoded hex color codes (e.g. `#1DA1F2` or `#000000`) in component code.    |
@@ -519,6 +605,8 @@ To maintain high contrast and metrological legal accuracy, status states follow 
 |  ❌ DON'T execute floating-point math in JS string outputs without rounding to scale interval $e$.  |
 |  ❌ DON'T use decorative consumer gradients, drop shadows, or non-functional accent fills.        |
 |  ❌ DON'T alter OIML R 76-2 form field structures or skip required metadata fields.                |
+|  ❌ DON'T use generic spinner loaders, full-page loading spinners, or blank fallback screens.     |
+|  ❌ DON'T leave static, uninformative, or generic page titles in the browser tab.                 |
 +---------------------------------------------------------------------------------------------------+
 ```
 

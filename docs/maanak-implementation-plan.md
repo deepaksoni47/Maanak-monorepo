@@ -16,6 +16,8 @@
 > 5. **Mandatory Mobile Phone Responsiveness**: Every single UI screen, component, and form **must be 100% responsive for mobile phones (smartphones 360px–430px)** as well as tablets and desktops.
 > 6. **Lucide React Icons**: All UI iconography across desktop, tablet, and mobile PWA clients must use **`lucide-react`** (latest stable).
 > 7. **Zero Floating Point Errors**: Decimal calculations ($P, E, E_0, E_c, \text{MPE}$) must strictly use `decimal.js` for arbitrary precision arithmetic.
+> 8. **Mandatory Skeleton Loaders (No Generic Spinners)**: All loading states across pages, tables, metrics cards, and forms **must strictly use animated skeleton loaders** (`<Skeleton className="animate-pulse bg-muted/60 rounded-2xl" />`) matching the exact geometry of the content to prevent Cumulative Layout Shift (CLS). Generic spinners (`<Loader2 className="animate-spin" />`) and blank loading screens are strictly prohibited.
+> 9. **Dynamic Page Titles & Route Metadata**: Every single page route and view must declare a dynamic document title following the pattern: `<Page Title> | MAANAK (मानक) — OIML R-76 Legal Metrology` with contextual breadcrumbs.
 
 ---
 
@@ -679,62 +681,69 @@ maanak-monorepo/
 
 ### TASK-047: Next.js 16 Project Setup & Theme Configuration
 
-- **Target File(s)**: `apps/web/package.json`, `apps/web/next.config.js`, `apps/web/src/app/globals.css`
+- **Target File(s)**: `apps/web/package.json`, `apps/web/next.config.js`, `apps/web/src/app/globals.css`, `apps/web/src/app/layout.tsx`
 - **Blocked By**: `TASK-001`, `TASK-008`
 - **Technical Blueprint**:
   - Next.js 16 (LTS v16.3.5) with App Router and React 19.
   - Tailwind CSS v4 with Tweakcn Twitter OKLCH theme tokens:
     `--primary: oklch(0.6723 0.1606 244.9955)`, `--radius: 1.3rem`.
   - Install `lucide-react` (latest stable).
-- **Acceptance Criteria**: Next.js app builds cleanly; renders styled page with Twitter Sky Blue theme tokens.
+  - Configure root Next.js metadata template in `layout.tsx`:
+    `title: { template: "%s | MAANAK (मानक) — OIML R-76 Legal Metrology", default: "MAANAK (मानक) — OIML R-76 Legal Metrology Workbench" }`.
+- **Acceptance Criteria**: Next.js app builds cleanly; renders styled page with Twitter Sky Blue theme tokens and default metadata title.
 
 ---
 
 ### TASK-048: Universal Responsive Mobile Shell & Layout
 
-- **Target File(s)**: `apps/web/src/components/layout/Shell.tsx`, `apps/web/src/components/layout/MobileNav.tsx`
+- **Target File(s)**: `apps/web/src/components/layout/Shell.tsx`, `apps/web/src/components/layout/MobileNav.tsx`, `apps/web/src/components/layout/Breadcrumbs.tsx`
 - **Blocked By**: `TASK-047`
 - **Technical Blueprint**:
   - Desktop view ($\ge 1024\text{px}$): Persistent sidebar navigation.
   - Mobile phone view ($360\text{px}\text{--}430\text{px}$): Top header with hamburger button triggering `<SheetContent side="left">` drawer.
   - Sticky bottom action bar container for mobile viewports.
-- **Acceptance Criteria**: Verified zero horizontal scroll on 360px viewport (Chrome DevTools).
+  - Dynamic breadcrumb bar reflecting the active page title and hierarchy with `aria-current="page"`.
+- **Acceptance Criteria**: Verified zero horizontal scroll on 360px viewport (Chrome DevTools); breadcrumb displays active route.
 
 ---
 
-### TASK-049: Shared Metrological UI Component Library
+### TASK-049: Shared Metrological UI Component & Skeleton Library
 
-- **Target File(s)**: `apps/web/src/components/ui/` (`Button.tsx`, `Card.tsx`, `Badge.tsx`, `Input.tsx`, `Table.tsx`)
+- **Target File(s)**: `apps/web/src/components/ui/` (`Button.tsx`, `Card.tsx`, `Badge.tsx`, `Input.tsx`, `Table.tsx`, `Skeleton.tsx`)
 - **Blocked By**: `TASK-047`
 - **Technical Blueprint**:
   - Buttons with pill rounding (`rounded-2xl`, `rounded-3xl`) and min touch target $48\text{px} \times 48\text{px}$ on mobile.
   - Badges for PASS (Green), FAIL (Red), WARNING (Amber).
   - Measurement numeric inputs with `inputMode="decimal"` and `text-base` font to prevent iOS zoom.
-- **Acceptance Criteria**: Storybook or component page renders components in light and dark mode with correct radii.
+  - Core Skeleton components (`TableSkeleton`, `MetricCardSkeleton`, `FormSkeleton`, `ReportPreviewSkeleton`) using `animate-pulse bg-muted/60 rounded-2xl` matching exact component geometry to prevent CLS. Generic spinners (`<Loader2 className="animate-spin" />`) are prohibited.
+- **Acceptance Criteria**: Storybook or component page renders components in light and dark mode with correct radii; skeleton components match layout dimensions.
 
 ---
 
 ### TASK-050: Mobile-First Observation Card Component
 
-- **Target File(s)**: `apps/web/src/components/bench/ObservationCard.tsx`
+- **Target File(s)**: `apps/web/src/components/bench/ObservationCard.tsx`, `apps/web/src/components/bench/BenchCardSkeleton.tsx`
 - **Blocked By**: `TASK-049`
 - **Technical Blueprint**:
   - Mobile view ($< 640\text{px}$): Stacked card displaying Load #, Status badge, Input values ($I, \Delta L$), and calculated outputs ($P, E_c, \text{MPE}$).
   - Touch-friendly Vernier increment buttons ($+0.1e, +0.2e, +0.5e$).
   - Quick-edit drawer trigger for re-testing.
-- **Acceptance Criteria**: Card renders cleanly on 375px iPhone viewport without wrapping issues.
+  - Geometry-matching `BenchCardSkeleton` (`h-44 w-full rounded-3xl animate-pulse bg-muted/60`) for smooth observation load transitions.
+- **Acceptance Criteria**: Card renders cleanly on 375px iPhone viewport without wrapping issues; skeleton mirrors card layout.
 
 ---
 
 ### TASK-051: Laboratory Executive Dashboard Page
 
-- **Target File(s)**: `apps/web/src/app/dashboard/page.tsx`
+- **Target File(s)**: `apps/web/src/app/dashboard/page.tsx`, `apps/web/src/app/dashboard/loading.tsx`
 - **Blocked By**: `TASK-048`, `TASK-049`
 - **Technical Blueprint**:
+  - Dynamic page metadata title: `Dashboard & Lab Analytics | MAANAK (मानक) — OIML R-76 Legal Metrology`.
+  - Next.js `loading.tsx` utilizing `MetricCardSkeleton` and `TableSkeleton` for zero-CLS loading states (no generic spinners).
   - Responsive metric grid (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`): Active Sessions, Pending Reviews, Approved Today, Rejection Rate.
   - Recent test sessions list with live status badges.
   - Offline sync status indicator in header.
-- **Acceptance Criteria**: Dashboard renders responsively on mobile phone (single column) and desktop (4 columns).
+- **Acceptance Criteria**: Dashboard renders responsively on mobile phone (single column) and desktop (4 columns); loading state displays 4 metric card skeletons and table rows.
 
 ---
 
@@ -743,59 +752,67 @@ maanak-monorepo/
 - **Target File(s)**: `apps/web/src/app/instruments/new/page.tsx`
 - **Blocked By**: `TASK-049`
 - **Technical Blueprint**:
+  - Dynamic page metadata title: `Instrument Intake & Model Approval | MAANAK (मानक) — OIML R-76 Legal Metrology`.
   - Form fields: Manufacturer, Model, Serial #, Class (I–IIII), Max, Min, $e, d$.
   - Real-time client-side calculation of $n = \text{Max} / e$ with live Table 3 validity pill.
   - Multi-interval range configuration accordion.
-- **Acceptance Criteria**: Entering $15\text{ kg}$ and $e=5\text{ g}$ immediately displays `n = 3000 (Valid Class III)` badge.
+  - Form loading state via `FormSkeleton`.
+- **Acceptance Criteria**: Entering $15\text{ kg}$ and $e=5\text{ g}$ immediately displays `n = 3000 (Valid Class III)` badge; dynamic document title displays correctly.
 
 ---
 
 ### TASK-053: Standard Weight Inventory & Live NABL Gatekeeper Page
 
-- **Target File(s)**: `apps/web/src/app/weights/page.tsx`
+- **Target File(s)**: `apps/web/src/app/weights/page.tsx`, `apps/web/src/app/weights/loading.tsx`
 - **Blocked By**: `TASK-049`
 - **Technical Blueprint**:
-  - Weight set selection interface.
+  - Dynamic page metadata title: `Standard Weights & NABL 129 Gatekeeper | MAANAK (मानक) — OIML R-76 Legal Metrology`.
+  - Weight set selection interface with `TableSkeleton` loading fallback.
   - Live NABL 129 uncertainty gatekeeper widget: Compares weight expanded uncertainty $U$ against target MPE.
   - Renders prominent amber warning card if $U > \frac{1}{3}\text{MPE}$, disabling test commencement.
-- **Acceptance Criteria**: Selecting out-of-spec test weight displays warning banner and locks start button.
+- **Acceptance Criteria**: Selecting out-of-spec test weight displays warning banner and locks start button; loading state renders table skeleton.
 
 ---
 
 ### TASK-054: Real-Time Bench Observation Logging Page
 
-- **Target File(s)**: `apps/web/src/app/sessions/[id]/bench/page.tsx`
+- **Target File(s)**: `apps/web/src/app/sessions/[id]/bench/page.tsx`, `apps/web/src/app/sessions/[id]/bench/loading.tsx`
 - **Blocked By**: `TASK-050`
 - **Technical Blueprint**:
+  - Dynamic page metadata title: `Session TS-[id] — Form 1 Weighing Bench | MAANAK (मानक) — OIML R-76 Legal Metrology`.
+  - Next.js `loading.tsx` uses `BenchCardSkeleton` stack.
   - Multi-tab navigation between Forms 1–6.
   - Mobile phone layout: Card stack with sticky bottom "Save & Next" bar.
   - Real-time calculation feedback: Indication entry immediately computes $P$ and $E_c$.
   - Offline local storage fallback via IndexedDB.
-- **Acceptance Criteria**: Inspector enters $I$ and $\Delta L$, card immediately displays calculated $E_c$ and PASS badge.
+- **Acceptance Criteria**: Inspector enters $I$ and $\Delta L$, card immediately displays calculated $E_c$ and PASS badge; dynamic session title renders in browser tab.
 
 ---
 
 ### TASK-055: Senior Reviewer Anomaly Audit Page
 
-- **Target File(s)**: `apps/web/src/app/sessions/[id]/review/page.tsx`
+- **Target File(s)**: `apps/web/src/app/sessions/[id]/review/page.tsx`, `apps/web/src/app/sessions/[id]/review/loading.tsx`
 - **Blocked By**: `TASK-049`
 - **Technical Blueprint**:
+  - Dynamic page metadata title: `Reviewer Audit & Anomaly Detection — TS-[id] | MAANAK (मानक) — OIML R-76 Legal Metrology`.
+  - Loading state using dual-pane card skeleton.
   - Automated anomaly check list with green checkmarks or red flags.
   - Calculation derivation tree modal: Step-by-step audit showing $I \to \Delta L \to P \to E_c \to \text{MPE}$.
   - Approve Session and Flag for Re-Test action buttons.
-- **Acceptance Criteria**: Anomaly audit screen highlights intentionally injected temperature drift error.
+- **Acceptance Criteria**: Anomaly audit screen highlights intentionally injected temperature drift error; page title dynamically displays session ID.
 
 ---
 
 ### TASK-056: Report Preview & Director X.509 PKI Signing Page
 
-- **Target File(s)**: `apps/web/src/app/reports/[id]/page.tsx`
+- **Target File(s)**: `apps/web/src/app/reports/[id]/page.tsx`, `apps/web/src/app/reports/[id]/loading.tsx`
 - **Blocked By**: `TASK-049`
 - **Technical Blueprint**:
-  - Multi-page responsive PDF viewer.
+  - Dynamic page metadata title: `Official OIML R 76-2 Pattern Evaluation Report — [id] | MAANAK (मानक) — OIML R-76 Legal Metrology`.
+  - Multi-page responsive PDF viewer with `ReportPreviewSkeleton` placeholder.
   - Cryptographic hash graph summary card showing session SHA-256 digest.
   - "Sign & Seal Report" button opening PIN confirmation modal for X.509 digital signing.
-- **Acceptance Criteria**: Clicking sign executes digital signature and displays verified badge with download link.
+- **Acceptance Criteria**: Clicking sign executes digital signature and displays verified badge with download link; loading state renders multi-page document skeleton.
 
 ---
 
@@ -804,10 +821,11 @@ maanak-monorepo/
 - **Target File(s)**: `apps/web/src/app/verify/[hash]/page.tsx`
 - **Blocked By**: `TASK-048`, `TASK-049`
 - **Technical Blueprint**:
-  - Public mobile-responsive page accessed via QR code scan.
+  - Dynamic page metadata title: `Certificate Verification — SHA-256 Hash Seal | MAANAK (मानक) — OIML R-76 Legal Metrology`.
+  - Public mobile-responsive page accessed via QR code scan with skeleton card loading.
   - Displays: Certificate status (VALID / INVALID), Instrument details, Signing authority, SHA-256 hash.
   - Full cryptographic provenance history tree.
-- **Acceptance Criteria**: Scanning QR code opens page with green verified badge and certificate details.
+- **Acceptance Criteria**: Scanning QR code opens page with green verified badge and certificate details; dynamic title reflects verification context.
 
 ---
 
