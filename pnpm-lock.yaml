@@ -159,6 +159,9 @@ importers:
 
   packages/report-generator:
     dependencies:
+      '@maanak/crypto-provenance':
+        specifier: workspace:*
+        version: link:../crypto-provenance
       '@maanak/types':
         specifier: workspace:*
         version: link:../types

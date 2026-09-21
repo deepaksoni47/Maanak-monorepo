@@ -12,6 +12,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@maanak/crypto-provenance": "workspace:*",
     "@maanak/types": "workspace:*",
     "docx": "^9.2.0",
     "pdf-lib": "^1.17.1"
