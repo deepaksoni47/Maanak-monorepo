@@ -13,6 +13,8 @@ import {
   instrumentsRouter,
   createSessionsRouter,
   sessionsRouter,
+  createObservationsRouter,
+  observationsRouter,
 } from "./routes/index.js";
 import { RulePackRegistry } from "@maanak/rules-engine";
 import { PrismaClient } from "@maanak/db";
@@ -133,10 +135,20 @@ export function createApp(options: AppOptions = {}): Express {
       : sessionsRouter;
   app.use("/api/v1/sessions", configuredSessionsRouter);
 
-  // 12. 404 Fallback Handler
+  // 12. Raw Observations & Real-Time Calculation Routes
+  const configuredObservationsRouter =
+    options.db || options.rulesRegistry
+      ? createObservationsRouter({
+          db: options.db,
+          rulesRegistry: options.rulesRegistry,
+        })
+      : observationsRouter;
+  app.use("/api/v1/observations", configuredObservationsRouter);
+
+  // 13. 404 Fallback Handler
   app.use(notFoundHandler);
 
-  // 13. Centralized Global Error Handler
+  // 14. Centralized Global Error Handler
   app.use(errorHandler);
 
   return app;

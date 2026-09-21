@@ -27,9 +27,9 @@
 |                                      TASK EXECUTION STATUS                                        |
 +-------------------+-------------------+-------------------+-------------------+-------------------+
 |   TOTAL TASKS     |      READY        |    IN_PROGRESS    |      BLOCKED      |     VERIFIED      |
-|       63          |        5          |        0          |        16         |        42         |
+|       63          |        4          |        0          |        16         |        43         |
 +-------------------+-------------------+-------------------+-------------------+-------------------+
-| PROGRESS: [████████████████████████████████████░░░░░░░░░░░░░░░░] 66.7% Complete                    |
+| PROGRESS: [█████████████████████████████████████░░░░░░░░░░░░░░░] 68.3% Complete                    |
 +---------------------------------------------------------------------------------------------------+
 ```
 
@@ -45,10 +45,10 @@
 | **MOD-05** | Database Layer (PostgreSQL/Prisma)  |   4    |   0   |    0    |      0      |    4     |    100%    |
 | **MOD-06** | WELMEC 7.2 Cryptographic Signer     |   4    |   0   |    0    |      0      |    4     |    100%    |
 | **MOD-07** | Report Generation Engine (PDF/Word) |   4    |   0   |    0    |      0      |    4     |    100%    |
-| **MOD-08** | Node.js REST API Gateway            |   10   |   4   |    0    |      0      |    6     |    60%     |
+| **MOD-08** | Node.js REST API Gateway            |   10   |   3   |    0    |      0      |    7     |    70%     |
 | **MOD-09** | Responsive Mobile Bench PWA & Web   |   12   |   1   |   11    |      0      |    0     |     0%     |
 | **MOD-10** | Ground Truth Test Verification      |   5    |   0   |    5    |      0      |    0     |     0%     |
-| **TOTAL**  | **Entire MAANAK Platform**          | **63** | **5** | **16**  |    **0**    |  **42**  | **66.7%**  |
+| **TOTAL**  | **Entire MAANAK Platform**          | **63** | **4** | **16**  |    **0**    |  **43**  | **68.3%**  |
 
 ---
 
@@ -181,7 +181,7 @@ graph TD
 | **`TASK-040`** | MOD-08 | Standard weight inventory & NABL pre-check routes                                                  | **`VERIFIED`** | `TASK-022` (Verified), `TASK-028` (Verified), `TASK-038` (Verified) | Verified: Weight set list with certs, registration route, single & batch NABL 129 pre-check gatekeeper (12/12 tests pass) | `pnpm --filter @maanak/api test`                              |
 | **`TASK-041`** | MOD-08 | Instrument model registration routes (`/api/v1/instruments`)                                       | **`VERIFIED`** | `TASK-011` (Verified), `TASK-028` (Verified), `TASK-038` (Verified) | Verified: Instrument model intake with Table 3 n=Max/e classifier, search, filter, and multi-interval ranges (12/12 tests pass) | `pnpm --filter @maanak/api test`                              |
 | **`TASK-042`** | MOD-08 | Test session & dynamic plan routes (`/api/v1/sessions`)                                            | **`VERIFIED`** | `TASK-024` (Verified), `TASK-028` (Verified), `TASK-038` (Verified) | Verified: Session intake, list/filter, full include graph, dynamic test plan loads, and state transitions (17/17 tests pass) | `pnpm --filter @maanak/api test`                              |
-| **`TASK-043`** | MOD-08 | Raw observation entry & real-time math API                                                         |  **`READY`**   | `TASK-015` (Verified), `TASK-016` (Verified), `TASK-028` (Verified), `TASK-029` (Verified) | Ready for immediate execution                                       | API test: POST /observations returns $P, E_c$, MPE            |
+| **`TASK-043`** | MOD-08 | Raw observation entry & real-time math API                                                         | **`VERIFIED`** | `TASK-015` (Verified), `TASK-016` (Verified), `TASK-028` (Verified), `TASK-029` (Verified) | Verified: Observation entry with real-time P, E, Ec, MPE math, WELMEC 7.2 provenance & session filters (12/12 tests pass) | `pnpm --filter @maanak/api test`                              |
 | **`TASK-044`** | MOD-08 | Reviewer anomaly audit routes (`/api/v1/review`)                                                   |  **`READY`**   | `TASK-023` (Verified), `TASK-028` (Verified), `TASK-038` (Verified) | Ready for immediate execution                                                               | API test: GET /sessions/:id/audit flags anomalies             |
 | **`TASK-045`** | MOD-08 | Report compilation & digital signing routes (`/reports`)                                           |  **`READY`**   | `TASK-031` (Verified), `TASK-034` (Verified), `TASK-035` (Verified), `TASK-038` (Verified) | Ready for immediate execution                                       | API test: POST /reports/sign embeds X.509 signature           |
 | **`TASK-046`** | MOD-08 | Public verification & offline sync routes (`/verify`, `/sync`)                                     |  **`READY`**   | `TASK-030` (Verified), `TASK-038` (Verified)                        | Ready for immediate execution                                                               | API test: GET /verify/:hash returns verified status           |
@@ -197,9 +197,9 @@ graph TD
 | **`TASK-056`** | MOD-09 | Report preview & Director X.509 PKI signing page                                                   | **`BLOCKED`**  | `TASK-049`                                                          | Complete UI component library                                                               | Signing PIN dialog triggers report download                   |
 | **`TASK-057`** | MOD-09 | Public verification QR landing page (`/verify/[hash]`)                                             | **`BLOCKED`**  | `TASK-048`, `TASK-049`                                              | Complete responsive shell & UI library                                                      | Responsive mobile view verifies SHA-256 hash                  |
 | **`TASK-058`** | MOD-09 | Offline PWA Service Worker & IndexedDB sync engine                                                 | **`BLOCKED`**  | `TASK-047`, `TASK-054`                                              | Complete Next.js setup & bench page                                                         | Offline observation entry syncs upon reconnect                |
-| **`TASK-059`** | MOD-10 | Ground truth verification TC-01: Class III weighing                                                | **`BLOCKED`**  | `TASK-018`, `TASK-043`                                              | Complete Form 1 engine & observations API                                                   | E2E test runs with 100% assertions passing                    |
-| **`TASK-060`** | MOD-10 | Ground truth verification TC-02: NABL 129 violation                                                | **`BLOCKED`**  | `TASK-022`, `TASK-040`                                              | Complete NABL gatekeeper & weights API                                                      | E2E test verifies observation submission locked               |
-| **`TASK-061`** | MOD-10 | Ground truth verification TC-03: Multi-interval scale                                              | **`BLOCKED`**  | `TASK-017`, `TASK-043`                                              | Complete multi-interval engine & obs API                                                    | E2E test asserts dynamic interval switching                   |
+| **`TASK-059`** | MOD-10 | Ground truth verification TC-01: Class III weighing                                                |   **`READY`**  | `TASK-018` (Verified), `TASK-043` (Verified)                        | Ready for immediate execution                                                               | E2E test runs with 100% assertions passing                    |
+| **`TASK-060`** | MOD-10 | Ground truth verification TC-02: NABL 129 violation                                                |   **`READY`**  | `TASK-022` (Verified), `TASK-040` (Verified)                        | Ready for immediate execution                                                               | E2E test verifies observation submission locked               |
+| **`TASK-061`** | MOD-10 | Ground truth verification TC-03: Multi-interval scale                                              |   **`READY`**  | `TASK-017` (Verified), `TASK-043` (Verified)                        | Ready for immediate execution                                                               | E2E test asserts dynamic interval switching                   |
 | **`TASK-062`** | MOD-10 | Ground truth verification TC-04: Temperature drift overrun                                         | **`BLOCKED`**  | `TASK-019`, `TASK-044`                                              | Complete Temp Drift engine & audit API                                                      | E2E test asserts drift violation flagged                      |
 | **`TASK-063`** | MOD-10 | Ground truth verification TC-05: WELMEC 7.2 tampering                                              | **`BLOCKED`**  | `TASK-030`, `TASK-046`                                              | Complete provenance validator & sync API                                                    | E2E test asserts SQL tampering detected                       |
 
