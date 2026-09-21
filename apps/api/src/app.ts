@@ -15,6 +15,8 @@ import {
   sessionsRouter,
   createObservationsRouter,
   observationsRouter,
+  createReviewRouter,
+  reviewRouter,
 } from "./routes/index.js";
 import { RulePackRegistry } from "@maanak/rules-engine";
 import { PrismaClient } from "@maanak/db";
@@ -145,10 +147,20 @@ export function createApp(options: AppOptions = {}): Express {
       : observationsRouter;
   app.use("/api/v1/observations", configuredObservationsRouter);
 
-  // 13. 404 Fallback Handler
+  // 13. Reviewer Anomaly Audit & Decision Routes
+  const configuredReviewRouter =
+    options.db || options.rulesRegistry
+      ? createReviewRouter({
+          db: options.db,
+          rulesRegistry: options.rulesRegistry,
+        })
+      : reviewRouter;
+  app.use("/api/v1/review", configuredReviewRouter);
+
+  // 14. 404 Fallback Handler
   app.use(notFoundHandler);
 
-  // 14. Centralized Global Error Handler
+  // 15. Centralized Global Error Handler
   app.use(errorHandler);
 
   return app;
