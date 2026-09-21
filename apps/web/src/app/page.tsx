@@ -21,7 +21,8 @@ import {
   Gauge,
   Sparkle,
 } from "@phosphor-icons/react";
-import { GridBackground } from "@/components/ui/GridBackground";
+import { cn } from "@/lib/utils";
+import { GridPattern } from "@/components/ui/grid-pattern";
 
 export default function HomePage() {
   // Simple interactive demonstration for load evaluation
@@ -109,7 +110,41 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-8 pb-14 lg:pt-14 lg:pb-20">
-        <GridBackground />
+        <GridPattern
+          width={40}
+          height={40}
+          x={-1}
+          y={-1}
+          strokeDasharray="0"
+          squares={[
+            [4, 4],
+            [5, 1],
+            [8, 2],
+            [5, 3],
+            [5, 5],
+            [10, 10],
+            [12, 15],
+            [15, 10],
+            [10, 15],
+            [15, 10],
+            [10, 15],
+            [15, 10],
+            [2, 3],
+            [7, 6],
+            [14, 4],
+            [18, 7],
+            [22, 2],
+            [25, 5],
+          ]}
+          className={cn(
+            "stroke-neutral-300/80 dark:stroke-neutral-700/80 fill-primary/15 dark:fill-primary/20",
+            "inset-x-0 inset-y-[-10%] h-[120%]"
+          )}
+          style={{
+            WebkitMaskImage: "radial-gradient(ellipse 75% 65% at 50% 35%, white 25%, transparent 85%)",
+            maskImage: "radial-gradient(ellipse 75% 65% at 50% 35%, white 25%, transparent 85%)",
+          }}
+        />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Column (Columns 1-7): Clean, Concise, Human Copy */}
