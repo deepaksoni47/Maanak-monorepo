@@ -53,8 +53,9 @@ export interface ScaleClassificationResult {
   valid: boolean;
   accuracyClass: AccuracyClass;
   scaleDivisionsN: string;
-  minAllowedN: string;
-  maxAllowedN: string;
+  n?: number;
+  minAllowedN: number | string;
+  maxAllowedN: number | string | null;
   errorReason?: string;
 }
 
