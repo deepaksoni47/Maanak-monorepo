@@ -11,7 +11,7 @@ interface GridBackgroundProps {
 
 /**
  * Static Grid Background inspired by React Bits (reactbits.dev)
- * Features crisp vector lines, subtle intersection crosshairs,
+ * Features clearly visible crisp grid lines, subtle intersection crosshairs,
  * an ambient primary glow, and optical edge blur/vignette falloff.
  */
 export function GridBackground({
@@ -26,27 +26,27 @@ export function GridBackground({
       aria-hidden="true"
       className={`absolute inset-0 -z-10 overflow-hidden pointer-events-none select-none ${className}`}
     >
-      {/* 1. Ambient Primary Radial Bloom (Warm developer aesthetic glow) */}
+      {/* 1. Ambient Primary Radial Glow (Subtle soft bloom in hero focus area) */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 70% 55% at 50% 40%, oklch(0.6723 0.1606 244.9955 / 0.08) 0%, transparent 75%)",
+            "radial-gradient(ellipse 75% 55% at 50% 35%, oklch(0.6723 0.1606 244.9955 / 0.08) 0%, transparent 75%)",
         }}
       />
 
-      {/* 2. Static SVG Grid Pattern with Radial Gradient Falloff Mask */}
+      {/* 2. Static SVG Grid Pattern with Wide Smooth Radial Fadeout */}
       <div
         className="absolute inset-0 w-full h-full"
         style={{
           maskImage:
-            "radial-gradient(ellipse 70% 60% at 50% 45%, black 25%, rgba(0, 0, 0, 0.4) 65%, transparent 90%)",
+            "radial-gradient(ellipse 85% 70% at 50% 40%, black 50%, rgba(0, 0, 0, 0.5) 75%, transparent 98%)",
           WebkitMaskImage:
-            "radial-gradient(ellipse 70% 60% at 50% 45%, black 25%, rgba(0, 0, 0, 0.4) 65%, transparent 90%)",
+            "radial-gradient(ellipse 85% 70% at 50% 40%, black 50%, rgba(0, 0, 0, 0.5) 75%, transparent 98%)",
         }}
       >
         <svg
-          className="absolute inset-0 h-full w-full stroke-primary/[0.12] dark:stroke-primary/[0.22]"
+          className="absolute inset-0 h-full w-full text-slate-300/85 dark:text-slate-700/80"
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
@@ -58,19 +58,21 @@ export function GridBackground({
               x="50%"
               y={-1}
             >
-              {/* Grid cell lines */}
+              {/* Crisp grid lines */}
               <path
                 d={`M.5 ${cellSize}V.5H${cellSize}`}
                 fill="none"
+                stroke="currentColor"
                 strokeWidth={1}
               />
-              {/* Optional intersection crosshairs (+ markers) */}
+              {/* Intersection crosshairs (+ markers) */}
               {showCrosshairs && (
                 <path
                   d="M -3 0 h 6 M 0 -3 v 6"
                   fill="none"
-                  strokeWidth={1}
-                  className="stroke-primary/[0.28] dark:stroke-primary/[0.40]"
+                  stroke="currentColor"
+                  strokeWidth={1.25}
+                  className="text-primary/60 dark:text-primary/70"
                 />
               )}
             </pattern>
@@ -79,14 +81,14 @@ export function GridBackground({
         </svg>
       </div>
 
-      {/* 3. Edge Blur Overlay: Progressively blurs grid lines at perimeter */}
+      {/* 3. Edge Optical Blur: Softens and blurs the grid at the perimeter */}
       <div
-        className="absolute inset-0 backdrop-blur-[1.5px]"
+        className="absolute inset-0 backdrop-blur-[2px]"
         style={{
           maskImage:
-            "radial-gradient(ellipse 75% 65% at 50% 45%, transparent 35%, black 85%)",
+            "radial-gradient(ellipse 90% 75% at 50% 40%, transparent 60%, rgba(0, 0, 0, 0.8) 85%, black 100%)",
           WebkitMaskImage:
-            "radial-gradient(ellipse 75% 65% at 50% 45%, transparent 35%, black 85%)",
+            "radial-gradient(ellipse 90% 75% at 50% 40%, transparent 60%, rgba(0, 0, 0, 0.8) 85%, black 100%)",
         }}
       />
     </div>

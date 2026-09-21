@@ -108,7 +108,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-8 pb-14 lg:pt-14 lg:pb-20 border-b border-border/40">
+      <section className="relative overflow-hidden pt-8 pb-14 lg:pt-14 lg:pb-20">
         <GridBackground />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -187,8 +187,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Section 2: Step-by-Step Lab Testing Journey (Unique, Intuitive, Not Generic Cards) */}
-      <section className="border-t border-border bg-card/40 py-14 lg:py-20">
+      {/* Section 2: Step-by-Step Lab Testing Journey */}
+      <section className="py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
             <span className="text-xs font-bold uppercase tracking-wider text-primary">Simple 4-Step Process</span>
@@ -350,7 +350,7 @@ export default function HomePage() {
       </section>
 
       {/* Section 4: Accuracy Classes Supported (Educational & Practical) */}
-      <section className="border-t border-border bg-card/30 py-14 lg:py-20">
+      <section className="py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
             <span className="text-xs font-bold uppercase tracking-wider text-primary">All Weighing Categories</span>
@@ -419,7 +419,7 @@ export default function HomePage() {
       </section>
 
       {/* Section 5: Regional Reference Standard Laboratories (RRSL) */}
-      <section className="border-t border-border bg-background py-14">
+      <section className="py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div>
