@@ -29,13 +29,13 @@ export const errorHandler: ErrorRequestHandler = (
   const requestId = (req.headers["x-request-id"] as string) || undefined;
   const path = req.originalUrl || req.url;
 
-  // Handle Zod Schema Validation Errors
-  if (err instanceof ZodError) {
+  // Handle Zod Schema Validation Errors (supporting cross-package monorepo instances)
+  if (err instanceof ZodError || err?.name === "ZodError") {
     res.status(400).json({
       error: "Input validation failed",
       code: "VALIDATION_ERROR",
-      details: err.errors.map((e) => ({
-        path: e.path.join("."),
+      details: (err as any).errors?.map((e: any) => ({
+        path: Array.isArray(e.path) ? e.path.join(".") : String(e.path),
         message: e.message,
         code: e.code,
       })),

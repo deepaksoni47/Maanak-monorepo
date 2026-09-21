@@ -4,10 +4,13 @@ import cors from "cors";
 import { randomUUID } from "node:crypto";
 import { errorHandler, notFoundHandler } from "./middleware/error.js";
 import { createAuthRouter, authRouter, AuthService } from "./auth/index.js";
+import { createRulesRouter, rulesRouter } from "./routes/index.js";
+import { RulePackRegistry } from "@maanak/rules-engine";
 
 export interface AppOptions {
   corsOrigin?: string | string[];
   authService?: AuthService;
+  rulesRegistry?: RulePackRegistry;
 }
 
 /**
@@ -91,10 +94,16 @@ export function createApp(options: AppOptions = {}): Express {
     : authRouter;
   app.use("/api/v1/auth", configuredAuthRouter);
 
-  // 8. 404 Fallback Handler
+  // 8. Rule Pack Management Routes
+  const configuredRulesRouter = options.rulesRegistry
+    ? createRulesRouter({ registry: options.rulesRegistry })
+    : rulesRouter;
+  app.use("/api/v1/rules", configuredRulesRouter);
+
+  // 9. 404 Fallback Handler
   app.use(notFoundHandler);
 
-  // 9. Centralized Global Error Handler
+  // 10. Centralized Global Error Handler
   app.use(errorHandler);
 
   return app;
