@@ -27,9 +27,9 @@
 |                                      TASK EXECUTION STATUS                                        |
 +-------------------+-------------------+-------------------+-------------------+-------------------+
 |   TOTAL TASKS     |      READY        |    IN_PROGRESS    |      BLOCKED      |     VERIFIED      |
-|       63          |        6          |        0          |        48         |        9          |
+|       63          |        2          |        0          |        24         |        37         |
 +-------------------+-------------------+-------------------+-------------------+-------------------+
-| PROGRESS: [█████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 14.3% Complete   |
+| PROGRESS: [███████████████████████████████░░░░░░░░░░░░░░░░░░░░░░] 58.7% Complete                    |
 +---------------------------------------------------------------------------------------------------+
 ```
 
@@ -39,16 +39,16 @@
 | :--------- | :---------------------------------- | :----: | :---: | :-----: | :---------: | :------: | :--------: |
 | **MOD-00** | Monorepo Foundation & Tooling       |   3    |   0   |    0    |      0      |    3     |    100%    |
 | **MOD-01** | Shared Types & Domain Schemas       |   5    |   0   |    0    |      0      |    5     |    100%    |
-| **MOD-02** | Standards-as-Code Rule Packs        |   5    |   1   |    3    |      0      |    1     |    20%     |
-| **MOD-03** | Deterministic Calculation Core      |   8    |   1   |    7    |      0      |    0     |     0%     |
-| **MOD-04** | Metrological Compliance Pre-Checks  |   3    |   0   |    3    |      0      |    0     |     0%     |
-| **MOD-05** | Database Layer (PostgreSQL/Prisma)  |   4    |   1   |    3    |      0      |    0     |     0%     |
-| **MOD-06** | WELMEC 7.2 Cryptographic Signer     |   4    |   1   |    3    |      0      |    0     |     0%     |
-| **MOD-07** | Report Generation Engine (PDF/Word) |   4    |   0   |    4    |      0      |    0     |     0%     |
-| **MOD-08** | Node.js REST API Gateway            |   10   |   1   |    9    |      0      |    0     |     0%     |
+| **MOD-02** | Standards-as-Code Rule Packs        |   5    |   0   |    0    |      0      |    5     |    100%    |
+| **MOD-03** | Deterministic Calculation Core      |   8    |   0   |    0    |      0      |    8     |    100%    |
+| **MOD-04** | Metrological Compliance Pre-Checks  |   3    |   0   |    0    |      0      |    3     |    100%    |
+| **MOD-05** | Database Layer (PostgreSQL/Prisma)  |   4    |   0   |    0    |      0      |    4     |    100%    |
+| **MOD-06** | WELMEC 7.2 Cryptographic Signer     |   4    |   0   |    0    |      0      |    4     |    100%    |
+| **MOD-07** | Report Generation Engine (PDF/Word) |   4    |   0   |    0    |      0      |    4     |    100%    |
+| **MOD-08** | Node.js REST API Gateway            |   10   |   1   |    8    |      0      |    1     |    10%     |
 | **MOD-09** | Responsive Mobile Bench PWA & Web   |   12   |   1   |   11    |      0      |    0     |     0%     |
 | **MOD-10** | Ground Truth Test Verification      |   5    |   0   |    5    |      0      |    0     |     0%     |
-| **TOTAL**  | **Entire MAANAK Platform**          | **63** | **6** | **48**  |    **0**    |  **9**   | **14.3%**  |
+| **TOTAL**  | **Entire MAANAK Platform**          | **63** | **2** | **24**  |    **0**    |  **37**  | **58.7%**  |
 
 ---
 
@@ -175,8 +175,8 @@ graph TD
 | **`TASK-034`** | MOD-07 | Official OIML R 76-2 multi-page PDF compiler (`@pdf-lib`)                                          | **`VERIFIED`** | `TASK-031` (Verified), `TASK-032` (Verified), `TASK-033` (Verified) | Verified: pdf.ts compiles 5-page OIML R 76-2 PDF report in ~170ms with QR, Forms 1-6 & X.509 sig (5/5 tests pass) | `pnpm --filter @maanak/report-generator test`              |
 | **`TASK-035`** | MOD-07 | Editable Word document (.docx) compiler                                                            | **`VERIFIED`** | `TASK-033` (Verified)                                               | Verified: docx.ts compiles valid OpenXML .docx with QR image, Forms 1-6 & metadata (3/3 tests pass) | `pnpm --filter @maanak/report-generator test`              |
 | **`TASK-036`** | MOD-07 | Report storage & SHA-256 checksum verification                                                     | **`VERIFIED`** | `TASK-034` (Verified), `TASK-035` (Verified)                        | Verified: storage.ts with SHA-256 integrity, local disk & memory storage, tamper detection (11/11 tests pass) | `pnpm --filter @maanak/report-generator test`              |
-| **`TASK-037`** | MOD-08 | Express/Fastify application skeleton with security middleware                                      |  **`READY`**   | `TASK-001` (Verified), `TASK-008` (Verified)                        | Ready for immediate execution                                                               | `curl http://localhost:4000/health` returns 200 OK            |
-| **`TASK-038`** | MOD-08 | Argon2id authentication & RBAC middleware guards                                                   | **`BLOCKED`**  | `TASK-037` (`TASK-028` Verified)                                    | Complete Express skeleton (`TASK-037`)                                                      | Integration test: login returns JWT; RBAC guards              |
+| **`TASK-037`** | MOD-08 | Express/Fastify application skeleton with security middleware                                      | **`VERIFIED`** | `TASK-001` (Verified), `TASK-008` (Verified)                        | Verified: Express app with Helmet, CORS, correlation ID, error handling, health routes (8/8 tests pass) | `pnpm --filter @maanak/api test`                              |
+| **`TASK-038`** | MOD-08 | Argon2id authentication & RBAC middleware guards                                                   |  **`READY`**   | `TASK-028` (Verified), `TASK-037` (Verified)                        | Ready for immediate execution                                                               | Integration test: login returns JWT; RBAC guards              |
 | **`TASK-039`** | MOD-08 | Rule pack management REST routes (`/api/v1/rules`)                                                 | **`BLOCKED`**  | `TASK-013`, `TASK-038`                                              | Complete rule registry & auth middleware                                                    | API test: GET /api/v1/rules returns active pack               |
 | **`TASK-040`** | MOD-08 | Standard weight inventory & NABL pre-check routes                                                  | **`BLOCKED`**  | `TASK-022`, `TASK-028`, `TASK-038`                                  | Complete NABL gatekeeper & auth                                                             | API test: POST /weights/precheck returns warning              |
 | **`TASK-041`** | MOD-08 | Instrument model registration routes (`/api/v1/instruments`)                                       | **`BLOCKED`**  | `TASK-011`, `TASK-028`, `TASK-038`                                  | Complete Table 3 classifier & auth                                                          | API test: POST /instruments classifies $n = \text{Max}/e$     |

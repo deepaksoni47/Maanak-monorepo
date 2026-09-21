@@ -1,26 +1,42 @@
-import express, { Express } from "express";
-import cors from "cors";
-import helmet from "helmet";
+import dotenv from "dotenv";
+import { app } from "./app.js";
 
-const app: Express = express();
+dotenv.config();
+
 const port = process.env.PORT || 4000;
 
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
-
-app.get("/health", (_req, res) => {
-  res.json({
-    status: "ok",
-    service: "maanak-api",
-    timestamp: new Date().toISOString(),
-  });
-});
+let server: ReturnType<typeof app.listen> | null = null;
 
 if (process.env.NODE_ENV !== "test") {
-  app.listen(port, () => {
-    console.log(`[MAANAK-API] Running on port ${port}`);
+  server = app.listen(port, () => {
+    console.log(
+      `[MAANAK-API] Legal Metrology Backend Server running on port ${port}`,
+    );
+    console.log(
+      `[MAANAK-API] Healthcheck available at: http://localhost:${port}/health`,
+    );
   });
+
+  // Graceful shutdown handling
+  const handleShutdown = (signal: string) => {
+    console.log(`[MAANAK-API] Received ${signal}. Gracefully shutting down...`);
+    if (server) {
+      server.close(() => {
+        console.log("[MAANAK-API] Closed HTTP server.");
+        process.exit(0);
+      });
+      // Force close after 5 seconds if connections linger
+      setTimeout(() => {
+        console.error("[MAANAK-API] Forcefully shutting down.");
+        process.exit(1);
+      }, 5000).unref();
+    } else {
+      process.exit(0);
+    }
+  };
+
+  process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+  process.on("SIGINT", () => handleShutdown("SIGINT"));
 }
 
-export { app };
+export { app, server };
