@@ -122,6 +122,9 @@ importers:
         specifier: ^1.5.4
         version: 1.5.4
     devDependencies:
+      '@types/node':
+        specifier: ^22.20.4
+        version: 22.20.4
       '@types/qrcode':
         specifier: ^1.5.5
         version: 1.5.6
