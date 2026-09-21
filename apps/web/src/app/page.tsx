@@ -21,6 +21,7 @@ import {
   Gauge,
   Sparkle,
 } from "@phosphor-icons/react";
+import { GridBackground } from "@/components/ui/GridBackground";
 
 export default function HomePage() {
   // Simple interactive demonstration for load evaluation
@@ -107,77 +108,80 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-14 lg:pt-14 lg:pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Left Column (Columns 1-7): Clean, Concise, Human Copy */}
-          <div className="lg:col-span-7 space-y-5 text-left">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent border border-primary/20 text-xs font-semibold text-accent-foreground">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Department of Consumer Affairs</span>
-              <span className="text-border">|</span>
-              <span className="text-primary font-bold">OIML R-76 Standard</span>
+      <section className="relative overflow-hidden pt-8 pb-14 lg:pt-14 lg:pb-20 border-b border-border/40">
+        <GridBackground />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            {/* Left Column (Columns 1-7): Clean, Concise, Human Copy */}
+            <div className="lg:col-span-7 space-y-5 text-left">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent border border-primary/20 text-xs font-semibold text-accent-foreground">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Department of Consumer Affairs</span>
+                <span className="text-border">|</span>
+                <span className="text-primary font-bold">OIML R-76 Standard</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.14]">
+                Accurate testing & approval for{" "}
+                <span className="text-primary relative inline-block">
+                  weighing scales
+                  <span className="absolute -bottom-1 left-0 w-full h-1 bg-primary/30 rounded-full" />
+                </span>
+              </h1>
+
+              {/* Short, clear, readable text without walls or complex jargon */}
+              <p className="text-base sm:text-lg text-muted-foreground font-normal leading-relaxed max-w-xl">
+                Automated error calculation, instant Pass/Fail results, and official test reports for
+                laboratory testing officers and legal metrology inspectors.
+              </p>
+
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary text-primary-foreground px-7 py-3.5 text-base font-semibold hover:bg-primary/90 transition-all shadow-md min-h-[48px]"
+                >
+                  <Scales size={20} weight="bold" />
+                  <span>Start New Test</span>
+                  <ArrowRight size={18} weight="bold" />
+                </Link>
+                <Link
+                  href="/verify"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card border border-border text-foreground px-6 py-3.5 text-base font-medium hover:bg-accent hover:text-accent-foreground transition-all min-h-[48px]"
+                >
+                  <QrCode size={20} weight="duotone" className="text-primary" />
+                  <span>Verify by QR Code</span>
+                </Link>
+              </div>
+
+              {/* Clean summary chips */}
+              <div className="pt-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle size={16} weight="fill" className="text-emerald-500" />
+                  <span>Zero math errors</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle size={16} weight="fill" className="text-emerald-500" />
+                  <span>Official PDF & Word reports</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <CheckCircle size={16} weight="fill" className="text-emerald-500" />
+                  <span>Works offline on mobile</span>
+                </span>
+              </div>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.14]">
-              Accurate testing & approval for{" "}
-              <span className="text-primary relative inline-block">
-                weighing scales
-                <span className="absolute -bottom-1 left-0 w-full h-1 bg-primary/30 rounded-full" />
-              </span>
-            </h1>
-
-            {/* Short, clear, readable text without walls or complex jargon */}
-            <p className="text-base sm:text-lg text-muted-foreground font-normal leading-relaxed max-w-xl">
-              Automated error calculation, instant Pass/Fail results, and official test reports for
-              laboratory testing officers and legal metrology inspectors.
-            </p>
-
-            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary text-primary-foreground px-7 py-3.5 text-base font-semibold hover:bg-primary/90 transition-all shadow-md min-h-[48px]"
-              >
-                <Scales size={20} weight="bold" />
-                <span>Start New Test</span>
-                <ArrowRight size={18} weight="bold" />
-              </Link>
-              <Link
-                href="/verify"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card border border-border text-foreground px-6 py-3.5 text-base font-medium hover:bg-accent hover:text-accent-foreground transition-all min-h-[48px]"
-              >
-                <QrCode size={20} weight="duotone" className="text-primary" />
-                <span>Verify by QR Code</span>
-              </Link>
-            </div>
-
-            {/* Clean summary chips */}
-            <div className="pt-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <CheckCircle size={16} weight="fill" className="text-emerald-500" />
-                <span>Zero math errors</span>
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <CheckCircle size={16} weight="fill" className="text-emerald-500" />
-                <span>Official PDF & Word reports</span>
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <CheckCircle size={16} weight="fill" className="text-emerald-500" />
-                <span>Works offline on mobile</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Right Column (Columns 8-12): Clean hero.avif Image */}
-          <div className="lg:col-span-5 w-full flex justify-center">
-            <div className="relative w-full max-w-lg rounded-3xl overflow-hidden border border-border/80 shadow-lg bg-card group">
-              <Image
-                src="/hero.avif"
-                alt="MAANAK Legal Metrology Workbench in Action"
-                width={680}
-                height={510}
-                className="w-full h-auto object-cover rounded-3xl transition-transform duration-300 group-hover:scale-[1.01]"
-                priority
-              />
+            {/* Right Column (Columns 8-12): Clean hero.avif Image */}
+            <div className="lg:col-span-5 w-full flex justify-center">
+              <div className="relative w-full max-w-lg rounded-3xl overflow-hidden border border-border/80 shadow-lg bg-card group">
+                <Image
+                  src="/hero.avif"
+                  alt="MAANAK Legal Metrology Workbench in Action"
+                  width={680}
+                  height={510}
+                  className="w-full h-auto object-cover rounded-3xl transition-transform duration-300 group-hover:scale-[1.01]"
+                  priority
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsc --noEmit && node --import tsx --test src/components/layout/layout.test.tsx",
+    "test": "tsc --noEmit && node --import tsx --test \"src/components/layout/layout.test.tsx\" \"src/components/ui/GridBackground.test.tsx\"",
     "lint": "next lint"
   },
   "dependencies": {
