@@ -3,9 +3,11 @@ import helmet from "helmet";
 import cors from "cors";
 import { randomUUID } from "node:crypto";
 import { errorHandler, notFoundHandler } from "./middleware/error.js";
+import { createAuthRouter, authRouter, AuthService } from "./auth/index.js";
 
 export interface AppOptions {
   corsOrigin?: string | string[];
+  authService?: AuthService;
 }
 
 /**
@@ -83,10 +85,16 @@ export function createApp(options: AppOptions = {}): Express {
     });
   });
 
-  // 7. 404 Fallback Handler
+  // 7. Authentication & Authorization Routes
+  const configuredAuthRouter = options.authService
+    ? createAuthRouter(options.authService)
+    : authRouter;
+  app.use("/api/v1/auth", configuredAuthRouter);
+
+  // 8. 404 Fallback Handler
   app.use(notFoundHandler);
 
-  // 8. Centralized Global Error Handler
+  // 9. Centralized Global Error Handler
   app.use(errorHandler);
 
   return app;
