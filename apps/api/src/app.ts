@@ -4,13 +4,20 @@ import cors from "cors";
 import { randomUUID } from "node:crypto";
 import { errorHandler, notFoundHandler } from "./middleware/error.js";
 import { createAuthRouter, authRouter, AuthService } from "./auth/index.js";
-import { createRulesRouter, rulesRouter } from "./routes/index.js";
+import {
+  createRulesRouter,
+  rulesRouter,
+  createWeightsRouter,
+  weightsRouter,
+} from "./routes/index.js";
 import { RulePackRegistry } from "@maanak/rules-engine";
+import { PrismaClient } from "@maanak/db";
 
 export interface AppOptions {
   corsOrigin?: string | string[];
   authService?: AuthService;
   rulesRegistry?: RulePackRegistry;
+  db?: PrismaClient;
 }
 
 /**
@@ -100,10 +107,16 @@ export function createApp(options: AppOptions = {}): Express {
     : rulesRouter;
   app.use("/api/v1/rules", configuredRulesRouter);
 
-  // 9. 404 Fallback Handler
+  // 9. Reference Standard Weight Inventory & NABL Pre-Check Routes
+  const configuredWeightsRouter = options.db
+    ? createWeightsRouter({ db: options.db })
+    : weightsRouter;
+  app.use("/api/v1/weights", configuredWeightsRouter);
+
+  // 10. 404 Fallback Handler
   app.use(notFoundHandler);
 
-  // 10. Centralized Global Error Handler
+  // 11. Centralized Global Error Handler
   app.use(errorHandler);
 
   return app;
