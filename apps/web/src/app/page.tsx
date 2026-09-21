@@ -146,9 +146,9 @@ export default function HomePage() {
           }}
         />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            {/* Left Column (Columns 1-7): Clean, Concise, Human Copy */}
-            <div className="lg:col-span-7 space-y-5 text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-center">
+            {/* Left Column (Columns 1-6): Clean, Concise, Human Copy */}
+            <div className="lg:col-span-6 space-y-5 text-left">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent border border-primary/20 text-xs font-semibold text-accent-foreground">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Department of Consumer Affairs</span>
@@ -156,7 +156,7 @@ export default function HomePage() {
                 <span className="text-primary font-bold">OIML R-76 Standard</span>
               </div>
 
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.14]">
+              <h1 className="text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-foreground leading-[1.14]">
                 Accurate testing & approval for{" "}
                 <span className="text-primary relative inline-block">
                   weighing scales
@@ -205,15 +205,15 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Column (Columns 8-12): Clean hero.avif Image */}
-            <div className="lg:col-span-5 w-full flex justify-center">
-              <div className="relative w-full max-w-lg rounded-3xl overflow-hidden border border-border/80 shadow-lg bg-card group">
+            {/* Right Column (Columns 7-12): Free-floating hero illustration */}
+            <div className="lg:col-span-6 w-full flex justify-center lg:justify-end items-center">
+              <div className="relative w-full max-w-lg xl:max-w-xl flex justify-center">
                 <Image
                   src="/hero.avif"
                   alt="MAANAK Legal Metrology Workbench in Action"
-                  width={680}
-                  height={510}
-                  className="w-full h-auto object-cover rounded-3xl transition-transform duration-300 group-hover:scale-[1.01]"
+                  width={750}
+                  height={560}
+                  className="w-full h-auto object-contain drop-shadow-lg select-none pointer-events-none"
                   priority
                 />
               </div>
