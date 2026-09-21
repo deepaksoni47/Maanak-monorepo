@@ -1,9 +1,38 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import React from "react";
+import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+};
 
 export const metadata: Metadata = {
-  title: "MAANAK (मानक) — Metrological Automation & Analysis Network",
-  description: "Automated OIML R-76 NAWI Test Report & Compliance Platform",
+  title: {
+    template: "%s | MAANAK (मानक) — OIML R-76 Legal Metrology",
+    default: "MAANAK (मानक) — OIML R-76 Legal Metrology Workbench",
+  },
+  description:
+    "Automated OIML R-76 NAWI Test Report, Compliance Verification & Cryptographic Provenance Platform under Section 22 of the Legal Metrology Act, 2009",
+  keywords: [
+    "OIML R-76",
+    "Legal Metrology",
+    "NAWI",
+    "Model Approval",
+    "RRSL",
+    "Weighing Instruments",
+    "NABL 129",
+    "WELMEC 7.2",
+  ],
+  authors: [{ name: "Department of Consumer Affairs, Government of India" }],
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -12,8 +41,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <body className="min-h-full bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary">
+        {children}
+      </body>
     </html>
   );
 }
