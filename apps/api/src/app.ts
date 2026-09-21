@@ -17,15 +17,19 @@ import {
   observationsRouter,
   createReviewRouter,
   reviewRouter,
+  createReportsRouter,
+  reportsRouter,
 } from "./routes/index.js";
 import { RulePackRegistry } from "@maanak/rules-engine";
 import { PrismaClient } from "@maanak/db";
+import { IReportStorage } from "@maanak/report-generator";
 
 export interface AppOptions {
   corsOrigin?: string | string[];
   authService?: AuthService;
   rulesRegistry?: RulePackRegistry;
   db?: PrismaClient;
+  storage?: IReportStorage;
 }
 
 /**
@@ -157,10 +161,20 @@ export function createApp(options: AppOptions = {}): Express {
       : reviewRouter;
   app.use("/api/v1/review", configuredReviewRouter);
 
-  // 14. 404 Fallback Handler
+  // 14. Report Generation & Digital Signing Routes
+  const configuredReportsRouter =
+    options.db || options.storage
+      ? createReportsRouter({
+          db: options.db,
+          storage: options.storage,
+        })
+      : reportsRouter;
+  app.use("/api/v1/reports", configuredReportsRouter);
+
+  // 15. 404 Fallback Handler
   app.use(notFoundHandler);
 
-  // 15. Centralized Global Error Handler
+  // 16. Centralized Global Error Handler
   app.use(errorHandler);
 
   return app;
