@@ -42,7 +42,7 @@ MAANAK solves PS 26035 through five non-negotiable architectural pillars:
 +---------------------------------------------------------------------------------------------------+
 |  [CLIENT LAYER]                                                                                   |
 |  • Next.js 16+ Web Portal (Executive Lab Dashboard, Reviewer Audit, Director PKI Sign)            |
-|  • Responsive Touch Web & Offline PWA (Smartphones 360-430px, Tablets, Lucide Icons, SQLite WASM)   |
+|  • Responsive Touch Web & Offline PWA (Smartphones 360-430px, Tablets, Phosphor Icons, SQLite WASM)   |
 +---------------------------------------------------------------------------------------------------+
                                                   |
                                     HTTPS / TLS 1.3 / REST API / Zod
@@ -84,7 +84,7 @@ MAANAK solves PS 26035 through five non-negotiable architectural pillars:
 
 | Architecture Layer                | Technology Selection                | Version / Specification                                           | Key Role & Justification                                                                                                                                                                              |
 | :-------------------------------- | :---------------------------------- | :---------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Web Portal & Dashboard**        | Next.js / React / Lucide React      | Next.js 16 (LTS v16.3.5) / React 19, Lucide React (Latest Stable) | Server-Side Rendering (SSR) & Server Actions; responsive grid system for multi-tab R 76-2 forms; full mobile phone & desktop responsiveness; native TypeScript type safety; clean Lucide iconography. |
+| **Web Portal & Dashboard**        | Next.js / React / Phosphor Icons    | Next.js 16 (LTS v16.3.5) / React 19, Phosphor React (Latest Stable) | Server-Side Rendering (SSR) & Server Actions; responsive grid system for multi-tab R 76-2 forms; full mobile phone & desktop responsiveness; native TypeScript type safety; clean Phosphor iconography. |
 | **Offline Bench & Field Client**  | PWA / Responsive Touch Web          | PWA Service Workers / Next.js 16                                  | Offline-first architecture allowing field & bench inspectors to record observations on smartphones and tablets without active Wi-Fi; touch-friendly numeric keypads for rapid bench entry.            |
 | **Backend API Gateway**           | Node.js / Express / Fastify         | Node.js 20+ LTS / 22 LTS (TypeScript)                             | High-throughput asynchronous non-blocking event loop; native Zod data validation schemas; auto-generated OpenAPI (Swagger) specifications; full TypeScript end-to-end type safety.                    |
 | **Calculation Engine**            | Pure TypeScript Engine              | Node.js (`decimal.js` Latest Stable)                              | Arbitrary precision decimal arithmetic avoiding IEEE 754 floating point rounding errors (`0.1 + 0.2 != 0.3`); zero AI dependencies; 100% deterministic test coverage.                                 |
@@ -93,7 +93,7 @@ MAANAK solves PS 26035 through five non-negotiable architectural pillars:
 | **Database ORM / Migrations**     | Prisma ORM                          | Prisma (Latest Stable)                                            | Type-safe SQL query generation, connection pooling, automated schema migrations, and seamless `Decimal` type support for metrological records.                                                        |
 | **Report Generation Engine**      | Node.js PDF Engine & `docx`         | `pdf-lib` / `pdfkit` & `docx` (Latest Stable)                     | Programmatic, pixel-perfect generation of official OIML R 76-2 PDF forms (Forms 1–17) and editable Word documents (`.docx`) with embedded vector curves.                                              |
 | **Cryptographic Provenance**      | Node.js `crypto` / `@peculiar/x509` | OpenSSL 3.0 / PKCS#11                                             | SHA-256 hash graph generation, WELMEC 7.2 record locking, and X.509 PKI digital signature integration for USB DSC hardware tokens.                                                                    |
-| **UI Iconography**                | Lucide React                        | `lucide-react` (Latest Stable)                                    | Standardized, accessible, clean UI iconography across web dashboard and PWA bench.                                                                                                                    |
+| **UI Iconography**                | Phosphor Icons                      | `@phosphor-icons/react` (Latest Stable)                           | Standardized, accessible, clean UI iconography across web dashboard and PWA bench.                                                                                                                    |
 | **Containerization & Web Server** | Docker & Nginx                      | Docker 25.0+ / Nginx 1.25+                                        | Isolated microservice containerization, reverse proxying, SSL/TLS termination, and HTTP/2 performance optimization.                                                                                   |
 
 ---
@@ -105,9 +105,9 @@ MAANAK solves PS 26035 through five non-negotiable architectural pillars:
 >
 > 1. **Follow Documentation Strictly**: All implementations, data models, APIs, and business rules must strictly follow the specifications in the `/docs` directory without deviation.
 > 2. **Node.js Stack**: The entire backend ecosystem is built on **Node.js (LTS v20+ / v22+) with TypeScript**. Python/FastAPI is strictly superseded.
-> 3. **Latest Stable Packages**: Always install and use the latest stable version of all packages and dependencies (e.g. Next.js 16 LTS v16.3.5, React 19, Tailwind CSS v4, Prisma ORM, Express/Fastify, `decimal.js`, `docx`, `pdf-lib`, `zod`, `lucide-react`).
+> 3. **Latest Stable Packages**: Always install and use the latest stable version of all packages and dependencies (e.g. Next.js 16 LTS v16.3.5, React 19, Tailwind CSS v4, Prisma ORM, Express/Fastify, `decimal.js`, `docx`, `pdf-lib`, `zod`, `@phosphor-icons/react`).
 > 4. **Mandatory Mobile Phone Responsiveness**: Every single UI design, screen, and component **must be fully responsive for mobile phones (smartphones 360px–430px)** as well as tablets and desktops. No horizontal clipping or overflow.
-> 5. **Lucide React Icons**: All icons across the web dashboard and mobile bench PWA must exclusively use **`lucide-react`** (latest stable).
+> 5. **Phosphor React Icons**: All icons across the web dashboard and mobile bench PWA must exclusively use **`@phosphor-icons/react`** (latest stable).
 > 6. **Zero Floating Point Errors**: Use `decimal.js` for arbitrary precision fixed-point arithmetic across all metrological calculations ($P, E, E_0, E_c, \text{MPE}$).
 
 ---
@@ -143,7 +143,7 @@ maanak-monorepo/
 │   │   ├── tailwind.config.ts        # Tailwind CSS v4 with Tweakcn Twitter Theme
 │   │   └── src/
 │   │       ├── app/                 # Routes: /dashboard, /instruments, /sessions, /reports, /audit
-│   │       ├── components/          # shadcn/ui components + Lucide React icons
+│   │       ├── components/          # shadcn/ui components + Phosphor React icons
 │   │       ├── lib/                 # Web utilities, API clients, Auth providers
 │   │       └── hooks/               # Custom React hooks
 │   └── pwa/                         # Touch-Optimized Offline Bench Interface (Mobile/Tablet)
@@ -290,7 +290,7 @@ All architectural specifications, database schemas, and metrological knowledge b
 2. [Technical Specification (TechSpec)](file:///docs/tech_spec.md) — High-level architecture, Node.js API gateway, decimal.js calculation engine, and security.
 3. [Application Flow Specification](file:///docs/app_flow.md) — Step-by-step user, system, and exception flows with Mermaid sequence diagrams.
 4. [Database Schema & Data Model Specification](file:///docs/maanak-db-schema-spec.md) — PostgreSQL DDL, NUMERIC(16,8) precision, Prisma models, and WELMEC 7.2 hash graph.
-5. [Design System & UI/UX Specification](file:///docs/maanak-design-system-spec.md) — Tailwind CSS v4, Tweakcn Twitter OKLCH theme tokens, and Lucide React icon standards.
+5. [Design System & UI/UX Specification](file:///docs/maanak-design-system-spec.md) — Tailwind CSS v4, Tweakcn Twitter OKLCH theme tokens, and Phosphor React icon standards.
 6. [Master Implementation Plan](file:///docs/maanak-implementation-plan.md) — Single consolidated, atomic Task ID execution roadmap where every task is executable by an AI agent in one iteration.
 7. [Implementation Tracker & State Graph](file:///docs/maanak-implementation-tracker.md) — Actionable Task ID dependency tracker with state tracking (READY, BLOCKED, IN_PROGRESS, VERIFIED) and unblock actions.
 8. [OIML R-76 & Legal Metrology Knowledge Base](file:///docs/maanak-r76-legal-metrology-rules-knowledge-base.md) — Comprehensive regulatory domain truth for developers.

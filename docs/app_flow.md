@@ -11,9 +11,9 @@
 >
 > 1. **Strict Documentation Adherence**: All implementation steps, state machines, and system interactions must strictly adhere to the specifications in this document.
 > 2. **Node.js Stack**: The backend architecture is built with **Node.js (LTS v20+ / v22+) & TypeScript** (Prisma ORM, Express/Fastify).
-> 3. **Latest Stable Packages**: All npm packages (Next.js 16 LTS v16.3.5, React 19, Prisma, `decimal.js`, `docx`, `pdf-lib`, `zod`, `lucide-react`) must use their latest stable releases.
+> 3. **Latest Stable Packages**: All npm packages (Next.js 16 LTS v16.3.5, React 19, Prisma, `decimal.js`, `docx`, `pdf-lib`, `zod`, `@phosphor-icons/react`) must use their latest stable releases.
 > 4. **Mandatory Mobile Phone Responsiveness**: All user interfaces and bench workflows **must be fully responsive on mobile phones (smartphones 360px–430px)** as well as tablets and desktops.
-> 5. **Lucide React Icons**: All UI iconography across web and PWA bench layouts must exclusively use **`lucide-react`**.
+> 5. **Phosphor React Icons**: All UI iconography across web and PWA bench layouts must exclusively use **`@phosphor-icons/react`**.
 > 6. **Deterministic Math**: Use `decimal.js` for zero floating point errors across all calculations.
 
 ---

@@ -12,7 +12,7 @@
 > 1. **Strict Documentation Adherence**: All database schemas, Prisma models, migrations, and queries must follow this document strictly.
 > 2. **Node.js & Prisma Stack**: Use **Prisma ORM (Latest Stable)** with Node.js 20+ LTS / 22 LTS to manage PostgreSQL 16 schema migrations and types.
 > 3. **Latest Stable Packages**: Always install and use the latest stable releases of all workspace packages.
-> 4. **Lucide React Icons**: All UI iconography across desktop and mobile PWA clients must use **`lucide-react`** (latest stable).
+> 4. **Phosphor React Icons**: All UI iconography across desktop and mobile PWA clients must use **`@phosphor-icons/react`** (latest stable).
 > 5. **Zero Floating Point Errors**: Metrological measurement columns (`NUMERIC(16,8)` / `Decimal`) must strictly map to `decimal.js` instances in TypeScript to eliminate IEEE 754 floating point errors.
 
 ---

@@ -2,7 +2,7 @@
 
 **Platform for Generation of Test Reports & Compliance Verification for Non-Automatic Weighing Instruments (NAWI) per OIML R-76**  
 **Problem Statement:** SIH26035 | **System Name:** MAANAK (मानक)  
-**Specification Version:** 2.0.0 | **Frontend Framework:** Next.js 16 (LTS v16.3.5) / React 19 / Tailwind CSS v4 / shadcn/ui / Lucide React  
+**Specification Version:** 2.0.0 | **Frontend Framework:** Next.js 16 (LTS v16.3.5) / React 19 / Tailwind CSS v4 / shadcn/ui / Phosphor Icons  
 **Theme:** Tweakcn "Twitter" Custom Theme (OKLCH Blue Base) | **Target Devices:** Smartphones (Mobile Phone 360px–430px), Touch Tablets (768px–1024px) & Responsive Desktop (1280px+)
 
 ---
@@ -11,9 +11,9 @@
 > **Authoritative Developer Directives:**
 >
 > 1. **Strict Documentation Adherence**: All UI components, page layouts, theme tokens, and typography must follow this document and the design system strictly.
-> 2. **Latest Stable Packages**: Always install and use the latest stable releases of all UI dependencies (`next` v16.3.5 LTS, `react` v19, `react-dom` v19, `tailwindcss@next` / v4, `lucide-react`, `shadcn/ui`, `@tanstack/react-query`).
+> 2. **Latest Stable Packages**: Always install and use the latest stable releases of all UI dependencies (`next` v16.3.5 LTS, `react` v19, `react-dom` v19, `tailwindcss@next` / v4, `@phosphor-icons/react`, `shadcn/ui`, `@tanstack/react-query`).
 > 3. **Mandatory Mobile Phone Responsiveness**: **EVERY SINGLE SCREEN, COMPONENT, AND DASHBOARD MUST BE FULLY RESPONSIVE FOR MOBILE PHONES (smartphones 360px–430px)** as well as tablets and desktops. No horizontal viewport overflow; tables must collapse to mobile stacked cards or swipeable horizontal scroll containers; navigation must adapt to bottom bars/drawers; touch targets must be $\ge 48\text{px}$.
-> 4. **Lucide React Icons**: All UI iconography across desktop, tablet, and mobile phone clients must exclusively use **`lucide-react`** (latest stable).
+> 4. **Phosphor React Icons**: All UI iconography across desktop, tablet, and mobile phone clients must exclusively use **`@phosphor-icons/react`** (latest stable).
 > 5. **Modern Design Aesthetics**: Render crisp, high-density metrological tables, rounded pill buttons (`--radius: 1.3rem`), and Twitter Sky Blue active state highlights.
 > 6. **Mandatory Skeleton Loaders (No Generic Spinners)**: All loading states across pages, data tables, metrics KPI grids, observation cards, and form containers **must strictly use animated skeleton loaders** (`<Skeleton className="animate-pulse bg-muted/60 rounded-2xl" />`) matching the exact geometry of the loading content to eliminate Cumulative Layout Shift (CLS). Generic loading spinners, spinner overlays, or blank loading screens are strictly prohibited.
 > 7. **Dynamic Page Titles & Route Metadata Architecture**: Every single page, sub-route, and view must declare a **dynamic document title** formatted systematically: `<Page Title> | MAANAK (मानक) — OIML R-76 Legal Metrology` (e.g. `Dashboard & Lab Analytics | MAANAK (मानक)`, `Test Session TS-2026-0089 — Bench Execution | MAANAK (मानक)`, `Public Verification — e3b0c442... | MAANAK (मानक)`). Route headers must also include dynamic breadcrumb navigation with the active page title clearly identified.
@@ -308,11 +308,11 @@ The persistent left navigation bar uses shadcn `<Sidebar>` primitives styled wit
 
 To maintain high contrast and metrological legal accuracy, status states follow a strict functional color hierarchy:
 
-| Compliance State    | Background Token    | Foreground / Text Token                  | Border Token            | Lucide Icon       | Visual Presentation                                                           |
+| Compliance State    | Background Token    | Foreground / Text Token                  | Border Token            | Phosphor Icon     | Visual Presentation                                                           |
 | :------------------ | :------------------ | :--------------------------------------- | :---------------------- | :---------------- | :---------------------------------------------------------------------------- |
-| **PASS**            | `bg-emerald-500/10` | `text-emerald-600 dark:text-emerald-400` | `border-emerald-500/30` | `<CheckCircle2>`  | Solid green pill badge, checkmark icon, bold `PASS` tag.                      |
+| **PASS**            | `bg-emerald-500/10` | `text-emerald-600 dark:text-emerald-400` | `border-emerald-500/30` | `<CheckCircle>`   | Solid green pill badge, checkmark icon, bold `PASS` tag.                      |
 | **FAIL**            | `bg-destructive/10` | `text-destructive`                       | `border-destructive/30` | `<XCircle>`       | High-contrast ember red badge, `FAIL` tag, error ring.                        |
-| **WARNING / BLOCK** | `bg-amber-500/10`   | `text-amber-600 dark:text-amber-400`     | `border-amber-500/30`   | `<AlertTriangle>` | Amber alert pill; used for $U > rac{1}{3}	ext{MPE}$ or thermal drift warnings. |
+| **WARNING / BLOCK** | `bg-amber-500/10`   | `text-amber-600 dark:text-amber-400`     | `border-amber-500/30`   | `<Warning>`       | Amber alert pill; used for $U > \frac{1}{3}\text{MPE}$ or thermal drift warnings. |
 | **IN PROGRESS**     | `bg-primary/10`     | `text-primary`                           | `border-primary/30`     | `<Clock>`         | Twitter Sky Blue badge with pulsing execution dot.                            |
 | **PENDING REVIEW**  | `bg-purple-500/10`  | `text-purple-600 dark:text-purple-400`   | `border-purple-500/30`  | `<FileSearch>`    | Muted purple pill badge indicating senior metrologist review queue.           |
 
@@ -433,9 +433,9 @@ To maintain high contrast and metrological legal accuracy, status states follow 
 
 | State Type                       | UI Presentation & Layout                                                                                                       | Interactive Behavior                                                                             |
 | :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------- |
-| **Empty Table / List**           | Center-aligned card shell with Lucide icon (`<Inbox>` or `<Scale>`), muted description text ("No active test sessions found"). | Includes a primary Sky Blue button ("+ Start New NAWI Evaluation").                              |
+| **Empty Table / List**           | Center-aligned card shell with Phosphor icon (`<Tray>` or `<Scales>`), muted description text ("No active test sessions found"). | Includes a primary Sky Blue button ("+ Start New NAWI Evaluation").                              |
 | **Skeleton Loading**             | Animated pulse skeletons (`bg-muted/60 animate-pulse rounded-2xl`) matching exact component geometry and dimensions.           | Eliminates Cumulative Layout Shift (CLS) while fetching REST API data or offline records.       |
-| **NABL Uncertainty Error Alert** | High-contrast amber alert card (`bg-amber-500/10 border-amber-500/30 text-amber-600`) with `<AlertTriangle>` icon.             | Disables bench input field until a compliant standard weight is selected.                        |
+| **NABL Uncertainty Error Alert** | High-contrast amber alert card (`bg-amber-500/10 border-amber-500/30 text-amber-600`) with `<Warning>` icon.                   | Disables bench input field until a compliant standard weight is selected.                        |
 | **Digital Signing Confirmation** | `<Dialog>` modal overlay displaying report summary, SHA-256 hash preview, and PIN entry field.                                 | Requires explicit PIN entry before invoking X.509 PKI signing key.                               |
 
 ---
@@ -541,10 +541,10 @@ Every page shell renders a breadcrumb trail (`<Breadcrumb>`) at the top of the m
 
 #### 2. Mobile Navigation & Touch Ergonomics
 
-- **Collapsible Mobile Sheet**: Replace desktop sidebar with a top header containing a hamburger menu button (`<Menu>` Lucide icon) that slides out a fluid touch drawer (`<SheetContent side="left">`).
+- **Collapsible Mobile Sheet**: Replace desktop sidebar with a top header containing a hamburger menu button (`<List>` Phosphor icon) that slides out a fluid touch drawer (`<SheetContent side="left">`).
 - **Sticky Mobile Bottom Action Bar**: Fixed at `bottom-0 left-0 right-0` (`z-50 bg-background/95 backdrop-blur border-t border-border p-3 flex gap-2 justify-between items-center`):
   - Primary button (`w-full rounded-2xl h-12 text-base font-semibold`): e.g. "Save Observation & Next Load" or "Generate Report".
-  - Quick status badge: Offline sync indicator (`<WifiOff className="w-4 h-4 text-amber-500" />`).
+  - Quick status badge: Offline sync indicator (`<WifiSlash className="w-4 h-4 text-amber-500" />`).
 
 #### 3. Touch Targets & Input Field Sizing
 

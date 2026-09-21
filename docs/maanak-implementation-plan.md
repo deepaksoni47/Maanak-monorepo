@@ -12,9 +12,9 @@
 > 1. **Strict Documentation Adherence**: All engineers, agents, and contributors must follow this document and the associated `/docs` specifications strictly.
 > 2. **Atomic Task Execution**: Every task in this document is engineered to be **self-contained and executable in a single iteration by an AI agent without hallucinating**. Do not combine tasks or skip prerequisites.
 > 3. **Node.js Ecosystem**: All backend and calculation services are implemented exclusively in **Node.js (LTS v20+ / v22+) using TypeScript**. Python/FastAPI is completely replaced.
-> 4. **Latest Stable Packages**: Always install and use the latest stable releases of all workspace packages (e.g. Next.js 16 LTS v16.3.5, React 19, Tailwind CSS v4, Prisma ORM, Express/Fastify, `decimal.js`, `docx`, `pdf-lib`, `zod`, `lucide-react`).
+> 4. **Latest Stable Packages**: Always install and use the latest stable releases of all workspace packages (e.g. Next.js 16 LTS v16.3.5, React 19, Tailwind CSS v4, Prisma ORM, Express/Fastify, `decimal.js`, `docx`, `pdf-lib`, `zod`, `@phosphor-icons/react`).
 > 5. **Mandatory Mobile Phone Responsiveness**: Every single UI screen, component, and form **must be 100% responsive for mobile phones (smartphones 360px–430px)** as well as tablets and desktops.
-> 6. **Lucide React Icons**: All UI iconography across desktop, tablet, and mobile PWA clients must use **`lucide-react`** (latest stable).
+> 6. **Phosphor React Icons**: All UI iconography across desktop, tablet, and mobile PWA clients must use **`@phosphor-icons/react`** (latest stable).
 > 7. **Zero Floating Point Errors**: Decimal calculations ($P, E, E_0, E_c, \text{MPE}$) must strictly use `decimal.js` for arbitrary precision arithmetic.
 > 8. **Mandatory Skeleton Loaders (No Generic Spinners)**: All loading states across pages, tables, metrics cards, and forms **must strictly use animated skeleton loaders** (`<Skeleton className="animate-pulse bg-muted/60 rounded-2xl" />`) matching the exact geometry of the content to prevent Cumulative Layout Shift (CLS). Generic spinners (`<Loader2 className="animate-spin" />`) and blank loading screens are strictly prohibited.
 > 9. **Dynamic Page Titles & Route Metadata**: Every single page route and view must declare a dynamic document title following the pattern: `<Page Title> | MAANAK (मानक) — OIML R-76 Legal Metrology` with contextual breadcrumbs.
@@ -687,7 +687,7 @@ maanak-monorepo/
   - Next.js 16 (LTS v16.3.5) with App Router and React 19.
   - Tailwind CSS v4 with Tweakcn Twitter OKLCH theme tokens:
     `--primary: oklch(0.6723 0.1606 244.9955)`, `--radius: 1.3rem`.
-  - Install `lucide-react` (latest stable).
+  - Install `@phosphor-icons/react` (latest stable).
   - Configure root Next.js metadata template in `layout.tsx`:
     `title: { template: "%s | MAANAK (मानक) — OIML R-76 Legal Metrology", default: "MAANAK (मानक) — OIML R-76 Legal Metrology Workbench" }`.
 - **Acceptance Criteria**: Next.js app builds cleanly; renders styled page with Twitter Sky Blue theme tokens and default metadata title.

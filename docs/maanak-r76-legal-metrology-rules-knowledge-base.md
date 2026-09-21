@@ -12,9 +12,9 @@
 >
 > 1. **Strict Documentation Adherence**: All engineers, agents, and contributors must follow this document and the associated `/docs` specifications strictly.
 > 2. **Node.js Ecosystem**: All backend and calculation services are implemented exclusively in **Node.js (LTS v20+ / v22+) using TypeScript**. Python/FastAPI is completely replaced.
-> 3. **Latest Stable Packages**: Always install and use the latest stable releases of all workspace packages (e.g. Next.js 16 LTS v16.3.5, React 19, Tailwind CSS v4, Prisma ORM, Express/Fastify, `decimal.js`, `docx`, `pdf-lib`, `zod`, `lucide-react`).
+> 3. **Latest Stable Packages**: Always install and use the latest stable releases of all workspace packages (e.g. Next.js 16 LTS v16.3.5, React 19, Tailwind CSS v4, Prisma ORM, Express/Fastify, `decimal.js`, `docx`, `pdf-lib`, `zod`, `@phosphor-icons/react`).
 > 4. **Mandatory Mobile Phone Responsiveness**: Every single UI design, screen, and component **must be fully responsive for mobile phones (smartphones 360px–430px)** as well as tablets and desktops.
-> 5. **Lucide React Icons**: All UI iconography across desktop, tablet, and mobile PWA clients must use **`lucide-react`** (latest stable).
+> 5. **Phosphor React Icons**: All UI iconography across desktop, tablet, and mobile PWA clients must use **`@phosphor-icons/react`** (latest stable).
 > 6. **Zero Floating Point Errors**: Decimal calculations ($P, E, E_0, E_c, \text{MPE}$) must strictly use `decimal.js` for arbitrary precision arithmetic.
 
 ---
@@ -382,7 +382,7 @@ A compliant report must contain fields structured across 10 mandatory categories
 - [ ] Build WELMEC 7.2 SHA-256 hash graph provenance generator using Node.js `crypto`.
 - [ ] Implement Node.js PDF (`@pdf-lib` / `pdfkit`) and Word (`docx`) generators rendering OIML R 76-2 Forms 1–17.
 - [ ] Build X.509 PKI / DSC digital signature signing pipeline using `@peculiar/x509`.
-- [ ] Implement web dashboard and responsive mobile/tablet PWA bench UI using Next.js 16 (LTS v16.3.5), React 19, Tailwind CSS v4, and Lucide React icons.
+- [ ] Implement web dashboard and responsive mobile/tablet PWA bench UI using Next.js 16 (LTS v16.3.5), React 19, Tailwind CSS v4, and Phosphor React icons.
 
 ---
 

@@ -234,9 +234,9 @@ For multi-interval scales with partial weighing ranges ($W_1, W_2, W_3$) having 
 >
 > 1. **Follow Documentation Strictly**: All implementations, data models, APIs, and business rules must strictly follow the specifications in the `/docs` directory without deviation.
 > 2. **Node.js Stack**: The entire backend ecosystem is built on **Node.js (LTS v20+ / v22+) with TypeScript**. Python/FastAPI is strictly superseded.
-> 3. **Latest Stable Packages**: Always install and use the latest stable version of all packages and dependencies (e.g. Next.js 16 LTS v16.3.5, React 19, Tailwind CSS v4, Prisma ORM, Express/Fastify, `decimal.js`, `docx`, `pdf-lib`/PDFKit, `zod`, `lucide-react`).
+> 3. **Latest Stable Packages**: Always install and use the latest stable version of all packages and dependencies (e.g. Next.js 16 LTS v16.3.5, React 19, Tailwind CSS v4, Prisma ORM, Express/Fastify, `decimal.js`, `docx`, `pdf-lib`/PDFKit, `zod`, `@phosphor-icons/react`).
 > 4. **Mandatory Mobile Phone Responsiveness**: Every user interface, portal screen, evaluation table, and report preview **must be fully responsive for mobile phones (smartphones 360px–430px)** as well as tablets and desktops.
-> 5. **Lucide React Icons**: All icons across the web dashboard and mobile bench PWA must exclusively use **`lucide-react`** (latest stable).
+> 5. **Phosphor React Icons**: All icons across the web dashboard and mobile bench PWA must exclusively use **`@phosphor-icons/react`** (latest stable).
 > 6. **Zero Floating Point Errors**: Use `decimal.js` for arbitrary precision fixed-point arithmetic across all metrological calculations ($P, E, E_0, E_c, \text{MPE}$).
 
 ---
