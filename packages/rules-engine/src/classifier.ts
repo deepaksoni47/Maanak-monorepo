@@ -3,7 +3,7 @@ import { AccuracyClass, UnitOfMeasurement, ScaleClassificationResult } from "@ma
 import { RulePack, Table3ClassLimit, loadDefaultRulePack } from "./loader.js";
 
 // Unit conversion factors to kilograms (kg)
-const UNIT_TO_KG_FACTORS: Record<UnitOfMeasurement, Decimal> = {
+export const UNIT_TO_KG_FACTORS: Record<UnitOfMeasurement, Decimal> = {
   kg: new Decimal("1"),
   g: new Decimal("0.001"),
   mg: new Decimal("0.000001"),

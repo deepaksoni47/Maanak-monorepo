@@ -33,7 +33,49 @@ export interface NABLPreCheckResult {
   maxAllowedUncertainty: string;
   mpeApplied?: string;
   loadPoint?: string;
+  ratioToMpe?: string;
+  weightId?: string;
+  unit?: string;
   warningMessage?: string;
+}
+
+export interface NABLBatchPreCheckResult {
+  allCompliant: boolean;
+  results: NABLPreCheckResult[];
+  failingCount: number;
+  passingCount: number;
+  summaryWarning?: string;
+}
+
+export type AnomalySeverity = "CRITICAL" | "WARNING" | "INFO";
+
+export type AnomalyCode =
+  | "ANOMALY_NON_MONOTONIC_INDICATION"
+  | "ANOMALY_EXCESSIVE_DELTA_L"
+  | "ANOMALY_NEGATIVE_DELTA_L"
+  | "ANOMALY_TEMPERATURE_DRIFT_EXCEEDED"
+  | "ANOMALY_TEMPERATURE_OUT_OF_RANGE"
+  | "ANOMALY_TARE_SANITY_FAILED"
+  | "ANOMALY_NEGATIVE_INDICATION"
+  | "ANOMALY_OVERLOAD_EXCEEDED"
+  | "ANOMALY_NEGATIVE_LOAD";
+
+export interface AnomalyFlag {
+  code: AnomalyCode | string;
+  severity: AnomalySeverity;
+  rule: string;
+  message: string;
+  loadPoint?: string;
+  details?: Record<string, any>;
+}
+
+export interface AnomalyAuditReport {
+  hasAnomalies: boolean;
+  totalAnomalies: number;
+  criticalCount: number;
+  warningCount: number;
+  flags: AnomalyFlag[];
+  summary: string;
 }
 
 export type ProvenanceNodeType =

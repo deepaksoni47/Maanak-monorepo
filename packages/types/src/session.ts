@@ -1,4 +1,4 @@
-import { ComplianceStatus } from "./metrology.js";
+import { ComplianceStatus, AccuracyClass, UnitOfMeasurement } from "./metrology.js";
 
 export enum TestFormType {
   FORM_1_WEIGHING = "FORM_1_WEIGHING",
@@ -119,4 +119,58 @@ export interface ReviewAudit {
   comments?: string;
   automatedAnomalyFlagsJson?: string[];
   reviewedAt: string;
+}
+
+export interface PlannedLoadPoint {
+  sequenceNumber: number;
+  nominalLoad: string;
+  nominalLoadNumber: number;
+  unit: UnitOfMeasurement;
+  nominalLoadInKg: string;
+  loadType: "ZERO" | "MIN" | "MPE_CHANGE" | "HALF_MAX" | "MAX" | "INTERMEDIATE" | "CORNER";
+  direction?: LoadRunDirection;
+  position?: "CENTER" | "FRONT_LEFT" | "BACK_LEFT" | "BACK_RIGHT" | "FRONT_RIGHT" | string;
+  mpeExpected?: string;
+  mpeExpectedFactorE?: string;
+  extraLoad14d?: string;
+  description?: string;
+}
+
+export interface TestPlanItem {
+  id?: string;
+  testPlanId?: string;
+  clauseNumber: string;
+  formNumber: string;
+  formType: TestFormType;
+  title: string;
+  executionOrder: number;
+  isMandatory: boolean;
+  targetLoads: PlannedLoadPoint[];
+  metadata?: Record<string, any>;
+}
+
+export interface TestPlan {
+  id?: string;
+  title: string;
+  instrumentModelId?: string;
+  accuracyClass: AccuracyClass;
+  maxCapacity: string;
+  minCapacity: string;
+  verificationIntervalE: string;
+  actualIntervalD: string;
+  unit: UnitOfMeasurement;
+  scaleDivisionCountN: number;
+  totalTestClauses: number;
+  totalLoadPoints: number;
+  items: TestPlanItem[];
+  form1WeighingPoints: PlannedLoadPoint[];
+  form2TemperatureDrift: {
+    tempPointsC: number[];
+    maxDriftRateCPerHour: number;
+  };
+  form3EccentricityLoad: PlannedLoadPoint;
+  form4DiscriminationLoads: PlannedLoadPoint[];
+  form5RepeatabilityLoads: PlannedLoadPoint[];
+  form6CreepLoad: PlannedLoadPoint;
+  createdAt?: string;
 }

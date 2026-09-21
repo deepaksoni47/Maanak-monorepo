@@ -1,0 +1,595 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -------------------------------------------------------------
+// 1. Identity & RBAC Domain
+// -------------------------------------------------------------
+
+model Laboratory {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(20)
+  name                String    @db.VarChar(255)
+  type                String    @db.VarChar(50)
+  addressLine1        String    @map("address_line1") @db.VarChar(255)
+  addressLine2        String?   @map("address_line2") @db.VarChar(255)
+  city                String    @db.VarChar(100)
+  state               String    @db.VarChar(100)
+  pincode             String    @db.VarChar(10)
+  contactEmail        String    @map("contact_email") @db.VarChar(255)
+  contactPhone        String    @map("contact_phone") @db.VarChar(20)
+  nablAccreditationNo String?   @map("nabl_accreditation_no") @db.VarChar(100)
+  nablValidUntil      DateTime? @map("nabl_valid_until") @db.Date
+  isActive            Boolean   @default(true) @map("is_active")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  users              User[]
+  referenceStandards ReferenceStandard[]
+  testSessions       TestSession[]
+
+  @@map("laboratories")
+}
+
+model Role {
+  id              String   @id @default(uuid()) @db.Uuid
+  code            String   @unique @db.VarChar(50)
+  name            String   @db.VarChar(100)
+  description     String?  @db.Text
+  permissionsJson Json     @default("[]") @map("permissions_json")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  users User[]
+
+  @@map("roles")
+}
+
+model User {
+  id                  String    @id @default(uuid()) @db.Uuid
+  laboratoryId        String    @map("laboratory_id") @db.Uuid
+  roleId              String    @map("role_id") @db.Uuid
+  username            String    @unique @db.VarChar(100)
+  email               String    @unique @db.VarChar(255)
+  passwordHash        String    @map("password_hash") @db.VarChar(255)
+  fullName            String    @map("full_name") @db.VarChar(255)
+  designation         String    @db.VarChar(100)
+  governmentIdNo      String?   @map("government_id_no") @db.VarChar(100)
+  mobileNumber        String    @map("mobile_number") @db.VarChar(20)
+  x509CertFingerprint String?   @map("x509_cert_fingerprint") @db.VarChar(128)
+  isActive            Boolean   @default(true) @map("is_active")
+  lastLoginAt         DateTime? @map("last_login_at") @db.Timestamptz()
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  laboratory                 Laboratory           @relation(fields: [laboratoryId], references: [id], onDelete: Restrict)
+  role                       Role                 @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  testSessionsConducted      TestSession[]        @relation("TestingOfficerSessions")
+  rulePackVersionsCreated    RulePackVersion[]    @relation("RulePackVersionCreator")
+  calculationRuns            CalculationRun[]     @relation("CalculationRunExecutor")
+  reviewAudits               ReviewAudit[]        @relation("ReviewAuditReviewer")
+  digitalSignatures          DigitalSignature[]   @relation("DigitalSignatureSigner")
+  reportVersionsGenerated    ReportVersion[]      @relation("ReportVersionGenerator")
+  evidenceAttachmentsUploaded EvidenceAttachment[] @relation("EvidenceUploader")
+  auditLogs                  AuditLog[]
+
+  @@index([laboratoryId], map: "idx_users_lab")
+  @@map("users")
+}
+
+// -------------------------------------------------------------
+// 2. Master & Reference Data Domain
+// -------------------------------------------------------------
+
+model AccuracyClass {
+  id                            String  @id @default(uuid()) @db.Uuid
+  code                          String  @unique @db.VarChar(10)
+  name                          String  @db.VarChar(50)
+  minVerificationScaleIntervals Int     @map("min_verification_scale_intervals")
+  maxVerificationScaleIntervals Int?    @map("max_verification_scale_intervals")
+  description                   String? @db.Text
+  displayOrder                  Int     @default(0) @map("display_order")
+
+  instrumentModels InstrumentModel[]
+
+  @@map("accuracy_classes")
+}
+
+model ReferenceStandard {
+  id                 String   @id @default(uuid()) @db.Uuid
+  laboratoryId       String   @map("laboratory_id") @db.Uuid
+  identificationCode String   @map("identification_code") @db.VarChar(100)
+  oimlClass          String   @map("oiml_class") @db.VarChar(10)
+  manufacturerName   String?  @map("manufacturer_name") @db.VarChar(255)
+  material           String?  @db.VarChar(100)
+  nominalMassMin     Decimal  @map("nominal_mass_min") @db.Decimal(16, 8)
+  nominalMassMax     Decimal  @map("nominal_mass_max") @db.Decimal(16, 8)
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  laboratory              Laboratory               @relation(fields: [laboratoryId], references: [id], onDelete: Restrict)
+  calibrationCertificates CalibrationCertificate[]
+
+  @@index([laboratoryId], map: "idx_ref_std_lab")
+  @@map("reference_standards")
+}
+
+model CalibrationCertificate {
+  id                   String   @id @default(uuid()) @db.Uuid
+  referenceStandardId  String   @map("reference_standard_id") @db.Uuid
+  certificateNumber    String   @unique @map("certificate_number") @db.VarChar(100)
+  calibratingAgency    String   @map("calibrating_agency") @db.VarChar(255)
+  nablCertNo           String   @map("nabl_cert_no") @db.VarChar(100)
+  calibrationDate      DateTime @map("calibration_date") @db.Date
+  expiryDate           DateTime @map("expiry_date") @db.Date
+  expandedUncertaintyU Decimal  @map("expanded_uncertainty_u") @db.Decimal(16, 8)
+  uncertaintyUnit      String   @default("mg") @map("uncertainty_unit") @db.VarChar(10)
+  coverageFactorK      Decimal  @default(2.00) @map("coverage_factor_k") @db.Decimal(4, 2)
+  certificatePdfUrl    String?  @map("certificate_pdf_url") @db.Text
+  isActive             Boolean  @default(true) @map("is_active")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  referenceStandard      ReferenceStandard        @relation(fields: [referenceStandardId], references: [id], onDelete: Restrict)
+  observationWeightsUsed ObservationWeightUsed[]
+
+  @@map("calibration_certificates")
+}
+
+// -------------------------------------------------------------
+// 3. Standards-as-Code Rules Domain
+// -------------------------------------------------------------
+
+model RulePack {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(50)
+  title       String   @db.VarChar(255)
+  issuingBody String   @map("issuing_body") @db.VarChar(100)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  versions RulePackVersion[]
+
+  @@map("rule_packs")
+}
+
+model RulePackVersion {
+  id                         String    @id @default(uuid()) @db.Uuid
+  rulePackId                 String    @map("rule_pack_id") @db.Uuid
+  versionTag                 String    @map("version_tag") @db.VarChar(50)
+  effectiveFrom              DateTime  @map("effective_from") @db.Date
+  effectiveUntil             DateTime? @map("effective_until") @db.Date
+  isActive                   Boolean   @default(false) @map("is_active")
+  ruleSchemaVersion          String    @default("1.0") @map("rule_schema_version") @db.VarChar(20)
+  table3ClassificationJson   Json      @map("table_3_classification_json")
+  table6MpeBracketsJson      Json      @map("table_6_mpe_brackets_json")
+  formulaDefinitionsJson     Json      @map("formula_definitions_json")
+  environmentalLimitsJson    Json      @map("environmental_limits_json")
+  createdByUserId            String?   @map("created_by_user_id") @db.Uuid
+  createdAt                  DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  rulePack        RulePack         @relation(fields: [rulePackId], references: [id], onDelete: Restrict)
+  createdByUser   User?            @relation("RulePackVersionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  testSessions    TestSession[]
+  calculationRuns CalculationRun[]
+
+  @@unique([rulePackId, versionTag], map: "uq_rule_version")
+  @@map("rule_pack_versions")
+}
+
+// -------------------------------------------------------------
+// 4. Instrument & Model Intake Domain
+// -------------------------------------------------------------
+
+model Manufacturer {
+  id                 String   @id @default(uuid()) @db.Uuid
+  companyName        String   @map("company_name") @db.VarChar(255)
+  tradeLicenseNo     String   @map("trade_license_no") @db.VarChar(100)
+  registrationNumber String   @unique @map("registration_number") @db.VarChar(100)
+  addressLine1       String   @map("address_line1") @db.VarChar(255)
+  addressLine2       String?  @map("address_line2") @db.VarChar(255)
+  city               String   @db.VarChar(100)
+  state              String   @db.VarChar(100)
+  country            String   @default("India") @db.VarChar(100)
+  pincode            String   @db.VarChar(10)
+  contactPerson      String   @map("contact_person") @db.VarChar(255)
+  contactEmail       String   @map("contact_email") @db.VarChar(255)
+  contactPhone       String   @map("contact_phone") @db.VarChar(20)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  instrumentModels InstrumentModel[]
+
+  @@map("manufacturers")
+}
+
+model InstrumentModel {
+  id                          String   @id @default(uuid()) @db.Uuid
+  manufacturerId              String   @map("manufacturer_id") @db.Uuid
+  accuracyClassId            String   @map("accuracy_class_id") @db.Uuid
+  modelName                   String   @map("model_name") @db.VarChar(255)
+  patternDesignation          String   @unique @map("pattern_designation") @db.VarChar(100)
+  instrumentType              String   @map("instrument_type") @db.VarChar(100)
+  weighingPrinciple           String   @map("weighing_principle") @db.VarChar(100)
+  maxCapacity                 Decimal  @map("max_capacity") @db.Decimal(16, 8)
+  minCapacity                 Decimal  @map("min_capacity") @db.Decimal(16, 8)
+  verificationScaleIntervalE  Decimal  @map("verification_scale_interval_e") @db.Decimal(16, 8)
+  actualScaleIntervalD        Decimal  @map("actual_scale_interval_d") @db.Decimal(16, 8)
+  scaleDivisionCountN         Int      @map("scale_division_count_n")
+  unitOfMeasure               String   @default("kg") @map("unit_of_measure") @db.VarChar(10)
+  isMultiInterval             Boolean  @default(false) @map("is_multi_interval")
+  isMultipleRange             Boolean  @default(false) @map("is_multiple_range")
+  numberOfPartialRanges       Int      @default(1) @map("number_of_partial_ranges")
+  tempRangeMinC               Decimal  @default(-10.0) @map("temp_range_min_c") @db.Decimal(4, 1)
+  tempRangeMaxC               Decimal  @default(40.0) @map("temp_range_max_c") @db.Decimal(4, 1)
+  powerSupplyVoltageNominal   Decimal  @default(230.0) @map("power_supply_voltage_nominal") @db.Decimal(5, 1)
+  powerSupplyFrequencyHz      Decimal  @default(50.0) @map("power_supply_frequency_hz") @db.Decimal(4, 1)
+  firmwareVersionId           String   @map("firmware_version_id") @db.VarChar(100)
+  createdAt                   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt                   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  manufacturer  Manufacturer        @relation(fields: [manufacturerId], references: [id], onDelete: Restrict)
+  accuracyClass AccuracyClass       @relation(fields: [accuracyClassId], references: [id], onDelete: Restrict)
+  partialRanges ModelPartialRange[]
+  units         InstrumentUnit[]
+  testPlans     TestPlan[]
+
+  @@map("instrument_models")
+}
+
+model ModelPartialRange {
+  id                          String  @id @default(uuid()) @db.Uuid
+  instrumentModelId           String  @map("instrument_model_id") @db.Uuid
+  rangeIndex                  Int     @map("range_index")
+  maxCapacityI                Decimal @map("max_capacity_i") @db.Decimal(16, 8)
+  minCapacityI                Decimal @map("min_capacity_i") @db.Decimal(16, 8)
+  verificationScaleIntervalEI Decimal @map("verification_scale_interval_e_i") @db.Decimal(16, 8)
+  actualScaleIntervalDI       Decimal @map("actual_scale_interval_d_i") @db.Decimal(16, 8)
+  scaleDivisionCountNI        Int     @map("scale_division_count_n_i")
+
+  instrumentModel InstrumentModel @relation(fields: [instrumentModelId], references: [id], onDelete: Cascade)
+
+  @@unique([instrumentModelId, rangeIndex], map: "uq_model_range")
+  @@map("model_partial_ranges")
+}
+
+model InstrumentUnit {
+  id                         String   @id @default(uuid()) @db.Uuid
+  instrumentModelId          String   @map("instrument_model_id") @db.Uuid
+  serialNumber               String   @unique @map("serial_number") @db.VarChar(100)
+  yearOfManufacture          Int      @map("year_of_manufacture")
+  indicatorSerialNo          String?  @map("indicator_serial_no") @db.VarChar(100)
+  loadCellModelNo            String?  @map("load_cell_model_no") @db.VarChar(100)
+  loadCellSerialNo           String?  @map("load_cell_serial_no") @db.VarChar(100)
+  sealingArrangementDetails  String?  @map("sealing_arrangement_details") @db.Text
+  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  instrumentModel InstrumentModel @relation(fields: [instrumentModelId], references: [id], onDelete: Restrict)
+  testSessions    TestSession[]
+
+  @@map("instrument_units")
+}
+
+// -------------------------------------------------------------
+// 5. Test Sessions & Execution Domain
+// -------------------------------------------------------------
+
+model TestPlan {
+  id                String   @id @default(uuid()) @db.Uuid
+  instrumentModelId String   @map("instrument_model_id") @db.Uuid
+  title             String   @db.VarChar(255)
+  totalTestClauses  Int      @default(0) @map("total_test_clauses")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  instrumentModel InstrumentModel @relation(fields: [instrumentModelId], references: [id], onDelete: Restrict)
+  items           TestPlanItem[]
+  testSessions    TestSession[]
+
+  @@map("test_plans")
+}
+
+model TestPlanItem {
+  id             String  @id @default(uuid()) @db.Uuid
+  testPlanId     String  @map("test_plan_id") @db.Uuid
+  clauseNumber   String  @map("clause_number") @db.VarChar(20)
+  formNumber     String  @map("form_number") @db.VarChar(20)
+  title          String  @db.VarChar(255)
+  executionOrder Int     @map("execution_order")
+  isMandatory    Boolean @default(true) @map("is_mandatory")
+
+  testPlan        TestPlan         @relation(fields: [testPlanId], references: [id], onDelete: Cascade)
+  rawObservations RawObservation[]
+
+  @@unique([testPlanId, clauseNumber], map: "uq_plan_clause")
+  @@map("test_plan_items")
+}
+
+model TestSession {
+  id                 String    @id @default(uuid()) @db.Uuid
+  localId            String?   @unique @map("local_id") @db.Uuid
+  sessionNumber      String    @unique @map("session_number") @db.VarChar(100)
+  laboratoryId       String    @map("laboratory_id") @db.Uuid
+  instrumentUnitId   String    @map("instrument_unit_id") @db.Uuid
+  testPlanId         String    @map("test_plan_id") @db.Uuid
+  rulePackVersionId  String    @map("rule_pack_version_id") @db.Uuid
+  testingOfficerId   String    @map("testing_officer_id") @db.Uuid
+  status             String    @default("DRAFT") @db.VarChar(50)
+  startedAt          DateTime  @default(now()) @map("started_at") @db.Timestamptz()
+  completedAt        DateTime? @map("completed_at") @db.Timestamptz()
+  syncStatus         String    @default("SYNCED") @map("sync_status") @db.VarChar(20)
+  deviceId           String?   @map("device_id") @db.VarChar(100)
+  serverSyncedAt     DateTime? @map("server_synced_at") @db.Timestamptz()
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  laboratory          Laboratory                @relation(fields: [laboratoryId], references: [id], onDelete: Restrict)
+  instrumentUnit      InstrumentUnit            @relation(fields: [instrumentUnitId], references: [id], onDelete: Restrict)
+  testPlan            TestPlan                  @relation(fields: [testPlanId], references: [id], onDelete: Restrict)
+  rulePackVersion     RulePackVersion           @relation(fields: [rulePackVersionId], references: [id], onDelete: Restrict)
+  testingOfficer      User                      @relation("TestingOfficerSessions", fields: [testingOfficerId], references: [id], onDelete: Restrict)
+  environmentalLogs   SessionEnvironmentalLog[]
+  rawObservations     RawObservation[]
+  calculationRuns     CalculationRun[]
+  reviewAudits        ReviewAudit[]
+  digitalSignatures   DigitalSignature[]
+  reports             Report[]
+  evidenceAttachments EvidenceAttachment[]
+  provenanceNodes     ProvenanceNode[]
+
+  @@index([laboratoryId], map: "idx_test_sessions_lab")
+  @@index([status], map: "idx_test_sessions_status")
+  @@index([instrumentUnitId], map: "idx_test_sessions_unit")
+  @@index([testingOfficerId], map: "idx_test_sessions_officer")
+  @@map("test_sessions")
+}
+
+model SessionEnvironmentalLog {
+  id                    String   @id @default(uuid()) @db.Uuid
+  testSessionId         String   @map("test_session_id") @db.Uuid
+  loggedAt              DateTime @default(now()) @map("logged_at") @db.Timestamptz()
+  temperatureC          Decimal  @map("temperature_c") @db.Decimal(4, 2)
+  relativeHumidityPercent Decimal @map("relative_humidity_percent") @db.Decimal(5, 2)
+  barometricPressureHpa Decimal? @map("barometric_pressure_hpa") @db.Decimal(6, 2)
+  tempDriftRateCPerHr   Decimal? @map("temp_drift_rate_c_per_hr") @db.Decimal(4, 2)
+  isTempStable          Boolean  @default(true) @map("is_temp_stable")
+
+  testSession TestSession @relation(fields: [testSessionId], references: [id], onDelete: Cascade)
+
+  @@map("session_environmental_logs")
+}
+
+// -------------------------------------------------------------
+// 6. Observations & Calculations Domain
+// -------------------------------------------------------------
+
+model RawObservation {
+  id                      String   @id @default(uuid()) @db.Uuid
+  localId                 String?  @unique @map("local_id") @db.Uuid
+  testSessionId           String   @map("test_session_id") @db.Uuid
+  testPlanItemId          String   @map("test_plan_item_id") @db.Uuid
+  sequenceNumber          Int      @map("sequence_number")
+  testClause              String   @map("test_clause") @db.VarChar(20)
+  loadRunDirection        String   @map("load_run_direction") @db.VarChar(20)
+  targetLoadL             Decimal  @map("target_load_l") @db.Decimal(16, 8)
+  displayedIndicationI    Decimal  @map("displayed_indication_i") @db.Decimal(16, 8)
+  changeoverWeightDl      Decimal  @default(0.0) @map("changeover_weight_dl") @db.Decimal(16, 8)
+  zeroIndicationI0        Decimal  @default(0.0) @map("zero_indication_i0") @db.Decimal(16, 8)
+  eccentricityPosition    Int?     @map("eccentricity_position")
+  elapsedTimeMinutes      Decimal? @map("elapsed_time_minutes") @db.Decimal(6, 2)
+  activePartialRangeIndex Int      @default(1) @map("active_partial_range_index")
+  recordedAt              DateTime @default(now()) @map("recorded_at") @db.Timestamptz()
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  testSession            TestSession              @relation(fields: [testSessionId], references: [id], onDelete: Cascade)
+  testPlanItem           TestPlanItem             @relation(fields: [testPlanItemId], references: [id], onDelete: Restrict)
+  weightsUsed            ObservationWeightUsed[]
+  calculationTraceItems  CalculationTraceItem[]
+
+  @@unique([testSessionId, testPlanItemId, sequenceNumber], map: "uq_obs_sequence")
+  @@index([testSessionId, testClause, sequenceNumber], map: "idx_raw_obs_session_clause")
+  @@map("raw_observations")
+}
+
+model ObservationWeightUsed {
+  id                       String  @id @default(uuid()) @db.Uuid
+  rawObservationId         String  @map("raw_observation_id") @db.Uuid
+  calibrationCertificateId String  @map("calibration_certificate_id") @db.Uuid
+  weightMassApplied        Decimal @map("weight_mass_applied") @db.Decimal(16, 8)
+
+  rawObservation         RawObservation         @relation(fields: [rawObservationId], references: [id], onDelete: Cascade)
+  calibrationCertificate CalibrationCertificate @relation(fields: [calibrationCertificateId], references: [id], onDelete: Restrict)
+
+  @@map("observation_weights_used")
+}
+
+model CalculationRun {
+  id                      String   @id @default(uuid()) @db.Uuid
+  testSessionId           String   @map("test_session_id") @db.Uuid
+  rulePackVersionId       String   @map("rule_pack_version_id") @db.Uuid
+  executedByUserId        String?  @map("executed_by_user_id") @db.Uuid
+  executedAt              DateTime @default(now()) @map("executed_at") @db.Timestamptz()
+  overallComplianceStatus String   @map("overall_compliance_status") @db.VarChar(20)
+  totalPointsEvaluated    Int      @map("total_points_evaluated")
+  totalPointsFailed       Int      @default(0) @map("total_points_failed")
+  maxErrorToMpeRatio      Decimal  @map("max_error_to_mpe_ratio") @db.Decimal(6, 4)
+
+  testSession     TestSession            @relation(fields: [testSessionId], references: [id], onDelete: Cascade)
+  rulePackVersion RulePackVersion        @relation(fields: [rulePackVersionId], references: [id], onDelete: Restrict)
+  executedByUser  User?                  @relation("CalculationRunExecutor", fields: [executedByUserId], references: [id], onDelete: SetNull)
+  traceItems      CalculationTraceItem[]
+
+  @@map("calculation_runs")
+}
+
+model CalculationTraceItem {
+  id                         String   @id @default(uuid()) @db.Uuid
+  calculationRunId           String   @map("calculation_run_id") @db.Uuid
+  rawObservationId           String   @map("raw_observation_id") @db.Uuid
+  preRoundingIndicationP     Decimal  @map("pre_rounding_indication_p") @db.Decimal(16, 8)
+  rawErrorE                  Decimal  @map("raw_error_e") @db.Decimal(16, 8)
+  zeroErrorE0                Decimal  @default(0.0) @map("zero_error_e0") @db.Decimal(16, 8)
+  correctedIntrinsicErrorEc  Decimal  @map("corrected_intrinsic_error_ec") @db.Decimal(16, 8)
+  mpeLimitApplied            Decimal  @map("mpe_limit_applied") @db.Decimal(16, 8)
+  mpeBracketCategory         String   @map("mpe_bracket_category") @db.VarChar(50)
+  complianceStatus           String   @map("compliance_status") @db.VarChar(10)
+  stepDerivationTreeJson     Json     @map("step_derivation_tree_json")
+  createdAt                  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  calculationRun CalculationRun @relation(fields: [calculationRunId], references: [id], onDelete: Cascade)
+  rawObservation RawObservation @relation(fields: [rawObservationId], references: [id], onDelete: Cascade)
+
+  @@index([calculationRunId], map: "idx_calc_trace_run")
+  @@index([rawObservationId], map: "idx_calc_trace_obs")
+  @@map("calculation_trace_items")
+}
+
+// -------------------------------------------------------------
+// 7. Reviews, Approvals & Provenance Domain
+// -------------------------------------------------------------
+
+model ReviewAudit {
+  id                        String   @id @default(uuid()) @db.Uuid
+  testSessionId             String   @map("test_session_id") @db.Uuid
+  reviewerUserId            String   @map("reviewer_user_id") @db.Uuid
+  reviewStage               String   @map("review_stage") @db.VarChar(50)
+  decision                  String   @db.VarChar(50)
+  comments                  String?  @db.Text
+  automatedAnomalyFlagsJson Json     @default("[]") @map("automated_anomaly_flags_json")
+  reviewedAt                DateTime @default(now()) @map("reviewed_at") @db.Timestamptz()
+
+  testSession  TestSession @relation(fields: [testSessionId], references: [id], onDelete: Cascade)
+  reviewerUser User        @relation("ReviewAuditReviewer", fields: [reviewerUserId], references: [id], onDelete: Restrict)
+
+  @@map("review_audits")
+}
+
+model DigitalSignature {
+  id                     String   @id @default(uuid()) @db.Uuid
+  testSessionId          String   @map("test_session_id") @db.Uuid
+  signerUserId           String   @map("signer_user_id") @db.Uuid
+  signerRole             String   @map("signer_role") @db.VarChar(50)
+  pdfBinaryHashSha256    String   @map("pdf_binary_hash_sha256") @db.VarChar(64)
+  x509CertificateSerial  String   @map("x509_certificate_serial") @db.VarChar(100)
+  pkiSignatureValueBase64 String  @map("pki_signature_value_base64") @db.Text
+  timestampTokenBase64   String?  @map("timestamp_token_base64") @db.Text
+  signedAt               DateTime @default(now()) @map("signed_at") @db.Timestamptz()
+
+  testSession TestSession @relation(fields: [testSessionId], references: [id], onDelete: Restrict)
+  signerUser  User        @relation("DigitalSignatureSigner", fields: [signerUserId], references: [id], onDelete: Restrict)
+
+  @@map("digital_signatures")
+}
+
+model Report {
+  id                String   @id @default(uuid()) @db.Uuid
+  testSessionId     String   @unique @map("test_session_id") @db.Uuid
+  reportNumber      String   @unique @map("report_number") @db.VarChar(100)
+  patternApprovalNo String?  @map("pattern_approval_no") @db.VarChar(100)
+  currentVersionNo  Int      @default(1) @map("current_version_no")
+  isSigned          Boolean  @default(false) @map("is_signed")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  testSession TestSession     @relation(fields: [testSessionId], references: [id], onDelete: Restrict)
+  versions    ReportVersion[]
+
+  @@map("reports")
+}
+
+model ReportVersion {
+  id                String   @id @default(uuid()) @db.Uuid
+  reportId          String   @map("report_id") @db.Uuid
+  versionNumber     Int      @map("version_number")
+  fileFormat        String   @map("file_format") @db.VarChar(10)
+  fileStoragePath   String   @map("file_storage_path") @db.Text
+  fileSizeBytes     BigInt   @map("file_size_bytes")
+  fileHashSha256    String   @map("file_hash_sha256") @db.VarChar(64)
+  generatedByUserId String?  @map("generated_by_user_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  report          Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  generatedByUser User?  @relation("ReportVersionGenerator", fields: [generatedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([reportId, versionNumber, fileFormat], map: "uq_report_version")
+  @@map("report_versions")
+}
+
+model EvidenceAttachment {
+  id                   String    @id @default(uuid()) @db.Uuid
+  testSessionId        String    @map("test_session_id") @db.Uuid
+  category             String    @db.VarChar(50)
+  fileName             String    @map("file_name") @db.VarChar(255)
+  fileStoragePath      String    @map("file_storage_path") @db.Text
+  mimeType             String    @map("mime_type") @db.VarChar(100)
+  fileHashSha256       String    @map("file_hash_sha256") @db.VarChar(64)
+  exifTimestamp        DateTime? @map("exif_timestamp") @db.Timestamptz()
+  exifLatitude         Decimal?  @map("exif_latitude") @db.Decimal(9, 6)
+  exifLongitude        Decimal?  @map("exif_longitude") @db.Decimal(9, 6)
+  ocrExtractedTextJson Json?     @map("ocr_extracted_text_json")
+  uploadedByUserId     String?   @map("uploaded_by_user_id") @db.Uuid
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  testSession    TestSession @relation(fields: [testSessionId], references: [id], onDelete: Cascade)
+  uploadedByUser User?       @relation("EvidenceUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+
+  @@map("evidence_attachments")
+}
+
+model ProvenanceNode {
+  id                     String   @id @default(uuid()) @db.Uuid
+  testSessionId          String   @map("test_session_id") @db.Uuid
+  nodeSequence           Int      @map("node_sequence")
+  nodeType               String   @map("node_type") @db.VarChar(50)
+  previousNodeHashSha256 String   @map("previous_node_hash_sha256") @db.VarChar(64)
+  payloadHashSha256      String   @map("payload_hash_sha256") @db.VarChar(64)
+  currentNodeHashSha256  String   @map("current_node_hash_sha256") @db.VarChar(64)
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  testSession TestSession @relation(fields: [testSessionId], references: [id], onDelete: Cascade)
+
+  @@unique([testSessionId, nodeSequence], map: "uq_session_provenance_seq")
+  @@index([testSessionId, nodeSequence], map: "idx_provenance_session_seq")
+  @@map("provenance_nodes")
+}
+
+// -------------------------------------------------------------
+// 8. Offline PWA Synchronization & System Audit
+// -------------------------------------------------------------
+
+model OfflineSyncQueue {
+  id              String    @id @default(uuid()) @db.Uuid
+  localEntityId   String    @map("local_entity_id") @db.Uuid
+  entityTableName String    @map("entity_table_name") @db.VarChar(50)
+  operationType   String    @map("operation_type") @db.VarChar(10)
+  payloadJson     Json      @map("payload_json")
+  clientTimestamp DateTime  @map("client_timestamp") @db.Timestamptz()
+  syncStatus      String    @default("PENDING") @map("sync_status") @db.VarChar(20)
+  retryCount      Int       @default(0) @map("retry_count")
+  errorMessage    String?   @map("error_message") @db.Text
+  syncedAt        DateTime? @map("synced_at") @db.Timestamptz()
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("offline_sync_queue")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String?  @map("entity_id") @db.VarChar(100)
+  details    Json?    @map("details")
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId], map: "idx_audit_logs_user")
+  @@index([action], map: "idx_audit_logs_action")
+  @@index([entityType, entityId], map: "idx_audit_logs_entity")
+  @@map("audit_logs")
+}

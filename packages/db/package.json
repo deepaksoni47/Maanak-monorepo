@@ -7,11 +7,13 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "prisma": "prisma",
+    "validate": "prisma validate",
     "generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "tsx prisma/seed.ts",
-    "test": "tsc --noEmit",
+    "test": "node --test dist/seed.test.js",
     "lint": "prettier --check \"src/**/*.ts\"",
     "clean": "rm -rf dist"
   },
@@ -20,8 +22,12 @@
     "@prisma/client": "^6.4.1"
   },
   "devDependencies": {
+    "@types/node": "^22.20.4",
     "prisma": "^6.4.1",
     "tsx": "^4.19.3",
     "typescript": "^7.0.2"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
