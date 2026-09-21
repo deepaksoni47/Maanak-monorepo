@@ -5,3 +5,5 @@ export * from "./sessions.js";
 export * from "./observations.js";
 export * from "./review.js";
 export * from "./reports.js";
+export * from "./verify.js";
+export * from "./sync.js";

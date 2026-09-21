@@ -19,6 +19,10 @@ import {
   reviewRouter,
   createReportsRouter,
   reportsRouter,
+  createVerifyRouter,
+  verifyRouter,
+  createSyncRouter,
+  syncRouter,
 } from "./routes/index.js";
 import { RulePackRegistry } from "@maanak/rules-engine";
 import { PrismaClient } from "@maanak/db";
@@ -171,10 +175,26 @@ export function createApp(options: AppOptions = {}): Express {
       : reportsRouter;
   app.use("/api/v1/reports", configuredReportsRouter);
 
-  // 15. 404 Fallback Handler
+  // 15. Public Verification Route (WELMEC 7.2 QR landing)
+  const configuredVerifyRouter = options.db
+    ? createVerifyRouter({ db: options.db })
+    : verifyRouter;
+  app.use("/api/v1/verify", configuredVerifyRouter);
+
+  // 16. Offline Sync Routes (Push / Pull)
+  const configuredSyncRouter =
+    options.db || options.rulesRegistry
+      ? createSyncRouter({
+          db: options.db,
+          rulesRegistry: options.rulesRegistry,
+        })
+      : syncRouter;
+  app.use("/api/v1/sync", configuredSyncRouter);
+
+  // 17. 404 Fallback Handler
   app.use(notFoundHandler);
 
-  // 16. Centralized Global Error Handler
+  // 18. Centralized Global Error Handler
   app.use(errorHandler);
 
   return app;
