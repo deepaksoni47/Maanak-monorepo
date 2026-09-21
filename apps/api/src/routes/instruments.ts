@@ -339,15 +339,21 @@ export function createInstrumentsRouter(
             firmwareVersionId: validated.firmwareVersionId,
             partialRanges: validated.partialRanges
               ? {
-                  create: validated.partialRanges.map((pr) => ({
-                    rangeIndex: pr.rangeIndex,
-                    maxCapacityI: String(pr.maxCapacityI),
-                    minCapacityI: String(pr.minCapacityI),
-                    verificationScaleIntervalEI: String(
-                      pr.verificationScaleIntervalEI,
-                    ),
-                    actualScaleIntervalDI: String(pr.actualScaleIntervalDI),
-                  })),
+                  create: validated.partialRanges.map((pr) => {
+                    const maxVal = Number(pr.maxCapacityI);
+                    const eVal = Number(pr.verificationScaleIntervalEI);
+                    const nVal = eVal > 0 ? Math.round(maxVal / eVal) : 3000;
+                    return {
+                      rangeIndex: pr.rangeIndex,
+                      maxCapacityI: String(pr.maxCapacityI),
+                      minCapacityI: String(pr.minCapacityI),
+                      verificationScaleIntervalEI: String(
+                        pr.verificationScaleIntervalEI,
+                      ),
+                      actualScaleIntervalDI: String(pr.actualScaleIntervalDI),
+                      scaleDivisionCountNI: nVal,
+                    };
+                  }),
                 }
               : undefined,
           },
