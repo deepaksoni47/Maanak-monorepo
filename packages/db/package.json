@@ -13,7 +13,7 @@
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "tsx prisma/seed.ts",
-    "test": "node --test dist/seed.test.js",
+    "test": "node --test dist/*.test.js",
     "lint": "prettier --check \"src/**/*.ts\"",
     "clean": "rm -rf dist"
   },
