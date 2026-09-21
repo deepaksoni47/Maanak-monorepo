@@ -27,9 +27,9 @@
 |                                      TASK EXECUTION STATUS                                        |
 +-------------------+-------------------+-------------------+-------------------+-------------------+
 |   TOTAL TASKS     |      READY        |    IN_PROGRESS    |      BLOCKED      |     VERIFIED      |
-|       63          |        7          |        0          |        16         |        40         |
+|       63          |        6          |        0          |        16         |        41         |
 +-------------------+-------------------+-------------------+-------------------+-------------------+
-| PROGRESS: [██████████████████████████████████░░░░░░░░░░░░░░░░░░] 63.5% Complete                    |
+| PROGRESS: [███████████████████████████████████░░░░░░░░░░░░░░░░░] 65.1% Complete                    |
 +---------------------------------------------------------------------------------------------------+
 ```
 
@@ -45,10 +45,10 @@
 | **MOD-05** | Database Layer (PostgreSQL/Prisma)  |   4    |   0   |    0    |      0      |    4     |    100%    |
 | **MOD-06** | WELMEC 7.2 Cryptographic Signer     |   4    |   0   |    0    |      0      |    4     |    100%    |
 | **MOD-07** | Report Generation Engine (PDF/Word) |   4    |   0   |    0    |      0      |    4     |    100%    |
-| **MOD-08** | Node.js REST API Gateway            |   10   |   6   |    0    |      0      |    4     |    40%     |
+| **MOD-08** | Node.js REST API Gateway            |   10   |   5   |    0    |      0      |    5     |    50%     |
 | **MOD-09** | Responsive Mobile Bench PWA & Web   |   12   |   1   |   11    |      0      |    0     |     0%     |
 | **MOD-10** | Ground Truth Test Verification      |   5    |   0   |    5    |      0      |    0     |     0%     |
-| **TOTAL**  | **Entire MAANAK Platform**          | **63** | **7** | **16**  |    **0**    |  **40**  | **63.5%**  |
+| **TOTAL**  | **Entire MAANAK Platform**          | **63** | **6** | **16**  |    **0**    |  **41**  | **65.1%**  |
 
 ---
 
@@ -179,7 +179,7 @@ graph TD
 | **`TASK-038`** | MOD-08 | Argon2id authentication & RBAC middleware guards                                                   | **`VERIFIED`** | `TASK-028` (Verified), `TASK-037` (Verified)                        | Verified: Argon2id hashing, JWT access/refresh tokens, requireAuth/Role/Permission (30/30 tests pass) | `pnpm --filter @maanak/api test`                              |
 | **`TASK-039`** | MOD-08 | Rule pack management REST routes (`/api/v1/rules`)                                                 | **`VERIFIED`** | `TASK-013` (Verified), `TASK-038` (Verified)                        | Verified: Rule pack list, active pack details, by-id inspection, Admin upload and activation hot-swap (14/14 tests pass) | `pnpm --filter @maanak/api test`                              |
 | **`TASK-040`** | MOD-08 | Standard weight inventory & NABL pre-check routes                                                  | **`VERIFIED`** | `TASK-022` (Verified), `TASK-028` (Verified), `TASK-038` (Verified) | Verified: Weight set list with certs, registration route, single & batch NABL 129 pre-check gatekeeper (12/12 tests pass) | `pnpm --filter @maanak/api test`                              |
-| **`TASK-041`** | MOD-08 | Instrument model registration routes (`/api/v1/instruments`)                                       |  **`READY`**   | `TASK-011` (Verified), `TASK-028` (Verified), `TASK-038` (Verified) | Ready for immediate execution                                                               | API test: POST /instruments classifies $n = \text{Max}/e$     |
+| **`TASK-041`** | MOD-08 | Instrument model registration routes (`/api/v1/instruments`)                                       | **`VERIFIED`** | `TASK-011` (Verified), `TASK-028` (Verified), `TASK-038` (Verified) | Verified: Instrument model intake with Table 3 n=Max/e classifier, search, filter, and multi-interval ranges (12/12 tests pass) | `pnpm --filter @maanak/api test`                              |
 | **`TASK-042`** | MOD-08 | Test session & dynamic plan routes (`/api/v1/sessions`)                                            |  **`READY`**   | `TASK-024` (Verified), `TASK-028` (Verified), `TASK-038` (Verified) | Ready for immediate execution                                                               | API test: GET /sessions/:id/plan returns loads                |
 | **`TASK-043`** | MOD-08 | Raw observation entry & real-time math API                                                         |  **`READY`**   | `TASK-015` (Verified), `TASK-016` (Verified), `TASK-028` (Verified), `TASK-029` (Verified) | Ready for immediate execution                                       | API test: POST /observations returns $P, E_c$, MPE            |
 | **`TASK-044`** | MOD-08 | Reviewer anomaly audit routes (`/api/v1/review`)                                                   |  **`READY`**   | `TASK-023` (Verified), `TASK-028` (Verified), `TASK-038` (Verified) | Ready for immediate execution                                                               | API test: GET /sessions/:id/audit flags anomalies             |

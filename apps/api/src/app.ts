@@ -9,6 +9,8 @@ import {
   rulesRouter,
   createWeightsRouter,
   weightsRouter,
+  createInstrumentsRouter,
+  instrumentsRouter,
 } from "./routes/index.js";
 import { RulePackRegistry } from "@maanak/rules-engine";
 import { PrismaClient } from "@maanak/db";
@@ -113,10 +115,16 @@ export function createApp(options: AppOptions = {}): Express {
     : weightsRouter;
   app.use("/api/v1/weights", configuredWeightsRouter);
 
-  // 10. 404 Fallback Handler
+  // 10. Instrument Model Registration & Table 3 Classification Routes
+  const configuredInstrumentsRouter = options.db
+    ? createInstrumentsRouter({ db: options.db })
+    : instrumentsRouter;
+  app.use("/api/v1/instruments", configuredInstrumentsRouter);
+
+  // 11. 404 Fallback Handler
   app.use(notFoundHandler);
 
-  // 11. Centralized Global Error Handler
+  // 12. Centralized Global Error Handler
   app.use(errorHandler);
 
   return app;
