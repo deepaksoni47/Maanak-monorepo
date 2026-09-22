@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@maanak/types": ["./packages/types/src/index.ts"],
+      "@maanak/rules-engine": ["./packages/rules-engine/src/index.ts"],
+      "@maanak/db": ["./packages/db/src/index.ts"],
+      "@maanak/crypto-provenance": ["./packages/crypto-provenance/src/index.ts"],
+      "@maanak/report-generator": ["./packages/report-generator/src/index.ts"]
+    }
+  },
+  "include": ["tests/**/*", "packages/*/src/**/*", "apps/*/src/**/*"]
+}
