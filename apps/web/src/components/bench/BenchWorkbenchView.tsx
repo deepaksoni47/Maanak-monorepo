@@ -23,6 +23,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { ObservationCard, ObservationData } from "./ObservationCard";
+import { OfflineSyncBanner } from "@/components/common/OfflineSyncBanner";
+import { enqueueOfflineObservation } from "@/lib/offline-sync";
 
 const INITIAL_STEPS: ObservationData[] = [
   {
@@ -177,6 +179,17 @@ export function BenchWorkbenchView() {
 
   const handleSaveAndAdvance = () => {
     setSavedSteps((prev) => ({ ...prev, [activeObservation.stepNumber]: true }));
+    // Automatically buffer observation into IndexedDB
+    enqueueOfflineObservation({
+      sessionId: "TS-2026-0142",
+      stepNumber: activeObservation.stepNumber,
+      nominalLoad: `${activeObservation.appliedLoad} ${activeObservation.unit}`,
+      indication: `${activeObservation.indication} ${activeObservation.unit}`,
+      deltaL: `${activeObservation.deltaL} ${activeObservation.unit}`,
+      turningPointP: `${activeResult.P.toFixed(4)} ${activeObservation.unit}`,
+      errorEc: `${activeResult.Ec.toFixed(4)} ${activeObservation.unit}`,
+    }).catch(() => {});
+
     if (currentStepIndex < steps.length - 1) {
       setCurrentStepIndex(currentStepIndex + 1);
     }
@@ -270,6 +283,9 @@ export function BenchWorkbenchView() {
             </div>
           </div>
         </div>
+
+        {/* Offline PWA Sync Status Banner */}
+        <OfflineSyncBanner sessionId="TS-2026-0142" />
 
         {/* Step Progression Chip Strip */}
         <div className="space-y-2">
