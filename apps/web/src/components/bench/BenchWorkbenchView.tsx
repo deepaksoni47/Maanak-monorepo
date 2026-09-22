@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Scales,
@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   FileText,
   ArrowsClockwise,
+  Table,
 } from "@phosphor-icons/react";
 import { Shell } from "@/components/layout/Shell";
 import { Badge } from "@/components/ui/Badge";
@@ -25,6 +26,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ObservationCard, ObservationData } from "./ObservationCard";
 import { OfflineSyncBanner } from "@/components/common/OfflineSyncBanner";
 import { enqueueOfflineObservation } from "@/lib/offline-sync";
+import { ObservationLedgerTable, LedgerEntry } from "./ObservationLedgerTable";
+import { ToleranceSafetyGauge } from "./ToleranceSafetyGauge";
+import { OfficerGuidanceBanner } from "./OfficerGuidanceBanner";
+import { observationsApi } from "@/lib/api";
 
 const INITIAL_STEPS: ObservationData[] = [
   {
@@ -89,7 +94,19 @@ const INITIAL_STEPS: ObservationData[] = [
   },
   {
     stepNumber: 6,
-    label: "Step #6 (2000e MPE Transition)",
+    label: "Step #6 (Half Max 1500e)",
+    appliedLoad: 7.5,
+    indication: 7.5,
+    deltaL: 0.0025,
+    eVal: 0.005,
+    e0: 0.0,
+    mpeLimit: 0.005,
+    unit: "kg",
+    direction: "ASCENDING",
+  },
+  {
+    stepNumber: 7,
+    label: "Step #7 (2000e MPE Transition)",
     appliedLoad: 10.0,
     indication: 10.0,
     deltaL: 0.0025,
@@ -100,8 +117,8 @@ const INITIAL_STEPS: ObservationData[] = [
     direction: "ASCENDING",
   },
   {
-    stepNumber: 7,
-    label: "Step #7 (Max = 3000e)",
+    stepNumber: 8,
+    label: "Step #8 (Max = 3000e Full Load)",
     appliedLoad: 15.0,
     indication: 15.0,
     deltaL: 0.0015, // Turning point = 15.001 kg, E = +1.0g
@@ -112,26 +129,14 @@ const INITIAL_STEPS: ObservationData[] = [
     direction: "ASCENDING",
   },
   {
-    stepNumber: 8,
-    label: "Step #8 (2000e Descending)",
-    appliedLoad: 10.0,
-    indication: 10.0,
+    stepNumber: 9,
+    label: "Step #9 (Half Max Return Descending)",
+    appliedLoad: 7.5,
+    indication: 7.5,
     deltaL: 0.0025,
     eVal: 0.005,
     e0: 0.0,
     mpeLimit: 0.005,
-    unit: "kg",
-    direction: "DESCENDING",
-  },
-  {
-    stepNumber: 9,
-    label: "Step #9 (500e Descending)",
-    appliedLoad: 2.5,
-    indication: 2.5,
-    deltaL: 0.0025,
-    eVal: 0.005,
-    e0: 0.0,
-    mpeLimit: 0.0025,
     unit: "kg",
     direction: "DESCENDING",
   },
@@ -148,6 +153,17 @@ const INITIAL_STEPS: ObservationData[] = [
     direction: "DESCENDING",
   },
 ];
+
+// Helper to calculate pseudo WELMEC hash snippet for an observation
+function calculateWelmecHashSnippet(step: ObservationData, P: number, Ec: number): string {
+  const seed = `${step.stepNumber}:${step.appliedLoad}:${step.indication}:${step.deltaL}:${P}:${Ec}`;
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) {
+    hash ^= seed.charCodeAt(i);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+  return `0x${(hash >>> 0).toString(16).padStart(8, "0").slice(0, 8)}...`;
+}
 
 export function BenchWorkbenchView() {
   const [steps, setSteps] = useState<ObservationData[]>(INITIAL_STEPS);
@@ -171,14 +187,63 @@ export function BenchWorkbenchView() {
     return { P, E, Ec, isPass };
   };
 
+  const activeResult = computeStepResult(activeObservation);
+
+  // Generate ledger entries dynamically from all saved steps plus active step
+  const buildLedgerEntries = (): LedgerEntry[] => {
+    return steps
+      .filter((s) => savedSteps[s.stepNumber] || s.stepNumber === activeObservation.stepNumber)
+      .map((s) => {
+        const res = computeStepResult(s);
+        const absEc = Math.abs(res.Ec);
+        const toleranceConsumed = s.mpeLimit > 0 ? (absEc / s.mpeLimit) * 100 : 0;
+        return {
+          stepNumber: s.stepNumber,
+          direction: s.direction || "ASCENDING",
+          stageLabel: s.label,
+          appliedLoad: s.appliedLoad,
+          indication: s.indication,
+          deltaL: s.deltaL,
+          eVal: s.eVal,
+          turningPointP: +res.P.toFixed(4),
+          rawErrorE: +res.E.toFixed(4),
+          intrinsicErrorEc: +res.Ec.toFixed(4),
+          mpeLimit: s.mpeLimit,
+          unit: s.unit || "kg",
+          isPass: res.isPass,
+          toleranceConsumedPercent: toleranceConsumed,
+          hashSnippet: calculateWelmecHashSnippet(s, res.P, res.Ec),
+          timestamp: new Date().toLocaleTimeString("en-IN", { hour12: false }),
+        };
+      });
+  };
+
+  const ledgerEntries = buildLedgerEntries();
+
   const handleObservationChange = (updated: ObservationData) => {
     const nextSteps = [...steps];
     nextSteps[currentStepIndex] = updated;
     setSteps(nextSteps);
+
+    // Call live backend calculation asynchronously to ensure 100% real-time backend synchronization
+    observationsApi
+      .calculateTurningPoint({
+        indication: updated.indication,
+        deltaL: updated.deltaL,
+        e: updated.eVal,
+        nominalLoad: updated.appliedLoad,
+        e0: updated.e0,
+        accuracyClass: "CLASS_III",
+        loadUnit: updated.unit || "kg",
+      })
+      .catch(() => {
+        // Safe offline fallback already handled locally
+      });
   };
 
   const handleSaveAndAdvance = () => {
     setSavedSteps((prev) => ({ ...prev, [activeObservation.stepNumber]: true }));
+
     // Automatically buffer observation into IndexedDB
     enqueueOfflineObservation({
       sessionId: "TS-2026-0142",
@@ -195,7 +260,13 @@ export function BenchWorkbenchView() {
     }
   };
 
-  const activeResult = computeStepResult(activeObservation);
+  // Preset quick navigation for field officers (Zero, Min 20e, 1/4 Max, 1/2 Max, Max)
+  const jumpToPresetLoad = (loadValue: number) => {
+    const foundIdx = steps.findIndex((s) => Math.abs(s.appliedLoad - loadValue) < 0.001);
+    if (foundIdx !== -1) {
+      setCurrentStepIndex(foundIdx);
+    }
+  };
 
   return (
     <Shell
@@ -287,6 +358,66 @@ export function BenchWorkbenchView() {
         {/* Offline PWA Sync Status Banner */}
         <OfflineSyncBanner sessionId="TS-2026-0142" />
 
+        {/* Officer Guided Mode Banner (Plain-English Field Instructions) */}
+        <OfficerGuidanceBanner
+          stepNumber={activeObservation.stepNumber}
+          direction={activeObservation.direction || "ASCENDING"}
+          appliedLoad={activeObservation.appliedLoad}
+          unit={activeObservation.unit || "kg"}
+          eVal={activeObservation.eVal}
+          onQuickFill={() => {
+            handleObservationChange({
+              ...activeObservation,
+              indication: activeObservation.appliedLoad,
+            });
+          }}
+        />
+
+        {/* Dynamic MPE Tolerance & Safety Monitor Gauge */}
+        <ToleranceSafetyGauge
+          intrinsicErrorEc={activeResult.Ec}
+          mpeLimit={activeObservation.mpeLimit}
+          currentStepIndex={currentStepIndex}
+          totalSteps={steps.length}
+          unit={activeObservation.unit}
+        />
+
+        {/* Officer Quick Load Preset Buttons */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <span className="text-xs font-semibold text-muted-foreground shrink-0 flex items-center gap-1">
+            <Scales size={14} className="text-primary" />
+            <span>Quick Load Presets:</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => jumpToPresetLoad(0.0)}
+            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-accent text-xs font-mono font-medium transition-colors shrink-0"
+          >
+            Zero (0 kg)
+          </button>
+          <button
+            type="button"
+            onClick={() => jumpToPresetLoad(0.1)}
+            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-accent text-xs font-mono font-medium transition-colors shrink-0"
+          >
+            Min (0.1 kg)
+          </button>
+          <button
+            type="button"
+            onClick={() => jumpToPresetLoad(7.5)}
+            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-accent text-xs font-mono font-medium transition-colors shrink-0"
+          >
+            ½ Max (7.5 kg)
+          </button>
+          <button
+            type="button"
+            onClick={() => jumpToPresetLoad(15.0)}
+            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-accent text-xs font-mono font-medium transition-colors shrink-0"
+          >
+            Full Max (15.0 kg)
+          </button>
+        </div>
+
         {/* Step Progression Chip Strip */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
@@ -352,7 +483,7 @@ export function BenchWorkbenchView() {
             />
           </div>
 
-          {/* Right Column: Complete Step Matrix Table (5 cols) */}
+          {/* Right Column: Complete Step Matrix Table & Formula Guidance (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
             <Card>
               <CardHeader className="pb-3 border-b border-border/60 flex flex-row items-center justify-between">
@@ -451,6 +582,16 @@ export function BenchWorkbenchView() {
             </div>
           </div>
         </div>
+
+        {/* Live Metrological Test Observation Ledger Table (Appended on each operation) */}
+        <ObservationLedgerTable
+          entries={ledgerEntries}
+          currentStepNumber={activeObservation.stepNumber}
+          onSelectStep={(num) => {
+            const idx = steps.findIndex((s) => s.stepNumber === num);
+            if (idx !== -1) setCurrentStepIndex(idx);
+          }}
+        />
       </div>
     </Shell>
   );

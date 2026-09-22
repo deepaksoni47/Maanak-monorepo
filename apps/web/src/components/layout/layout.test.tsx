@@ -116,4 +116,41 @@ describe("TASK-048: Universal Responsive Mobile Shell & Navigation", () => {
       assert.ok(html.includes("fixed bottom-14 lg:bottom-0"), "Bottom action bar should be fixed");
     });
   });
+
+  describe("TASK-069: Navbar 404 Route Resolutions", () => {
+    test("renders InstrumentsPage without 404", () => {
+      const InstrumentsPage = require("@/app/instruments/page").default;
+      const html = renderToStaticMarkup(<InstrumentsPage />);
+      assert.ok(html.includes("NAWI Instrument Registry"));
+      assert.ok(html.includes("DS-215 Precision Counter"));
+    });
+
+    test("renders ReportsIndexPage without 404", () => {
+      const ReportsPage = require("@/app/reports/page").default;
+      const html = renderToStaticMarkup(<ReportsPage />);
+      assert.ok(html.includes("OIML R 76-2 Test Reports &amp; Certificates") || html.includes("OIML R 76-2 Test Reports & Certificates"));
+      assert.ok(html.includes("CERT-2026-0142"));
+    });
+
+    test("renders PublicVerifyLookupPage without 404", () => {
+      const VerifyLookupPage = require("@/app/verify/page").default;
+      const html = renderToStaticMarkup(<VerifyLookupPage />);
+      assert.ok(html.includes("National Metrological Verification Portal"));
+      assert.ok(html.includes("Verify Certificate Authenticity"));
+    });
+
+    test("renders RulePacksPage without 404", () => {
+      const RulePacksPage = require("@/app/rule-packs/page").default;
+      const html = renderToStaticMarkup(<RulePacksPage />);
+      assert.ok(html.includes("Standards-as-Code &amp; Statutory Rule Packs") || html.includes("Standards-as-Code & Statutory Rule Packs"));
+      assert.ok(html.includes("OIML R-76-1:2006 Edition"));
+    });
+
+    test("renders ProvenancePage without 404", () => {
+      const ProvenancePage = require("@/app/provenance/page").default;
+      const html = renderToStaticMarkup(<ProvenancePage />);
+      assert.ok(html.includes("WELMEC 7.2 Cryptographic Provenance Ledger"));
+      assert.ok(html.includes("Chronological Cryptographic Event Blocks"));
+    });
+  });
 });

@@ -73,14 +73,17 @@ export function ObservationCard({
     direction = "ASCENDING",
   } = observation;
 
-  const [indication, setIndication] = useState<number>(initialIndication);
-  const [deltaL, setDeltaL] = useState<number>(initialDeltaL);
+  const [indicationStr, setIndicationStr] = useState<string>(String(initialIndication));
+  const [deltaLStr, setDeltaLStr] = useState<string>(String(initialDeltaL));
 
   // Sync internal state if external observation prop changes
   useEffect(() => {
-    setIndication(initialIndication);
-    setDeltaL(initialDeltaL);
+    setIndicationStr(String(initialIndication));
+    setDeltaLStr(String(initialDeltaL));
   }, [initialIndication, initialDeltaL]);
+
+  const indication = parseFloat(indicationStr) || 0;
+  const deltaL = parseFloat(deltaLStr) || 0;
 
   // Metrological Real-Time Derivation Math (Clause A.4.4.3)
   // P = I + 0.5e - ΔL
@@ -96,23 +99,29 @@ export function ObservationCard({
     mpeLimit > 0 ? Math.max(0, Math.min(100, ((mpeLimit - absError) / mpeLimit) * 100)) : 0;
 
   const handleIndicationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    const safeVal = isNaN(val) ? 0 : val;
-    setIndication(safeVal);
-    onChange?.({
-      ...observation,
-      indication: safeVal,
-      deltaL,
-    });
+    const raw = e.target.value;
+    if (raw === "" || /^-?\d*\.?\d*$/.test(raw)) {
+      setIndicationStr(raw);
+      const safeVal = parseFloat(raw) || 0;
+      onChange?.({
+        ...observation,
+        indication: safeVal,
+        deltaL,
+      });
+    }
   };
 
-  const handleDeltaLChange = (newDeltaL: number) => {
-    setDeltaL(newDeltaL);
-    onChange?.({
-      ...observation,
-      indication,
-      deltaL: newDeltaL,
-    });
+  const handleDeltaLChange = (newDeltaL: number | string) => {
+    const raw = String(newDeltaL);
+    if (raw === "" || /^-?\d*\.?\d*$/.test(raw)) {
+      setDeltaLStr(raw);
+      const safeVal = parseFloat(raw) || 0;
+      onChange?.({
+        ...observation,
+        indication,
+        deltaL: safeVal,
+      });
+    }
   };
 
   return (
@@ -170,14 +179,37 @@ export function ObservationCard({
         {/* Inputs: Indication (I) & Vernier (ΔL) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground flex justify-between">
-              <span>Indication (I)</span>
-              <span className="text-[10px] text-muted-foreground">Scale reading</span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-foreground">Indication (I)</label>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIndicationStr(String(appliedLoad));
+                    onChange?.({ ...observation, indication: appliedLoad, deltaL });
+                  }}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground font-mono transition-colors"
+                  title="Quick fill with nominal applied load"
+                >
+                  Match L ({appliedLoad})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIndicationStr("0");
+                    onChange?.({ ...observation, indication: 0, deltaL });
+                  }}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground font-mono transition-colors"
+                  title="Quick fill zero"
+                >
+                  Zero
+                </button>
+              </div>
+            </div>
             <Input
               numeric
               unit={unit}
-              value={indication}
+              value={indicationStr}
               onChange={handleIndicationChange}
               disabled={disabled}
               placeholder="0.0000"
@@ -186,15 +218,15 @@ export function ObservationCard({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground flex justify-between">
-              <span>Vernier (ΔL)</span>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-foreground">Vernier (ΔL)</label>
               <span className="text-[10px] text-muted-foreground">Changeover weight</span>
-            </label>
+            </div>
             <Input
               numeric
               unit={unit}
-              value={deltaL}
-              onChange={(e) => handleDeltaLChange(parseFloat(e.target.value) || 0)}
+              value={deltaLStr}
+              onChange={(e) => handleDeltaLChange(e.target.value)}
               disabled={disabled}
               placeholder="0.0000"
               aria-label={`Vernier changeover load delta L for load ${appliedLoad} ${unit}`}
