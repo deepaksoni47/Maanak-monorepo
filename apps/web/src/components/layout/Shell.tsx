@@ -10,7 +10,10 @@ import {
   User,
   ShieldCheck,
   CheckCircle,
+  SignOut,
+  SignIn,
 } from "@phosphor-icons/react";
+import { useAuth } from "@/lib/auth-context";
 
 export interface ShellProps {
   children: ReactNode;
@@ -30,6 +33,7 @@ export function Shell({
   bottomActionBar,
 }: ShellProps) {
   const pathname = usePathname();
+  const { user, logout, isAuthenticated } = useAuth();
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row">
@@ -101,15 +105,57 @@ export function Shell({
 
         {/* Sidebar User & Facility Footer */}
         <div className="p-4 border-t border-sidebar-border bg-sidebar-accent/20 space-y-2.5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <User size={16} weight="bold" />
+          {isAuthenticated && user ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <User size={16} weight="bold" />
+                  </div>
+                  <div className="truncate text-left min-w-0">
+                    <div className="text-xs font-bold text-sidebar-foreground truncate">
+                      {user.fullName || user.username}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground truncate">
+                      {user.designation || "Legal Metrology Officer"}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={logout}
+                  title="Sign Out"
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all shrink-0"
+                  aria-label="Sign Out"
+                >
+                  <SignOut size={16} weight="bold" />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between gap-1 text-[10px]">
+                <span className="px-1.5 py-0.5 rounded font-mono font-bold bg-primary/10 text-primary border border-primary/20">
+                  {user.role}
+                </span>
+                <Link
+                  href="/login"
+                  className="text-muted-foreground hover:text-foreground underline underline-offset-2"
+                >
+                  Switch Persona
+                </Link>
+              </div>
             </div>
-            <div className="truncate text-left">
-              <div className="text-xs font-bold text-sidebar-foreground truncate">Officer A. Sharma</div>
-              <div className="text-[11px] text-muted-foreground truncate">RRSL Faridabad Facility</div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Not signed in</span>
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+              >
+                <SignIn size={14} weight="bold" />
+                <span>Sign In</span>
+              </Link>
             </div>
-          </div>
+          )}
 
           <div className="pt-2 flex items-center justify-between text-[10px] text-muted-foreground border-t border-sidebar-border/60 font-mono">
             <div className="flex items-center gap-1.5">

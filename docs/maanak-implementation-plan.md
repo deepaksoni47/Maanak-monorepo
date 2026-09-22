@@ -903,3 +903,104 @@ maanak-monorepo/
   - Execute direct SQL update modifying raw indication: $I = 10.000\text{ kg} \to 10.005\text{ kg}$.
   - Re-run `validateSessionProvenanceChain`.
 - **Acceptance Criteria**: Test asserts provenance validation fails, identifies corrupted node, and prevents report generation.
+
+---
+
+## 14. Module 11: Production Flagship End-to-End Integration & Officer UX Enhancements
+
+Module 11 transforms MAANAK from an atomic verified test engine into an integrated, production-grade flagship application directly connected to the Express backend with zero simulated data, complete authentication, intuitive non-technical officer workflows, dynamic observation ledger tables, and flawless decimal entry.
+
+---
+
+### TASK-064: Genuine End-to-End Authentication & Session Management
+
+- **Target File(s)**: `apps/web/src/app/login/page.tsx`, `apps/web/src/lib/auth-context.tsx`, `apps/web/src/components/layout/Shell.tsx`
+- **Blocked By**: `TASK-038`, `TASK-048`
+- **Technical Blueprint**:
+  - Implement full client authentication context (`AuthContext`) communicating with `POST /api/v1/auth/login` and `GET /api/v1/auth/me`.
+  - Persist JWT access token in `localStorage` and browser cookies for SSR compatibility.
+  - Create dedicated `/login` page with tabs for Legal Metrology Inspector (`inspector@maanak.gov.in`), Reviewer (`reviewer@maanak.gov.in`), and Director (`director@maanak.gov.in`) with one-click quick-fill credentials.
+  - Update `Shell.tsx` to dynamically display the authenticated user's name, role, and facility, replacing all hardcoded mock profile strings.
+  - Include responsive Sign Out action with token invalidation and redirect to `/login`.
+- **Acceptance Criteria**: User can authenticate with valid credentials, user details reflect across all views, and unauthenticated requests can be redirected.
+
+---
+
+### TASK-065: Unified Live Backend API Client
+
+- **Target File(s)**: `apps/web/src/lib/api.ts`
+- **Blocked By**: `TASK-046`, `TASK-064`
+- **Technical Blueprint**:
+  - Implement centralized, type-safe API client targeting `http://localhost:4000/api/v1` (configurable via `NEXT_PUBLIC_API_URL`).
+  - Automatically attach `Authorization: Bearer <token>` and `X-Request-Id` to all outgoing requests.
+  - Export structured sub-APIs: `sessionsApi`, `observationsApi`, `weightsApi`, `instrumentsApi`, `rulesApi`, `reviewApi`, `reportsApi`, and `verifyApi`.
+  - Wire `/dashboard`, `/bench`, `/review`, `/weights`, and `/instruments/new` to fetch live records from the Express backend, eliminating all simulated or static data fallbacks when online.
+- **Acceptance Criteria**: All application views successfully fetch, submit, and display live database records from port 4000.
+
+---
+
+### TASK-066: Live Metrological Test Observation Ledger Table
+
+- **Target File(s)**: `apps/web/src/components/bench/ObservationLedgerTable.tsx`, `apps/web/src/components/bench/BenchWorkbenchView.tsx`
+- **Blocked By**: `TASK-043`, `TASK-065`
+- **Technical Blueprint**:
+  - Create `ObservationLedgerTable` component displaying an official OIML test data sheet.
+  - As the officer records each load step (Zero $E_0$, Min, 1/4 Max, 1/2 Max, Max, descending, tare, repeatability, eccentricity), dynamically append the row to the ledger table.
+  - Table columns: Step #, Direction (▲/▼), Nominal Load ($L$), Indication ($I$), Vernier ($\Delta L$), Turning Point ($P$), Raw Error ($E$), Corrected Error ($E_c$), Table 6 MPE, Metrological Verdict (PASS/FAIL), and WELMEC 7.2 Node Hash snippet.
+  - Connect table directly to `POST /api/v1/observations` to commit observations to the backend and update the table in real-time.
+- **Acceptance Criteria**: Every recorded observation appends seamlessly to the ledger table with all mathematical derivations and compliance badges displayed accurately.
+
+---
+
+### TASK-067: Decimal Precision Input Engine & Vernier Input Fix
+
+- **Target File(s)**: `apps/web/src/components/bench/ObservationCard.tsx`, `apps/web/src/components/ui/Input.tsx`
+- **Blocked By**: `TASK-054`
+- **Technical Blueprint**:
+  - Refactor controlled numeric inputs from raw number states to string-buffered states (`useState<string>`).
+  - Resolve the React numeric re-render bug where typing `"0."` or decimal points is prematurely wiped out by `parseFloat()`.
+  - Allow unrestricted decimal string typing with regex validation (`/^-?\d*\.?\d*$/`) and parse to arbitrary precision `decimal.js` on calculation.
+  - Ensure mobile devices trigger the decimal numeric keyboard via `inputMode="decimal"` and `step="any"`.
+- **Acceptance Criteria**: Officer can type `0.0025`, `10.005`, and `2.5` without any loss of the decimal point or focus jumping.
+
+---
+
+### TASK-068: Dynamic MPE Safety & Test Battery Progress Gauges
+
+- **Target File(s)**: `apps/web/src/components/bench/BenchWorkbenchView.tsx`, `apps/web/src/app/dashboard/page.tsx`
+- **Blocked By**: `TASK-066`
+- **Technical Blueprint**:
+  - Replace static progress and safety bars with dynamic calculation derived from actual test observations:
+    - **Step Completion Rate**: $\frac{N_{\text{completed}}}{N_{\text{total}}} \times 100\%$ with visual fraction badge (e.g. `4 / 10 Steps Completed`).
+    - **Dynamic MPE Consumption Gauge**: $\text{Margin} = \frac{|E_c|}{|\text{MPE}|} \times 100\%$.
+    - Dynamic color coding: Emerald ($0\% - 75\%$ MPE consumed = "Safe Legal Tolerance"), Amber ($75\% - 100\%$ = "Marginal - High Drift"), Crimson ($> 100\%$ = "Statutory MPE Exceeded - Illegal").
+- **Acceptance Criteria**: Safety gauge and progress bar dynamically update on every input keystroke and observation submission.
+
+---
+
+### TASK-069: Navigation Routing & Missing Pages Completion
+
+- **Target File(s)**: `apps/web/src/components/layout/MobileNav.tsx`, `apps/web/src/app/instruments/page.tsx`, `apps/web/src/app/reports/page.tsx`, `apps/web/src/app/verify/page.tsx`, `apps/web/src/app/rule-packs/page.tsx`, `apps/web/src/app/provenance/page.tsx`
+- **Blocked By**: `TASK-048`, `TASK-065`
+- **Technical Blueprint**:
+  - Fix `/reviews` link to `/review` in `MobileNav.tsx` and `Shell.tsx`.
+  - Build `apps/web/src/app/instruments/page.tsx`: Instrument Inventory listing active NAWI units with "New Intake" CTA.
+  - Build `apps/web/src/app/reports/page.tsx`: Reports Directory displaying generated Form 1/2 certificates with search and filter.
+  - Build `apps/web/src/app/verify/page.tsx`: Public Verification portal with QR code scanner and manual SHA-256 hash lookup.
+  - Build `apps/web/src/app/rule-packs/page.tsx`: Standards-as-Code viewer for OIML R 76-1:2006 and Table 3/6 rules.
+  - Build `apps/web/src/app/provenance/page.tsx`: WELMEC 7.2 cryptographic ledger explorer.
+- **Acceptance Criteria**: Clicking every item in the navbar navigation routes cleanly to an active, functional page with zero 404 errors.
+
+---
+
+### TASK-070: Non-Technical Officer Guided Mode & Intuitive Field UX
+
+- **Target File(s)**: `apps/web/src/components/bench/BenchWorkbenchView.tsx`, `apps/web/src/components/bench/ObservationCard.tsx`
+- **Blocked By**: `TASK-066`, `TASK-067`
+- **Technical Blueprint**:
+  - Provide an intuitive "Field Guided Mode" for Legal Metrology Officers with limited technical knowledge:
+    - Contextual prompt banner: "Step Action: Place 5.000 kg standard weight on the platform and observe display".
+    - One-tap quick load buttons (Zero, Min 20e, 1/4 Max, 1/2 Max, Max).
+    - Clear, plain-English tooltips for all metrological terms ($L$, $I$, $\Delta L$, $P$, $E$, $E_c$, MPE).
+    - High-contrast touch buttons ($\ge 48\text{px}$) designed for gloved or outdoor bay usage.
+- **Acceptance Criteria**: Guided prompts adapt to each step of the test battery and simplify testing for non-technical officers.
