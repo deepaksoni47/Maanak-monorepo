@@ -22,11 +22,14 @@ import {
   X,
   Buildings,
   Hash,
+  PencilSimple,
+  Plus,
 } from "@phosphor-icons/react";
 import { Shell } from "@/components/layout/Shell";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 import { ObservationCard, ObservationData } from "./ObservationCard";
 import { OfflineSyncBanner } from "@/components/common/OfflineSyncBanner";
 import { enqueueOfflineObservation } from "@/lib/offline-sync";
@@ -35,7 +38,12 @@ import { ToleranceSafetyGauge } from "./ToleranceSafetyGauge";
 import { OfficerGuidanceBanner } from "./OfficerGuidanceBanner";
 import { observationsApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { REGISTERED_INSTRUMENTS, InstrumentItem } from "@/components/instruments/InstrumentsListView";
+import {
+  InstrumentItem,
+  DEFAULT_INSTRUMENTS,
+  getStoredInstruments,
+  updateStoredInstrument,
+} from "@/lib/instruments-store";
 
 // Dynamic OIML R-76 Clause A.4.4 Test Points Schedule Generator
 export function generateStepsForInstrument(inst: InstrumentItem): ObservationData[] {
@@ -210,13 +218,29 @@ export function BenchWorkbenchView() {
   const { user } = useAuth();
   const urlInstId = useSafeInstrumentId();
 
+  const [instrumentsList, setInstrumentsList] = useState<InstrumentItem[]>(DEFAULT_INSTRUMENTS);
+
+  // Initialize selected instrument
   const initialInstrument =
-    REGISTERED_INSTRUMENTS.find((i) => i.id === urlInstId) || REGISTERED_INSTRUMENTS[0];
+    instrumentsList.find((i) => i.id === urlInstId) || instrumentsList[0];
 
   const [selectedInstrument, setSelectedInstrument] = useState<InstrumentItem>(initialInstrument);
   const [steps, setSteps] = useState<ObservationData[]>(() =>
     generateStepsForInstrument(initialInstrument)
   );
+
+  // Load dynamically stored instruments from Phase 1 Intake
+  useEffect(() => {
+    const stored = getStoredInstruments();
+    setInstrumentsList(stored);
+    if (urlInstId) {
+      const match = stored.find((i) => i.id === urlInstId);
+      if (match) {
+        setSelectedInstrument(match);
+        setSteps(generateStepsForInstrument(match));
+      }
+    }
+  }, [urlInstId]);
 
   // Bench step navigation: ALWAYS start at Step #1 (Zero Load E0)
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -224,18 +248,12 @@ export function BenchWorkbenchView() {
   const [isInstrumentSelectorOpen, setIsInstrumentSelectorOpen] = useState<boolean>(false);
   const [isCompletedModalOpen, setIsCompletedModalOpen] = useState<boolean>(false);
 
-  // Sync if URL query param changes
-  useEffect(() => {
-    if (urlInstId && urlInstId !== selectedInstrument.id) {
-      const match = REGISTERED_INSTRUMENTS.find((i) => i.id === urlInstId);
-      if (match) {
-        setSelectedInstrument(match);
-        setSteps(generateStepsForInstrument(match));
-        setCurrentStepIndex(0);
-        setSavedSteps({});
-      }
-    }
-  }, [urlInstId]);
+  // Edit Scale Metadata state
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [editSerial, setEditSerial] = useState<string>(selectedInstrument.serialNumber);
+  const [editModel, setEditModel] = useState<string>(selectedInstrument.model);
+  const [editTac, setEditTac] = useState<string>(selectedInstrument.tacNumber);
+  const [editMfr, setEditMfr] = useState<string>(selectedInstrument.manufacturer);
 
   const handleSelectInstrument = (inst: InstrumentItem) => {
     setSelectedInstrument(inst);
@@ -249,6 +267,23 @@ export function BenchWorkbenchView() {
       url.searchParams.set("instrumentId", inst.id);
       window.history.replaceState({}, "", url.toString());
     }
+  };
+
+  const handleSaveEditMetadata = (e: React.FormEvent) => {
+    e.preventDefault();
+    const updated: InstrumentItem = {
+      ...selectedInstrument,
+      serialNumber: editSerial,
+      model: editModel,
+      tacNumber: editTac,
+      manufacturer: editMfr,
+    };
+    setSelectedInstrument(updated);
+    updateStoredInstrument(selectedInstrument.id, updated);
+    setInstrumentsList((prev) =>
+      prev.map((i) => (i.id === selectedInstrument.id ? updated : i))
+    );
+    setIsEditModalOpen(false);
   };
 
   const activeObservation = steps[currentStepIndex] || steps[0];
@@ -339,6 +374,16 @@ export function BenchWorkbenchView() {
     }
   };
 
+  // Safe display formatting for max & e
+  const displayMax =
+    selectedInstrument.id === "inst-001"
+      ? "15 kg"
+      : selectedInstrument.maxCapacity;
+  const displayE =
+    selectedInstrument.id === "inst-001"
+      ? "5 g"
+      : selectedInstrument.verificationInterval;
+
   return (
     <Shell
       breadcrumbs={[
@@ -392,28 +437,47 @@ export function BenchWorkbenchView() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-bold text-foreground">
-                  Session TS-2026-0142: {selectedInstrument.model}
+                  Session TS-{selectedInstrument.id === "inst-001" ? "2026-0142" : selectedInstrument.serialNumber}: {selectedInstrument.model}
                 </h3>
                 <Badge variant="pass" showIcon={false} className="py-0.5 px-2 text-[10px] font-mono">
                   {selectedInstrument.accuracyClass === "CLASS_III" ? "CLASS III" : selectedInstrument.accuracyClass.replace("_", " ")}
                 </Badge>
                 <span className="text-[11px] font-mono text-muted-foreground">
-                  Max 15 kg | e = 5 g | TAC: {selectedInstrument.tacNumber}
+                  Max {displayMax} | e = {displayE} | TAC: {selectedInstrument.tacNumber}
                 </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsInstrumentSelectorOpen(true)}
-                  className="h-7 text-xs font-semibold px-2.5 rounded-lg border-primary/30 text-primary hover:bg-primary/10"
-                  leftIcon={<ArrowsClockwise size={13} />}
-                >
-                  Switch Instrument
-                </Button>
+                <div className="flex items-center gap-1.5 ml-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsInstrumentSelectorOpen(true)}
+                    className="h-7 text-xs font-semibold px-2.5 rounded-lg border-primary/30 text-primary hover:bg-primary/10"
+                    leftIcon={<ArrowsClockwise size={13} />}
+                  >
+                    Switch Instrument
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditSerial(selectedInstrument.serialNumber);
+                      setEditModel(selectedInstrument.model);
+                      setEditTac(selectedInstrument.tacNumber);
+                      setEditMfr(selectedInstrument.manufacturer);
+                      setIsEditModalOpen(true);
+                    }}
+                    className="h-7 text-xs font-semibold px-2.5 rounded-lg border-muted-foreground/30 text-muted-foreground hover:bg-muted"
+                    leftIcon={<PencilSimple size={13} />}
+                  >
+                    Edit Serial
+                  </Button>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Serial: <span className="font-mono font-semibold">{selectedInstrument.serialNumber}</span> · Officer:{" "}
-                {user ? `${user.fullName} (${user.role})` : "Guest Officer (Sign In to Sign & Stamp)"} · Testing Bay #2
+                Serial: <span className="font-mono font-semibold text-foreground">{selectedInstrument.serialNumber}</span> · Manufacturer:{" "}
+                <span className="font-semibold text-foreground">{selectedInstrument.manufacturer}</span> · Officer:{" "}
+                {user ? `${user.fullName} (${user.role})` : "Guest Officer (Sign In to Sign & Stamp)"}
               </p>
             </div>
           </div>
@@ -639,6 +703,101 @@ export function BenchWorkbenchView() {
         />
       </div>
 
+      {/* Edit Scale Metadata Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 w-full max-w-lg shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <PencilSimple size={18} className="text-primary" />
+                  Edit Active Field Instrument Details
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Update serial number or manufacturer for this specific unit under test.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditMetadata} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-foreground">
+                  Serial Number (Unit Under Test) *
+                </label>
+                <Input
+                  value={editSerial}
+                  onChange={(e) => setEditSerial(e.target.value)}
+                  placeholder="e.g. SN-2026-9042"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-foreground">
+                  Model Designation
+                </label>
+                <Input
+                  value={editModel}
+                  onChange={(e) => setEditModel(e.target.value)}
+                  placeholder="e.g. Essae DS-215"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-foreground">
+                  Pattern Designation / TAC Ref
+                </label>
+                <Input
+                  value={editTac}
+                  onChange={(e) => setEditTac(e.target.value)}
+                  placeholder="e.g. IND/09/2026/042"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-foreground">
+                  Manufacturer
+                </label>
+                <Input
+                  value={editMfr}
+                  onChange={(e) => setEditMfr(e.target.value)}
+                  placeholder="e.g. Essae-Teraoka Ltd."
+                  required
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-border/60">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="text-xs font-semibold"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="text-xs font-bold px-4"
+                >
+                  Save &amp; Update Bench
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Instrument Selection Modal */}
       {isInstrumentSelectorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
@@ -663,7 +822,7 @@ export function BenchWorkbenchView() {
             </div>
 
             <div className="grid grid-cols-1 gap-3">
-              {REGISTERED_INSTRUMENTS.map((inst) => {
+              {instrumentsList.map((inst) => {
                 const isCurrent = inst.id === selectedInstrument.id;
                 return (
                   <div
@@ -694,7 +853,7 @@ export function BenchWorkbenchView() {
                       <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
                         <span>{inst.manufacturer}</span>
                         <span>·</span>
-                        <span className="font-mono font-semibold">SN: {inst.serialNumber}</span>
+                        <span className="font-mono font-semibold text-foreground">SN: {inst.serialNumber}</span>
                         <span>·</span>
                         <span className="font-mono">TAC: {inst.tacNumber}</span>
                       </div>
@@ -716,7 +875,17 @@ export function BenchWorkbenchView() {
               })}
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-3 flex items-center justify-between border-t border-border/60">
+              <Link href="/instruments/new">
+                <Button
+                  type="button"
+                  size="sm"
+                  leftIcon={<Plus size={14} weight="bold" />}
+                  className="text-xs font-bold"
+                >
+                  + Intake New NAWI Scale (Phase 1)
+                </Button>
+              </Link>
               <Button
                 type="button"
                 variant="outline"
