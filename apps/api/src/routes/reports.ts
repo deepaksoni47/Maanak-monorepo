@@ -264,7 +264,7 @@ export function createReportsRouter(options: ReportsRouterOptions = {}): Router 
   // ---------------------------------------------------------------------------
   router.get(
     "/",
-    optionalAuth,
+    requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { search, page = "1", limit = "20" } = req.query;
@@ -738,7 +738,7 @@ export function createReportsRouter(options: ReportsRouterOptions = {}): Router 
   // ---------------------------------------------------------------------------
   router.get(
     "/:id/pdf",
-    optionalAuth,
+    requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
@@ -787,7 +787,7 @@ export function createReportsRouter(options: ReportsRouterOptions = {}): Router 
   // ---------------------------------------------------------------------------
   router.get(
     "/:id/docx",
-    optionalAuth,
+    requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
@@ -839,7 +839,7 @@ export function createReportsRouter(options: ReportsRouterOptions = {}): Router 
   // ---------------------------------------------------------------------------
   router.get(
     "/:id/verify",
-    optionalAuth,
+    requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
@@ -880,7 +880,7 @@ export function createReportsRouter(options: ReportsRouterOptions = {}): Router 
   // ---------------------------------------------------------------------------
   router.get(
     "/:id",
-    optionalAuth,
+    requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;

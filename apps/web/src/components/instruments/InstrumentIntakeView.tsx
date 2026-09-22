@@ -33,6 +33,7 @@ import {
   toGrams,
 } from "@/lib/table3";
 import { saveNewInstrument, InstrumentItem } from "@/lib/instruments-store";
+import { instrumentsApi } from "@/lib/api";
 
 interface PresetSpec {
   name: string;
@@ -184,7 +185,7 @@ export function InstrumentIntakeView() {
     setClassSelection(preset.classType);
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!evaluation.valid) return;
 
@@ -204,7 +205,7 @@ export function InstrumentIntakeView() {
         ? "CLASS_IIII"
         : "CLASS_III";
 
-    const newInst = saveNewInstrument({
+    let newInst = saveNewInstrument({
       serialNumber,
       model: modelName,
       manufacturer,
@@ -232,10 +233,46 @@ export function InstrumentIntakeView() {
       weighingPrinciple,
     });
 
-    setTimeout(() => {
+    try {
+      const payload = {
+        modelName,
+        patternDesignation,
+        instrumentType: instrumentType === "COMPLETE_SCALE" ? "Non-Automatic Weighing Instrument" : "Indicator Module",
+        weighingPrinciple,
+        accuracyClass: mappedClass,
+        maxCapacity: maxKg,
+        minCapacity: minKg,
+        verificationScaleIntervalE: eKg,
+        actualScaleIntervalD: dKg,
+        unitOfMeasure: "kg",
+        isMultiInterval,
+        serialNumber,
+        manufacturer: {
+          companyName: manufacturer,
+          registrationNumber: `REG-${manufacturer.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}-2026`,
+          tradeLicenseNo: "TL-STD-2026",
+          addressLine1: "Industrial Zone",
+          city: "Metrology City",
+          state: "State Division",
+          pincode: "110001",
+          contactPerson: applicantName || "Authorized Signatory",
+          contactEmail: "legal@manufacturer.in",
+          contactPhone: "+91-9876543210",
+        },
+      };
+      const apiRes = await instrumentsApi.register(payload);
+      if (apiRes?.instrument?.id) {
+        newInst = {
+          ...newInst,
+          id: apiRes.instrument.id,
+        };
+      }
+    } catch (err) {
+      console.warn("Live API instrument registration warning:", err);
+    } finally {
       setIsSubmitting(false);
       setRegisteredInstrument(newInst);
-    }, 400);
+    }
   };
 
   const activeClassDisplay = evaluation.derivedClass || "Unclassified";

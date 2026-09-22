@@ -238,7 +238,7 @@ export function createSessionsRouter(
   // ---------------------------------------------------------------------------
   router.get(
     "/",
-    optionalAuth,
+    requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const {
@@ -362,7 +362,7 @@ export function createSessionsRouter(
   // ---------------------------------------------------------------------------
   router.get(
     "/:id",
-    optionalAuth,
+    requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;

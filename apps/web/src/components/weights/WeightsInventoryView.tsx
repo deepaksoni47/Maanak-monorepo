@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { weightsApi } from "@/lib/api";
 import {
   ShieldCheck,
   CheckCircle,
@@ -112,6 +113,48 @@ const INVENTORY_SETS: StandardWeightSet[] = [
 ];
 
 export function WeightsInventoryView() {
+  const [inventory, setInventory] = useState<StandardWeightSet[]>(INVENTORY_SETS);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Load live standard weights from database
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLiveWeights() {
+      try {
+        setIsLoading(true);
+        const res = await weightsApi.list();
+        if (isMounted && res?.weights && res.weights.length > 0) {
+          const mapped: StandardWeightSet[] = res.weights.map((w: any) => {
+            const cert = w.calibrationCertificates?.[0];
+            const isExpired = cert?.expiryDate && new Date(cert.expiryDate) < new Date();
+            return {
+              id: w.id,
+              code: w.identificationCode || `WS-${w.oimlClass}-01`,
+              oimlClass: (w.oimlClass || "M1") as any,
+              range: w.nominalMassRange || "1 g – 10 kg",
+              nablCertNo: cert?.certificateNumber || "CC-NABL-2026-001",
+              calibratingAgency: cert?.calibratingLaboratory || w.laboratory?.name || "National Physical Laboratory",
+              calibrationDate: cert?.calibrationDate ? new Date(cert.calibrationDate).toISOString().split("T")[0] : "2025-10-15",
+              expiryDate: cert?.expiryDate ? new Date(cert.expiryDate).toISOString().split("T")[0] : "2026-10-14",
+              uncertaintyFormatted: cert?.expandedUncertaintyU ? `U ≤ ${cert.expandedUncertaintyU} kg (k=2)` : "U ≤ 0.5 mg (k=2)",
+              status: isExpired ? "expired" : "valid",
+              statusLabel: isExpired ? "EXPIRED" : "VALID",
+            };
+          });
+          setInventory(mapped);
+        }
+      } catch (err) {
+        console.warn("Weights API fetch error:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    fetchLiveWeights();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Gatekeeper Simulator Interactive State
   const [load, setLoad] = useState("2.5");
   const [loadUnit, setLoadUnit] = useState<MassUnit>("kg");
@@ -138,7 +181,7 @@ export function WeightsInventoryView() {
     uncertaintyUnit: uUnit,
   });
 
-  const filteredInventory = INVENTORY_SETS.filter(
+  const filteredInventory = inventory.filter(
     (item) =>
       item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.oimlClass.toLowerCase().includes(searchQuery.toLowerCase()) ||

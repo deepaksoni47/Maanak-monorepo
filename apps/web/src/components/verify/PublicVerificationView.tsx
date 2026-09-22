@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { verifyApi } from "@/lib/api";
 import {
   ShieldCheck,
   ShieldWarning,
@@ -30,15 +31,66 @@ export interface PublicVerificationViewProps {
 export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
   const [copied, setCopied] = useState<boolean>(false);
   const [inputHash, setInputHash] = useState<string>("");
+  const [liveVerification, setLiveVerification] = useState<{
+    loaded: boolean;
+    authentic: boolean;
+    tamperDetected: boolean;
+    sessionNumber?: string;
+    model?: string;
+    serial?: string;
+    laboratory?: string;
+    totalNodes?: number;
+  } | null>(null);
 
-  // Determine authenticity:
-  // Hashes containing "tamper", "invalid", or "corrupt" are flagged as violations.
+  useEffect(() => {
+    let isMounted = true;
+    async function verifyCryptographicHash() {
+      try {
+        const res = await verifyApi.verifyHash(hash);
+        if (isMounted) {
+          const s = res?.session;
+          const model = s?.instrumentUnit?.instrumentModel;
+          setLiveVerification({
+            loaded: true,
+            authentic: Boolean(res?.authentic && !res?.tamperDetected),
+            tamperDetected: Boolean(res?.tamperDetected),
+            sessionNumber: s?.sessionNumber,
+            model: model?.modelName,
+            serial: s?.instrumentUnit?.serialNumber,
+            laboratory: s?.laboratory?.name,
+            totalNodes: res?.chainValidation?.totalNodes,
+          });
+        }
+      } catch (err: any) {
+        if (isMounted) {
+          const isTamper =
+            err?.response?.tamperDetected ||
+            err?.response?.error === "TAMPER_DETECTED" ||
+            hash.toLowerCase().includes("tamper");
+          setLiveVerification({
+            loaded: true,
+            authentic: false,
+            tamperDetected: isTamper,
+          });
+        }
+      }
+    }
+    verifyCryptographicHash();
+    return () => {
+      isMounted = false;
+    };
+  }, [hash]);
+
+  // Determine authenticity dynamically:
   const isTampered =
+    liveVerification?.tamperDetected ||
     hash.toLowerCase().includes("tamper") ||
     hash.toLowerCase().includes("invalid") ||
     hash.toLowerCase().includes("corrupt");
 
-  const isAuthentic = !isTampered && hash.length >= 12;
+  const isAuthentic = liveVerification
+    ? liveVerification.authentic
+    : !isTampered && hash.length >= 12;
 
   const handleCopyHash = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {

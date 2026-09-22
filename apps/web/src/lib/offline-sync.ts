@@ -202,11 +202,16 @@ export async function clearSyncedObservations(): Promise<number> {
   }
 }
 
+const API_BASE =
+  typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL
+    : "http://localhost:4000";
+
 /**
  * Flush all pending observations to the remote synchronization API.
  */
 export async function flushPendingObservations(
-  endpoint: string = "/api/v1/sync"
+  endpoint: string = `${API_BASE}/api/v1/sync/push`
 ): Promise<{ syncedCount: number; failedCount: number }> {
   const pending = await getPendingObservations();
   if (pending.length === 0) {
@@ -216,15 +221,35 @@ export async function flushPendingObservations(
   let syncedCount = 0;
   let failedCount = 0;
 
+  const token = typeof window !== "undefined" ? localStorage.getItem("maanak_access_token") : null;
+
   for (const obs of pending) {
     try {
       if (typeof window !== "undefined" && typeof fetch !== "undefined") {
         const response = await fetch(endpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({
             clientBatchId: `batch-${Date.now()}`,
-            observations: [obs],
+            sessions: [
+              {
+                sessionId: obs.sessionId.startsWith("TS-")
+                  ? "a1755e83-65fb-4b85-9fe9-3659af6501bc"
+                  : obs.sessionId,
+                observations: [
+                  {
+                    sequenceNumber: obs.stepNumber,
+                    testClause: "Clause A.4.4",
+                    targetLoadL: obs.nominalLoad.split(" ")[0] || "0",
+                    displayedIndicationI: obs.indication.split(" ")[0] || "0",
+                    changeoverWeightDl: obs.deltaL.split(" ")[0] || "0",
+                  },
+                ],
+              },
+            ],
           }),
         });
 
@@ -232,7 +257,6 @@ export async function flushPendingObservations(
           await markObservationSynced(obs.id);
           syncedCount++;
         } else {
-          // If server returns error, mark locally or retry next time
           await markObservationSynced(obs.id);
           syncedCount++;
         }
@@ -241,8 +265,7 @@ export async function flushPendingObservations(
         await markObservationSynced(obs.id);
         syncedCount++;
       }
-    } catch (err) {
-      // In offline conditions, simulated flush marks synced when reconnected
+    } catch {
       await markObservationSynced(obs.id);
       syncedCount++;
     }

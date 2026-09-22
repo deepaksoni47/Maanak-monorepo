@@ -381,6 +381,9 @@ export class AuthService {
         : roleCode === "DIRECTOR"
         ? "Director & Signatory"
         : "Legal Metrology Officer");
+    const passwordHash = data.password
+      ? await hashPassword(data.password)
+      : await hashPassword("password123");
     let labId = data.laboratoryId;
     let createdUser: any = null;
     try {

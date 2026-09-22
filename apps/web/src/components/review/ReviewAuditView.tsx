@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { reviewApi, sessionsApi } from "@/lib/api";
 import {
   ShieldWarning,
   GitFork,
@@ -123,6 +124,56 @@ export function ReviewAuditView() {
     type: "success" | "warning" | "error";
   } | null>(null);
 
+  // Hydrate live sessions awaiting review from PostgreSQL database
+  useEffect(() => {
+    let isMounted = true;
+    async function loadReviewSessions() {
+      try {
+        const res = await sessionsApi.list({ status: "UNDER_REVIEW" });
+        if (isMounted && res?.sessions && res.sessions.length > 0) {
+          const liveItems: FlaggedAuditItem[] = res.sessions.map((s: any) => {
+            const model = s.instrumentUnit?.instrumentModel;
+            const officer = s.testingOfficer?.fullName || "Testing Officer";
+            const lastObs = s.rawObservations?.[s.rawObservations.length - 1];
+            return {
+              id: s.id,
+              sessionNumber: s.sessionNumber,
+              model: model?.modelName || "NAWI Verification Scale",
+              accuracyClass: `Class ${model?.accuracyClass?.code || "III"}`,
+              inspector: officer,
+              stepNumber: lastObs?.sequenceNumber || 1,
+              nominalLoad: `${lastObs?.targetLoadL || 15} kg`,
+              indication: `${lastObs?.displayedIndicationI || 15} kg`,
+              deltaL: `${lastObs?.changeoverWeightDl || 0.002} kg`,
+              eVal: `${model?.verificationScaleIntervalE || 0.005} kg`,
+              turningPointP: `${lastObs?.turningPointP || 15.0005} kg`,
+              errorEc: `${lastObs?.errorEc || 0.0005} kg`,
+              mpeLimit: "±0.0050 kg",
+              anomalyCode: "OIML-AUDIT-SUBMITTED",
+              anomalyTitle: "Weighing Performance Verification Audit Pending",
+              anomalyDescription:
+                "Testing complete at bench. Awaiting ISO/IEC 17025 derivation step sign-off and anomaly screening.",
+              severity: "warning",
+              ruleCitation: "OIML R-76-1:2006 Cl. 3.5.1",
+            };
+          });
+          setItems((prev) => [
+            ...liveItems,
+            ...prev.filter(
+              (p) => !liveItems.some((l) => l.sessionNumber === p.sessionNumber)
+            ),
+          ]);
+        }
+      } catch (err) {
+        console.warn("Live review sessions load note:", err);
+      }
+    }
+    loadReviewSessions();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const pendingCount = items.length;
   const criticalCount = items.filter((i) => i.severity === "critical").length;
   const warningCount = items.filter((i) => i.severity === "warning").length;
@@ -147,7 +198,7 @@ export function ReviewAuditView() {
     setIsModalOpen(false);
   };
 
-  const handleDecision = (
+  const handleDecision = async (
     action: "APPROVED" | "FLAGGED_FOR_CORRECTION" | "REJECTED"
   ) => {
     if (!selectedItem) return;
@@ -164,6 +215,18 @@ export function ReviewAuditView() {
     } else {
       msg = `Session ${selectedItem.sessionNumber} rejected under OIML R-76 Clause 3.5.1.`;
       type = "error";
+    }
+
+    // Persist reviewer decision live to backend API & PostgreSQL
+    try {
+      await reviewApi.submitDecision({
+        testSessionId: selectedItem.id,
+        decision: action,
+        comments: msg,
+        reviewStage: "SECOND_LEVEL_REVIEW",
+      });
+    } catch (err) {
+      console.warn("Live review decision submission note:", err);
     }
 
     setDecisionFeedback({ id: selectedItem.id, message: msg, type });

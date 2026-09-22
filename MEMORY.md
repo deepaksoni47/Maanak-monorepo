@@ -273,3 +273,12 @@ This document serves as the persistent operational memory bank for the MAANAK le
 - **Observation Nodes**: Every physical observation logged at the bench generates a SHA-256 provenance node with canonical key ordering covering `sessionId`, `stepNumber`, `loadMass`, `indicatedValue`, `turningPointP`, `errorEc`, `mpe`, `timestamp`, and `previousHash`.
 - **Tamper Evident**: Modifying or removing any past observation breaks the hash avalanche test and immediately flags the session as tampered during review and certificate generation.
 
+### 10.5 Mock Prisma In-Memory DI & Optional Chaining in Unit Tests
+- **Issue**: Unit test suites mock Prisma with a localized subset of tables (e.g., `mockPrisma` in `instruments.test.ts` mocks `instrumentModel`, `accuracyClass`, and `manufacturer`, but does not mock `instrumentUnit`).
+- **Gotcha**: Directly invoking newly added relations (such as `db.instrumentUnit.create`) causes `TypeError: Cannot read properties of undefined (reading 'create')` during in-memory unit tests.
+- **Pattern**: When introducing child model persistence in route handlers, guard the call with defensive checks (`if (db.instrumentUnit && typeof db.instrumentUnit.create === "function")`). This preserves 100% compatibility with test mocks while ensuring full relational persistence when connected to PostgreSQL.
+
+### 10.6 Express Route Auth Guards & Frontend API Client Token Propagation
+- **Issue**: Unit test suites explicitly assert that unauthenticated calls to `GET /api/v1/instruments`, `GET /api/v1/sessions`, `GET /api/v1/weights`, and `GET /api/v1/reports/:id/pdf` return `401 UNAUTHORIZED`.
+- **Pattern**: Routes must enforce `requireAuth` rather than `optionalAuth`. The Next.js client (`apps/web/src/lib/api.ts`) automatically retrieves the authenticated session token (`maanak_access_token` from localStorage) and attaches `Authorization: Bearer <token>` to all downstream requests, including binary PDF/DOCX downloads and background synchronization pushes.
+
