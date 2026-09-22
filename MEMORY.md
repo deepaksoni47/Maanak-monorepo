@@ -113,3 +113,29 @@ This document serves as the persistent operational memory bank for the MAANAK le
 - Access tokens expire in **15 minutes** (`expiresIn: "15m"`).
 - Refresh tokens expire in **7 days** (`expiresIn: "7d"`).
 - Decoded access tokens attach `req.user: AuthenticatedUser` with metrological permissions and `role`.
+
+---
+
+## 6. Frontend Web & UI Architectural Insights
+
+### 6.1 Dual CSS/SVG Masking (`-webkit-mask-image` + `mask-image`)
+- **Issue**: Tailwind arbitrary mask utilities such as `[mask-image:radial-gradient(...)]` only compile standard `mask-image`. In Chromium (Chrome, Edge) and WebKit (Safari), CSS masks applied to SVG background containers fail to render or render the elements invisible unless `-webkit-mask-image` is present.
+- **Rule**: Whenever creating radial vignette fades or blurred edges on grids/backgrounds, always supply both properties via inline style or dual properties:
+  ```tsx
+  style={{
+    WebkitMaskImage: "radial-gradient(ellipse 75% 65% at 50% 35%, white 25%, transparent 85%)",
+    maskImage: "radial-gradient(ellipse 75% 65% at 50% 35%, white 25%, transparent 85%)",
+  }}
+  ```
+
+### 6.2 Layout Continuity vs Section Divider Borders
+- **Issue**: Alternating full-width background color bands (`bg-card/40` vs `bg-background`) coupled with hard full-width horizontal dividing lines (`border-b`, `border-t`) creates a visual "striped" fragmentation where adjacent sections look like unrelated, stacked sub-pages.
+- **Pattern**: Maintain a unified canvas (`bg-background`) throughout the landing page. Rely on consistent vertical spacing (`py-12 lg:py-16`) and self-contained card containers (`rounded-3xl bg-card border border-border`) rather than full-bleed section dividers.
+
+### 6.3 Transparent Artwork & Frameless Hero Illustrations
+- **Issue**: Wrapping transparent cutout illustrations (e.g. `hero.avif` scale artwork) inside a rectangular card container (`rounded-3xl border bg-card shadow-lg`) destroys the organic cutout depth and adds unnecessary visual clutter.
+- **Pattern**: Let transparent illustrations float freely on the background canvas/grid with a natural `drop-shadow-lg` and proportional constraints (`max-w-lg xl:max-w-xl`), preserving spaciousness and visual lightness.
+
+### 6.4 Magic UI `GridPattern` with `useId()` and Decorative Squares
+- SVG grid patterns defined inside `<defs><pattern id={id}>` require dynamic `useId()` generation to prevent pattern collisions across pages or concurrent test runs.
+- Decorative accent filled squares (`squares={[ [x, y], ... ]}`) should be rendered inside an `<svg className="overflow-visible">` overlay using exact coordinate multiples (`sqX * width + 1`) and subtle primary-tinted opacity (`fill-primary/15 dark:fill-primary/20`).
