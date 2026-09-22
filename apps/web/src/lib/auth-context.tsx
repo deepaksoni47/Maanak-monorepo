@@ -19,6 +19,14 @@ export interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (identifier: string, password?: string) => Promise<boolean>;
+  register: (userData: {
+    fullName: string;
+    email: string;
+    password?: string;
+    role?: string;
+    designation?: string;
+    facility?: string;
+  }) => Promise<boolean>;
   logout: () => void;
   switchRoleQuick: (role: "INSPECTOR" | "REVIEWER" | "DIRECTOR" | "ADMIN") => Promise<boolean>;
 }
@@ -116,9 +124,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Backend offline, keep stored session
           }
         } else {
-          // Auto-initialize default inspector persona for seamless zero-barrier officer usage
-          const defaultInspector = PRESET_OFFICERS[0];
-          await login(defaultInspector.email, "password123");
+          // No active session in storage - user is unauthenticated by default
+          setToken(null);
+          setUser(null);
         }
       } catch {
         // Tolerated in SSR/hydration
@@ -139,79 +147,98 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email: identifier, password }),
       });
 
-      if (!res.ok) {
-        throw new Error("Authentication failed");
-      }
+      if (res.ok) {
+        const data = await res.json();
+        if (data.tokens?.accessToken && data.user) {
+          const loggedUser: UserProfile = {
+            id: data.user.id,
+            username: data.user.username,
+            email: data.user.email,
+            fullName: data.user.fullName,
+            designation: data.user.designation,
+            role: data.user.role,
+            laboratoryId: data.user.laboratoryId,
+            permissions: data.user.permissions,
+          };
 
-      const data = await res.json();
-      if (data.success && data.tokens?.accessToken && data.user) {
-        const userProfile: UserProfile = {
-          id: data.user.id,
-          username: data.user.username,
-          email: data.user.email,
-          fullName: data.user.fullName,
-          designation: data.user.designation,
-          role: data.user.role,
-          laboratoryId: data.user.laboratoryId,
-          permissions: data.user.permissions,
-        };
-
-        setToken(data.tokens.accessToken);
-        setUser(userProfile);
-
-        localStorage.setItem(TOKEN_KEY, data.tokens.accessToken);
-        localStorage.setItem(USER_KEY, JSON.stringify(userProfile));
-
-        // Sync cookie for Next.js SSR requests
-        document.cookie = `maanak_token=${data.tokens.accessToken}; path=/; max-age=604800; SameSite=Lax`;
-        return true;
+          setToken(data.tokens.accessToken);
+          setUser(loggedUser);
+          localStorage.setItem(TOKEN_KEY, data.tokens.accessToken);
+          localStorage.setItem(USER_KEY, JSON.stringify(loggedUser));
+          return true;
+        }
       }
       return false;
-    } catch (err) {
-      console.warn("[Auth] API login failed, checking fallback:", err);
-      // Fallback local match if API server is temporarily offline
-      const matched = PRESET_OFFICERS.find(
-        (o) => o.email.toLowerCase() === identifier.toLowerCase() || o.role.toLowerCase() === identifier.toLowerCase()
-      );
-
-      if (matched) {
-        const fallbackUser: UserProfile = {
-          id: `usr-${matched.role.toLowerCase()}-001`,
-          username: matched.role.toLowerCase(),
-          email: matched.email,
-          fullName: matched.name,
-          designation: matched.designation,
-          role: matched.role,
-          laboratoryId: "11111111-2222-3333-4444-555555555555",
-        };
-        const syntheticToken = `fallback_token_${matched.role}_${Date.now()}`;
-        setUser(fallbackUser);
-        setToken(syntheticToken);
-        localStorage.setItem(TOKEN_KEY, syntheticToken);
-        localStorage.setItem(USER_KEY, JSON.stringify(fallbackUser));
-        return true;
-      }
+    } catch {
       return false;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  const register = useCallback(
+    async (userData: {
+      fullName: string;
+      email: string;
+      password?: string;
+      role?: string;
+      designation?: string;
+      facility?: string;
+    }): Promise<boolean> => {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`${API_URL}/api/v1/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userData),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.tokens?.accessToken && data.user) {
+            const registeredUser: UserProfile = {
+              id: data.user.id,
+              username: data.user.username,
+              email: data.user.email,
+              fullName: data.user.fullName || userData.fullName,
+              designation: data.user.designation || "Legal Metrology Officer",
+              role: data.user.role || "INSPECTOR",
+              laboratoryId: data.user.laboratoryId || "11111111-2222-3333-4444-555555555555",
+              permissions: data.user.permissions || [],
+            };
+
+            setToken(data.tokens.accessToken);
+            setUser(registeredUser);
+            localStorage.setItem(TOKEN_KEY, data.tokens.accessToken);
+            localStorage.setItem(USER_KEY, JSON.stringify(registeredUser));
+            return true;
+          }
+        }
+        return false;
+      } catch {
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
   const logout = useCallback(() => {
-    setUser(null);
-    setToken(null);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-    document.cookie = "maanak_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    setToken(null);
+    setUser(null);
   }, []);
 
-  const switchRoleQuick = useCallback(async (role: "INSPECTOR" | "REVIEWER" | "DIRECTOR" | "ADMIN") => {
-    const target = PRESET_OFFICERS.find((p) => p.role === role);
-    if (target) {
-      return login(target.email, "password123");
-    }
-    return false;
-  }, [login]);
+  const switchRoleQuick = useCallback(
+    async (role: "INSPECTOR" | "REVIEWER" | "DIRECTOR" | "ADMIN"): Promise<boolean> => {
+      const preset = PRESET_OFFICERS.find((p) => p.role === role);
+      if (!preset) return false;
+      return login(preset.email, "password123");
+    },
+    [login]
+  );
 
   return (
     <AuthContext.Provider
@@ -221,6 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user && !!token,
         login,
+        register,
         logout,
         switchRoleQuick,
       }}
@@ -234,21 +262,14 @@ export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
     return {
-      user: {
-        id: "usr-insp-001",
-        username: "inspector",
-        email: "inspector@maanak.gov.in",
-        fullName: "R. K. Verma",
-        designation: "Legal Metrology Officer / Testing Officer",
-        role: "INSPECTOR",
-        laboratoryId: "11111111-2222-3333-4444-555555555555",
-      },
-      token: "default-auth-token",
+      user: null,
+      token: null,
       isLoading: false,
-      isAuthenticated: true,
-      login: async () => true,
+      isAuthenticated: false,
+      login: async () => false,
+      register: async () => false,
       logout: () => {},
-      switchRoleQuick: async () => true,
+      switchRoleQuick: async () => false,
     };
   }
   return context;

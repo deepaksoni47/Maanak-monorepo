@@ -18,6 +18,15 @@ const RefreshBodySchema = z.object({
   refreshToken: z.string().min(1, "Refresh token is required"),
 });
 
+const RegisterBodySchema = z.object({
+  fullName: z.string().min(2, "Full name is required"),
+  email: z.string().email("Valid official email is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(["INSPECTOR", "REVIEWER", "DIRECTOR", "ADMIN"]).optional(),
+  designation: z.string().optional(),
+  facility: z.string().optional(),
+});
+
 /**
  * Creates the Authentication REST router.
  */
@@ -25,6 +34,30 @@ export function createAuthRouter(
   authService: AuthService = defaultAuthService,
 ): Router {
   const router = Router();
+
+  /**
+   * POST /api/v1/auth/register
+   * Registers a new Legal Metrology officer account and returns tokens.
+   */
+  router.post(
+    "/register",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const validated = RegisterBodySchema.parse(req.body);
+        const result = await authService.registerUser(validated);
+        return res.status(201).json({
+          success: true,
+          user: result.user,
+          tokens: result.tokens,
+        });
+      } catch (err: any) {
+        if (err instanceof z.ZodError) {
+          return next(err);
+        }
+        return next(err);
+      }
+    },
+  );
 
   /**
    * POST /api/v1/auth/login

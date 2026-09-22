@@ -145,15 +145,29 @@ export function Shell({
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Not signed in</span>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-              >
-                <SignIn size={14} weight="bold" />
-                <span>Sign In</span>
-              </Link>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground font-medium">Guest / Not signed in</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                  GUEST
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href="/login"
+                  className="flex-1 py-2 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-bold text-center hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 min-h-[38px]"
+                >
+                  <SignIn size={14} weight="bold" />
+                  <span>Sign In</span>
+                </Link>
+                <Link
+                  href="/login"
+                  className="py-2 px-2.5 rounded-xl border border-border bg-card hover:bg-accent text-xs font-semibold text-center transition-colors min-h-[38px] flex items-center justify-center"
+                  title="Create Officer Account"
+                >
+                  Register
+                </Link>
+              </div>
             </div>
           )}
 

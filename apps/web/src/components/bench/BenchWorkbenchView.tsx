@@ -30,6 +30,7 @@ import { ObservationLedgerTable, LedgerEntry } from "./ObservationLedgerTable";
 import { ToleranceSafetyGauge } from "./ToleranceSafetyGauge";
 import { OfficerGuidanceBanner } from "./OfficerGuidanceBanner";
 import { observationsApi } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 const INITIAL_STEPS: ObservationData[] = [
   {
@@ -166,6 +167,7 @@ function calculateWelmecHashSnippet(step: ObservationData, P: number, Ec: number
 }
 
 export function BenchWorkbenchView() {
+  const { user } = useAuth();
   const [steps, setSteps] = useState<ObservationData[]>(INITIAL_STEPS);
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(3); // Default to Step #4 for interactive demo
   const [savedSteps, setSavedSteps] = useState<Record<number, boolean>>({
@@ -331,7 +333,7 @@ export function BenchWorkbenchView() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Officer: Er. R. Verma | RRSL Faridabad Testing Bay #2
+                Officer: {user ? `${user.fullName} (${user.role})` : "Guest Officer (Sign In to Sign & Stamp)"} | RRSL Faridabad Testing Bay #2
               </p>
             </div>
           </div>
