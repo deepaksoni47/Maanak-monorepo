@@ -5,7 +5,7 @@ import {
   classifyInstrument,
   normalizeAccuracyClass,
 } from "@maanak/rules-engine";
-import { requireAuth, requireRole, Role } from "../auth/index.js";
+import { requireAuth, optionalAuth, requireRole, Role } from "../auth/index.js";
 
 export interface InstrumentsRouterOptions {
   db?: PrismaClient;
@@ -59,13 +59,17 @@ const RegisterInstrumentSchema = z.object({
   unitOfMeasure: z.string().default("kg"),
   isMultiInterval: z.boolean().default(false),
   isMultipleRange: z.boolean().default(false),
-  numberOfPartialRanges: z.number().int().default(1),
+  numberOfPartialRanges: z.number().int().min(1).max(3).default(1),
   partialRanges: z.array(PartialRangeInputSchema).optional(),
-  tempRangeMinC: z.number().default(-10.0),
-  tempRangeMaxC: z.number().default(40.0),
-  powerSupplyVoltageNominal: z.number().default(230.0),
-  powerSupplyFrequencyHz: z.number().default(50.0),
-  firmwareVersionId: z.string().default("1.0.0"),
+  tareType: z
+    .enum(["SUBTRACTIVE", "ADDITIVE", "NONE", "BALANCING"])
+    .default("SUBTRACTIVE"),
+  maxTareEffect: z.union([z.string(), z.number()]).optional(),
+  tempRangeMinC: z.union([z.string(), z.number()]).default(10),
+  tempRangeMaxC: z.union([z.string(), z.number()]).default(40),
+  powerSupplyVoltageNominal: z.union([z.string(), z.number()]).default(230),
+  powerSupplyFrequencyHz: z.union([z.string(), z.number()]).default(50),
+  firmwareVersionId: z.string().optional(),
 });
 
 const ClassifyOnlySchema = z.object({
@@ -124,7 +128,7 @@ export function createInstrumentsRouter(
    */
   router.get(
     "/",
-    requireAuth,
+    optionalAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const search = req.query.search as string | undefined;
@@ -185,7 +189,7 @@ export function createInstrumentsRouter(
    */
   router.get(
     "/:id",
-    requireAuth,
+    optionalAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;

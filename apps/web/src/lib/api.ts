@@ -249,6 +249,15 @@ export const reviewApi = {
 };
 
 export const reportsApi = {
+  list: (params: { search?: string; page?: number; limit?: number } = {}) => {
+    const query = new URLSearchParams();
+    if (params.search) query.append("search", params.search);
+    if (params.page) query.append("page", String(params.page));
+    if (params.limit) query.append("limit", String(params.limit));
+    const qs = query.toString();
+    return apiRequest(`/api/v1/reports${qs ? `?${qs}` : ""}`);
+  },
+
   generate: (sessionId: string, options: { format?: "PDF" | "DOCX"; includeCurves?: boolean } = {}) =>
     apiRequest(`/api/v1/reports/${sessionId}/generate`, {
       method: "POST",

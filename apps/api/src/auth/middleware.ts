@@ -112,3 +112,29 @@ export function requirePermission(permission: string) {
     return next();
   };
 }
+
+/**
+ * Middleware: Optional Bearer JWT authentication.
+ * If token is present and valid, attaches `req.user`.
+ * If missing or invalid, proceeds without rejecting, allowing read-only access.
+ */
+export function optionalAuth(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return next();
+  }
+
+  const token = authHeader.slice(7).trim();
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const payload = verifyAccessToken(token);
+    req.user = payload;
+  } catch {
+    // Tolerated for optional auth
+  }
+
+  return next();
+}

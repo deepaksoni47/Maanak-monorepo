@@ -18,7 +18,7 @@ import {
   validateSessionProvenanceChain,
 } from "@maanak/crypto-provenance";
 import type { CalculationTraceItem } from "@maanak/types";
-import { requireAuth, requireRole, Role } from "../auth/index.js";
+import { requireAuth, optionalAuth, requireRole, Role } from "../auth/index.js";
 
 export interface ReportsRouterOptions {
   db?: PrismaClient;
@@ -258,6 +258,73 @@ export function createReportsRouter(options: ReportsRouterOptions = {}): Router 
     });
     return report;
   }
+
+  // ---------------------------------------------------------------------------
+  // 0. GET /api/v1/reports - List generated reports with pagination & relations
+  // ---------------------------------------------------------------------------
+  router.get(
+    "/",
+    optionalAuth,
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { search, page = "1", limit = "20" } = req.query;
+        const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+        const take = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 20));
+        const skip = (pageNum - 1) * take;
+
+        const where: any = {};
+        if (search) {
+          where.OR = [
+            { reportNumber: { contains: search as string, mode: "insensitive" } },
+            { testSession: { sessionNumber: { contains: search as string, mode: "insensitive" } } },
+          ];
+        }
+
+        const [reports, totalCount] = await Promise.all([
+          db.report.findMany({
+            where,
+            skip,
+            take,
+            orderBy: { createdAt: "desc" },
+            include: {
+              versions: { orderBy: { versionNumber: "desc" } },
+              testSession: {
+                include: {
+                  laboratory: true,
+                  testingOfficer: true,
+                  instrumentUnit: {
+                    include: {
+                      instrumentModel: {
+                        include: {
+                          manufacturer: true,
+                          accuracyClass: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          }),
+          db.report.count({ where }),
+        ]);
+
+        return res.status(200).json({
+          success: true,
+          count: reports.length,
+          reports: reports.map(formatReportForJson),
+          meta: {
+            page: pageNum,
+            limit: take,
+            totalCount,
+            totalPages: Math.ceil(totalCount / take),
+          },
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
 
   // ---------------------------------------------------------------------------
   // 1. POST /api/v1/reports/:sessionId/generate
@@ -671,7 +738,7 @@ export function createReportsRouter(options: ReportsRouterOptions = {}): Router 
   // ---------------------------------------------------------------------------
   router.get(
     "/:id/pdf",
-    requireAuth,
+    optionalAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
@@ -720,7 +787,7 @@ export function createReportsRouter(options: ReportsRouterOptions = {}): Router 
   // ---------------------------------------------------------------------------
   router.get(
     "/:id/docx",
-    requireAuth,
+    optionalAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
@@ -772,7 +839,7 @@ export function createReportsRouter(options: ReportsRouterOptions = {}): Router 
   // ---------------------------------------------------------------------------
   router.get(
     "/:id/verify",
-    requireAuth,
+    optionalAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
@@ -813,7 +880,7 @@ export function createReportsRouter(options: ReportsRouterOptions = {}): Router 
   // ---------------------------------------------------------------------------
   router.get(
     "/:id",
-    requireAuth,
+    optionalAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;

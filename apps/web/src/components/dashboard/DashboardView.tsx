@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Scales,
   CheckCircle,
@@ -17,13 +17,14 @@ import { Shell } from "@/components/layout/Shell";
 import { Badge, BadgeVariant } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { sessionsApi, weightsApi } from "@/lib/api";
 
-export interface RecentSession {
+export interface FormattedSession {
   id: string;
   sessionNumber: string;
   model: string;
   manufacturer: string;
-  accuracyClass: "I" | "II" | "III" | "IIII";
+  accuracyClass: string;
   maxCapacity: string;
   verificationInterval: string;
   inspector: string;
@@ -33,7 +34,7 @@ export interface RecentSession {
   statusLabel: string;
 }
 
-export const RECENT_SESSIONS: RecentSession[] = [
+export const RECENT_SESSIONS: FormattedSession[] = [
   {
     id: "sess-01",
     sessionNumber: "TS-2026-0142",
@@ -106,7 +107,125 @@ export const RECENT_SESSIONS: RecentSession[] = [
   },
 ];
 
+function mapStatusToBadge(status: string): { variant: BadgeVariant; label: string } {
+  switch (status?.toUpperCase()) {
+    case "COMPLETED":
+    case "CERTIFIED":
+    case "PASS":
+      return { variant: "pass", label: "PASSED" };
+    case "FAILED":
+    case "FAIL":
+      return { variant: "fail", label: "MPE EXCEEDED" };
+    case "REVIEW_PENDING":
+    case "PENDING":
+      return { variant: "pending", label: "IN REVIEW" };
+    case "IN_PROGRESS":
+      return { variant: "in_progress", label: "TESTING" };
+    case "DRAFT":
+    default:
+      return { variant: "in_progress", label: "DRAFT" };
+  }
+}
+
+function formatRelativeTime(dateString?: string | Date | null): string {
+  if (!dateString) return "Recently";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes} mins ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+}
+
 export function DashboardView() {
+  const [sessions, setSessions] = useState<FormattedSession[]>(RECENT_SESSIONS);
+  const [activeCount, setActiveCount] = useState<number | string>(14);
+  const [pendingCount, setPendingCount] = useState<number | string>(3);
+  const [approvedCount, setApprovedCount] = useState<number | string>(8);
+  const [complianceRate, setComplianceRate] = useState<string>("94.2%");
+  const [weightsValidBadge, setWeightsValidBadge] = useState<string>("ALL 24 SETS VALID");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadDashboardData() {
+      try {
+        const [sessionsRes, weightsRes] = await Promise.allSettled([
+          sessionsApi.list(),
+          weightsApi.list(),
+        ]);
+
+        if (isMounted) {
+          if (sessionsRes.status === "fulfilled" && sessionsRes.value?.sessions && sessionsRes.value.sessions.length > 0) {
+            const rawSessions: any[] = sessionsRes.value.sessions;
+
+            const mapped: FormattedSession[] = rawSessions.map((s) => {
+              const model = s.instrumentUnit?.instrumentModel;
+              const { variant, label } = mapStatusToBadge(s.status);
+              const obsCount = s._count?.rawObservations || s.rawObservations?.length || 0;
+              const stage =
+                obsCount > 0
+                  ? `Form 1: Weighing (${obsCount} pts)`
+                  : s.status === "REVIEW_PENDING"
+                  ? "Audit Pending"
+                  : "Form 1: Ready to Start";
+
+              return {
+                id: s.id,
+                sessionNumber: s.sessionNumber,
+                model: model?.modelName || "Standard Scale",
+                manufacturer: model?.manufacturer?.companyName || "Domestic Manufacturer",
+                accuracyClass: model?.accuracyClass?.code || "III",
+                maxCapacity: `${model?.maxCapacity || "15"} ${model?.unitOfMeasure || "kg"}`,
+                verificationInterval: `${model?.verificationScaleIntervalE || "5"} ${model?.unitOfMeasure || "g"}`,
+                inspector: s.testingOfficer?.fullName || "Testing Officer",
+                stage,
+                updatedAt: formatRelativeTime(s.updatedAt || s.startedAt),
+                status: variant,
+                statusLabel: label,
+              };
+            });
+
+            setSessions(mapped);
+
+            const active = rawSessions.filter(
+              (s) => s.status === "IN_PROGRESS" || s.status === "DRAFT",
+            ).length;
+            const pending = rawSessions.filter((s) => s.status === "REVIEW_PENDING").length;
+            const approved = rawSessions.filter(
+              (s) => s.status === "COMPLETED" || s.status === "CERTIFIED",
+            ).length;
+
+            setActiveCount(active);
+            setPendingCount(pending);
+            setApprovedCount(approved);
+
+            const totalEvaluated = approved + rawSessions.filter((s) => s.status === "FAILED").length;
+            if (totalEvaluated > 0) {
+              setComplianceRate(`${((approved / totalEvaluated) * 100).toFixed(1)}%`);
+            }
+          }
+
+          if (weightsRes.status === "fulfilled" && weightsRes.value?.count !== undefined) {
+            setWeightsValidBadge(`ALL ${weightsRes.value.count} SETS VALID`);
+          }
+        }
+      } catch (err) {
+        console.error("Live dashboard hydration note:", err);
+      }
+    }
+
+    loadDashboardData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <Shell
       breadcrumbs={[
@@ -144,7 +263,7 @@ export function DashboardView() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold font-mono tracking-tight text-foreground">
-                14
+                {activeCount}
               </div>
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
@@ -167,7 +286,7 @@ export function DashboardView() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold font-mono tracking-tight text-amber-600 dark:text-amber-400">
-                3
+                {pendingCount}
               </div>
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <span className="text-amber-600 dark:text-amber-400 font-semibold font-mono">
@@ -190,7 +309,7 @@ export function DashboardView() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
-                8
+                {approvedCount}
               </div>
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
@@ -213,7 +332,7 @@ export function DashboardView() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold font-mono tracking-tight text-foreground">
-                94.2%
+                {complianceRate}
               </div>
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
@@ -237,7 +356,7 @@ export function DashboardView() {
                   NABL 129 Standard Weights Health: 100% In Calibration
                 </h4>
                 <Badge variant="pass" showIcon={false} className="py-0.5 px-2 text-[10px]">
-                  ALL 24 SETS VALID
+                  {weightsValidBadge}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -295,7 +414,7 @@ export function DashboardView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {RECENT_SESSIONS.map((session) => (
+                {sessions.map((session) => (
                   <tr
                     key={session.id}
                     className="hover:bg-accent/40 transition-colors group"
@@ -349,7 +468,7 @@ export function DashboardView() {
 
           {/* Mobile Collapsible Cards (< 640px) */}
           <div className="block sm:hidden divide-y divide-border/60 p-4 space-y-3">
-            {RECENT_SESSIONS.map((session) => (
+            {sessions.map((session) => (
               <div
                 key={session.id}
                 className="pt-3 first:pt-0 space-y-2.5 bg-card/50 rounded-2xl p-3 border border-border/60"

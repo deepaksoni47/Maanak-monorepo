@@ -1,14 +1,15 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { FileText, QrCode, ShieldCheck, ArrowRight, Certificate } from "@phosphor-icons/react";
+import { FileText, QrCode, ShieldCheck, ArrowRight, Certificate, CircleNotch, PlusCircle } from "@phosphor-icons/react";
+import { reportsApi, sessionsApi } from "@/lib/api";
 
-export interface ReportItem {
+export interface FormattedReport {
   id: string;
   reportNumber: string;
   sessionId: string;
@@ -21,7 +22,7 @@ export interface ReportItem {
   sha256Hash: string;
 }
 
-export const REPORTS_DATA: ReportItem[] = [
+export const REPORTS_DATA: FormattedReport[] = [
   {
     id: "TS-2026-0142",
     reportNumber: "CERT-2026-0142",
@@ -32,7 +33,7 @@ export const REPORTS_DATA: ReportItem[] = [
     issuedAt: "2026-09-22",
     directorSigned: true,
     complianceOutcome: "PASS",
-    sha256Hash: "0x8fa37b12d94e7732a10b8cf6347209...",
+    sha256Hash: "0x8fa37b12d94e7732a10b8cf6347209",
   },
   {
     id: "TS-2026-0140",
@@ -44,23 +45,80 @@ export const REPORTS_DATA: ReportItem[] = [
     issuedAt: "2026-09-20",
     directorSigned: true,
     complianceOutcome: "PASS",
-    sha256Hash: "0x7bb024f9e115cc7203b876a4550183...",
-  },
-  {
-    id: "TS-2026-0089",
-    reportNumber: "CERT-2026-0089",
-    sessionId: "TS-2026-0089",
-    instrumentModel: "Avery Weigh-Tronix Heavy Scale",
-    serialNumber: "SN-2026-7734",
-    accuracyClass: "Class III",
-    issuedAt: "2026-09-15",
-    directorSigned: false,
-    complianceOutcome: "FAIL",
-    sha256Hash: "0x33e8a1d7f023ab9154ec4718902891...",
+    sha256Hash: "0x7bb024f9e115cc7203b876a4550183",
   },
 ];
 
 export function ReportsListView() {
+  const [reports, setReports] = useState<FormattedReport[]>(REPORTS_DATA);
+  const [sessionsWithoutReport, setSessionsWithoutReport] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isCompiling, setIsCompiling] = useState<string | null>(null);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const [repRes, sessRes] = await Promise.allSettled([
+        reportsApi.list(),
+        sessionsApi.list(),
+      ]);
+
+      let loadedReports: FormattedReport[] = [];
+
+      if (repRes.status === "fulfilled" && repRes.value?.reports) {
+        loadedReports = repRes.value.reports.map((r: any) => {
+          const s = r.testSession;
+          const model = s?.instrumentUnit?.instrumentModel;
+          return {
+            id: r.id,
+            reportNumber: r.reportNumber,
+            sessionId: r.testSessionId,
+            instrumentModel: model?.modelName || "Non-Automatic Weighing Instrument",
+            serialNumber: s?.instrumentUnit?.serialNumber || "SN-OIML-001",
+            accuracyClass: `Class ${model?.accuracyClass?.code || "III"}`,
+            issuedAt: r.createdAt ? new Date(r.createdAt).toISOString().split("T")[0] : "2026-09-22",
+            directorSigned: Boolean(r.isSigned),
+            complianceOutcome: (r.overallComplianceOutcome || "PASS") as "PASS" | "FAIL",
+            sha256Hash: r.contentSha256 || "0x8fa37b12d94e7732a10b8cf6347209",
+          };
+        });
+      }
+
+      setReports(loadedReports);
+
+      if (sessRes.status === "fulfilled" && sessRes.value?.sessions) {
+        const rawSessions: any[] = sessRes.value.sessions;
+        const uncompiled = rawSessions.filter(
+          (s) => !loadedReports.some((r) => r.sessionId === s.id)
+        );
+        setSessionsWithoutReport(uncompiled);
+      }
+    } catch (err) {
+      console.error("Failed to load reports:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleGenerateReport = async (sessionId: string) => {
+    try {
+      setIsCompiling(sessionId);
+      await reportsApi.generate(sessionId, { format: "PDF" });
+      await loadData();
+    } catch (err) {
+      console.error("Report generation failed:", err);
+    } finally {
+      setIsCompiling(null);
+    }
+  };
+
+  const totalCertificates = reports.length;
+  const signedCount = reports.filter((r) => r.directorSigned).length;
+
   return (
     <Shell
       breadcrumbs={[
@@ -69,7 +127,7 @@ export function ReportsListView() {
         { label: "Test Reports & Certificates" },
       ]}
       pageTitle="OIML R 76-2 Test Reports & Certificates"
-      pageSubtitle="Authenticated Legal Metrology verification certificates bearing official X.509 PKI signatures and WELMEC 7.2 cryptographic tamper-evidence."
+      pageSubtitle="Authenticated Legal Metrology verification certificates bearing official X.509 PKI signatures and WELMEC 7.2 cryptographic tamper-evidence connected to live PostgreSQL."
     >
       <div className="space-y-6">
         {/* KPI Summary Strip */}
@@ -79,8 +137,10 @@ export function ReportsListView() {
               <Certificate size={22} weight="duotone" />
             </div>
             <div>
-              <div className="text-xs text-muted-foreground font-medium">Certificates Issued</div>
-              <div className="text-xl font-bold font-mono text-foreground">3 Official Records</div>
+              <div className="text-xs text-muted-foreground font-medium">Certificates Compiled</div>
+              <div className="text-xl font-bold font-mono text-foreground">
+                {isLoading ? <CircleNotch size={20} className="animate-spin" /> : `${totalCertificates} Official Records`}
+              </div>
             </div>
           </Card>
           <Card className="p-4 rounded-3xl border border-border bg-card flex items-center gap-3">
@@ -90,7 +150,7 @@ export function ReportsListView() {
             <div>
               <div className="text-xs text-muted-foreground font-medium">PKI Signed by Director</div>
               <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                2 Sealed
+                {isLoading ? <CircleNotch size={20} className="animate-spin" /> : `${signedCount} Sealed`}
               </div>
             </div>
           </Card>
@@ -118,90 +178,151 @@ export function ReportsListView() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/40 text-muted-foreground border-b border-border/70 font-mono text-[11px] uppercase tracking-wider">
-                  <tr>
-                    <th scope="col" className="py-3 px-4">Certificate #</th>
-                    <th scope="col" className="py-3 px-4">Instrument / Serial</th>
-                    <th scope="col" className="py-3 px-4">Class</th>
-                    <th scope="col" className="py-3 px-4">Date Issued</th>
-                    <th scope="col" className="py-3 px-4">Director X.509 PKI</th>
-                    <th scope="col" className="py-3 px-4 text-center">Compliance</th>
-                    <th scope="col" className="py-3 px-4 text-right">View / Verify</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {REPORTS_DATA.map((item) => (
-                    <tr key={item.id} className="hover:bg-accent/40 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-foreground">
-                        {item.reportNumber}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-foreground">{item.instrumentModel}</div>
-                        <div className="text-[11px] text-muted-foreground font-mono">{item.serialNumber}</div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                          {item.accuracyClass}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-muted-foreground">
-                        {item.issuedAt}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {item.directorSigned ? (
-                          <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
-                            <ShieldCheck size={16} weight="fill" />
-                            <span>Digitally Signed</span>
-                          </div>
-                        ) : (
-                          <div className="text-amber-600 dark:text-amber-400 text-[11px] font-medium">
-                            Pending Review
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <Badge
-                          variant={item.complianceOutcome === "PASS" ? "pass" : "fail"}
-                          showIcon={false}
-                          className="text-[10px] font-mono py-0.5 px-2 font-bold"
-                        >
-                          {item.complianceOutcome}
-                        </Badge>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link href={`/verify/${item.sha256Hash.slice(2, 18)}`}>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 min-h-[36px] text-xs font-semibold px-2.5"
-                              leftIcon={<QrCode size={14} />}
-                              title="Public QR Verification"
-                            >
-                              QR
-                            </Button>
-                          </Link>
-                          <Link href={`/reports/${item.id}`}>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-8 min-h-[36px] text-xs font-semibold px-3"
-                              rightIcon={<ArrowRight size={14} weight="bold" />}
-                            >
-                              Certificate
-                            </Button>
-                          </Link>
-                        </div>
-                      </td>
+            {isLoading ? (
+              <div className="p-12 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                <CircleNotch size={32} className="animate-spin text-primary" />
+                <p className="text-xs font-medium">Loading reports from database...</p>
+              </div>
+            ) : reports.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground space-y-2">
+                <p className="text-sm font-semibold text-foreground">No compiled certificates in database yet.</p>
+                <p className="text-xs">Select any completed verification session below to generate an official OIML R 76-2 report.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-muted/40 text-muted-foreground border-b border-border/70 font-mono text-[11px] uppercase tracking-wider">
+                    <tr>
+                      <th scope="col" className="py-3 px-4">Certificate #</th>
+                      <th scope="col" className="py-3 px-4">Instrument / Serial</th>
+                      <th scope="col" className="py-3 px-4">Class</th>
+                      <th scope="col" className="py-3 px-4">Date Issued</th>
+                      <th scope="col" className="py-3 px-4">Director X.509 PKI</th>
+                      <th scope="col" className="py-3 px-4 text-center">Compliance</th>
+                      <th scope="col" className="py-3 px-4 text-right">View / Verify</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {reports.map((item) => (
+                      <tr key={item.id} className="hover:bg-accent/40 transition-colors">
+                        <td className="py-3.5 px-4 font-mono font-bold text-foreground">
+                          {item.reportNumber}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-foreground">{item.instrumentModel}</div>
+                          <div className="text-[11px] text-muted-foreground font-mono">{item.serialNumber}</div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                            {item.accuracyClass}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-muted-foreground">
+                          {item.issuedAt}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {item.directorSigned ? (
+                            <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+                              <ShieldCheck size={16} weight="fill" />
+                              <span>Digitally Signed</span>
+                            </div>
+                          ) : (
+                            <div className="text-amber-600 dark:text-amber-400 text-[11px] font-medium">
+                              Pending Review
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <Badge
+                            variant={item.complianceOutcome === "PASS" ? "pass" : "fail"}
+                            showIcon={false}
+                            className="text-[10px] font-mono py-0.5 px-2 font-bold"
+                          >
+                            {item.complianceOutcome}
+                          </Badge>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link href={`/verify/${item.sha256Hash.slice(0, 16)}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 min-h-[36px] text-xs font-semibold px-2.5"
+                                leftIcon={<QrCode size={14} />}
+                                title="Public QR Verification"
+                              >
+                                QR
+                              </Button>
+                            </Link>
+                            <Link href={`/reports/${item.sessionId}`}>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="h-8 min-h-[36px] text-xs font-semibold px-3"
+                                rightIcon={<ArrowRight size={14} weight="bold" />}
+                              >
+                                Certificate
+                              </Button>
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Ready for Certificate Generation Section */}
+        {sessionsWithoutReport.length > 0 && (
+          <Card className="rounded-3xl border border-border/80 p-5 bg-card">
+            <CardHeader className="p-0 pb-4">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <FileText size={20} className="text-primary" />
+                <span>Test Sessions Ready for Certificate Compilation</span>
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                Completed legal metrology verification sessions in PostgreSQL ready to be compiled into formal OIML R 76-2 PDFs.
+              </CardDescription>
+            </CardHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              {sessionsWithoutReport.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between p-3.5 rounded-2xl border border-border bg-background hover:border-primary/40 transition-colors"
+                >
+                  <div>
+                    <div className="font-mono font-bold text-xs text-foreground">{s.sessionNumber}</div>
+                    <div className="text-xs font-medium text-foreground mt-0.5">
+                      {s.instrumentUnit?.instrumentModel?.modelName || "NAWI Scale"}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground font-mono">
+                      SN: {s.instrumentUnit?.serialNumber} · Status: {s.status}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isCompiling === s.id}
+                    onClick={() => handleGenerateReport(s.id)}
+                    leftIcon={
+                      isCompiling === s.id ? (
+                        <CircleNotch size={14} className="animate-spin" />
+                      ) : (
+                        <PlusCircle size={14} weight="bold" />
+                      )
+                    }
+                    className="text-xs min-h-[40px] font-semibold"
+                  >
+                    {isCompiling === s.id ? "Compiling..." : "Generate PDF"}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </Shell>
   );

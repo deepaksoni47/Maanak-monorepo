@@ -11,7 +11,7 @@ import {
   RulePackRegistry,
   rulePackRegistry,
 } from "@maanak/rules-engine";
-import { requireAuth, requireRole, Role } from "../auth/index.js";
+import { requireAuth, optionalAuth, requireRole, Role } from "../auth/index.js";
 
 export interface SessionsRouterOptions {
   db?: PrismaClient;
@@ -238,7 +238,7 @@ export function createSessionsRouter(
   // ---------------------------------------------------------------------------
   router.get(
     "/",
-    requireAuth,
+    optionalAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const {
@@ -263,7 +263,7 @@ export function createSessionsRouter(
         // Scope to user's lab if inspector, unless lab is specified or user is admin
         if (laboratoryId) {
           where.laboratoryId = laboratoryId as string;
-        } else if (req.user?.role !== Role.ADMIN && req.user?.laboratoryId) {
+        } else if (req.user && req.user.role === Role.INSPECTOR && req.user.laboratoryId) {
           where.laboratoryId = req.user.laboratoryId;
         }
 
@@ -301,8 +301,8 @@ export function createSessionsRouter(
               laboratory: {
                 select: {
                   id: true,
-                  laboratoryName: true,
-                  laboratoryCode: true,
+                  name: true,
+                  code: true,
                 },
               },
               instrumentUnit: {
@@ -362,7 +362,7 @@ export function createSessionsRouter(
   // ---------------------------------------------------------------------------
   router.get(
     "/:id",
-    requireAuth,
+    optionalAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;

@@ -14,26 +14,27 @@ export interface InstrumentItem {
   serialNumber: string;
   model: string;
   manufacturer: string;
-  applicantName: string;
-  countryOfOrigin: string;
-  instrumentType: "COMPLETE_SCALE" | "INDICATOR_MODULE";
+  applicantName?: string;
+  countryOfOrigin?: string;
+  instrumentType?: "COMPLETE_SCALE" | "INDICATOR_MODULE" | string;
   accuracyClass: "CLASS_I" | "CLASS_II" | "CLASS_III" | "CLASS_IIII";
   maxCapacity: string;
   maxCapacityKg: number;
-  minCapacity: string;
-  minCapacityKg: number;
+  minCapacity?: string;
+  minCapacityKg?: number;
   verificationInterval: string;
   verificationIntervalKg: number;
-  actualInterval: string;
-  actualIntervalKg: number;
-  ratioN: number;
-  isMultiInterval: boolean;
+  actualInterval?: string;
+  actualIntervalKg?: number;
+  ratioN?: number;
+  isMultiInterval?: boolean;
   partialRanges?: PartialRange[];
   tacNumber: string;
   weighingPrinciple?: string;
-  status: "REGISTERED" | "VERIFIED" | "IN_PROGRESS" | "PENDING_VERIFICATION";
-  lastVerified: string;
-  sha256MetadataNode: string;
+  status?: "REGISTERED" | "VERIFIED" | "IN_PROGRESS" | "PENDING_VERIFICATION" | string;
+  lastVerified?: string;
+  sha256MetadataNode?: string;
+  createdAt?: string;
 }
 
 export const DEFAULT_INSTRUMENTS: InstrumentItem[] = [

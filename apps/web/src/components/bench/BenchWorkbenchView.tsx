@@ -36,7 +36,7 @@ import { enqueueOfflineObservation } from "@/lib/offline-sync";
 import { ObservationLedgerTable, LedgerEntry } from "./ObservationLedgerTable";
 import { ToleranceSafetyGauge } from "./ToleranceSafetyGauge";
 import { OfficerGuidanceBanner } from "./OfficerGuidanceBanner";
-import { observationsApi } from "@/lib/api";
+import { observationsApi, sessionsApi, instrumentsApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   InstrumentItem,
@@ -205,18 +205,23 @@ function calculateWelmecHashSnippet(step: ObservationData, P: number, Ec: number
   return `0x${(hash >>> 0).toString(16).padStart(8, "0").slice(0, 8)}...`;
 }
 
-function useSafeInstrumentId(): string | null {
+function useSafeBenchParams(): { instrumentId: string | null; sessionId: string | null } {
   try {
     const searchParams = useSearchParams();
-    return searchParams ? searchParams.get("instrumentId") : null;
+    if (!searchParams) return { instrumentId: null, sessionId: null };
+    return {
+      instrumentId: searchParams.get("instrumentId"),
+      sessionId: searchParams.get("session") || searchParams.get("sessionId"),
+    };
   } catch {
-    return null;
+    return { instrumentId: null, sessionId: null };
   }
 }
 
 export function BenchWorkbenchView() {
   const { user } = useAuth();
-  const urlInstId = useSafeInstrumentId();
+  const { instrumentId: urlInstId, sessionId: urlSessionId } = useSafeBenchParams();
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(urlSessionId);
 
   const [instrumentsList, setInstrumentsList] = useState<InstrumentItem[]>(DEFAULT_INSTRUMENTS);
 
@@ -229,18 +234,103 @@ export function BenchWorkbenchView() {
     generateStepsForInstrument(initialInstrument)
   );
 
-  // Load dynamically stored instruments from Phase 1 Intake
+  // Load dynamically stored instruments and live database session / instruments
   useEffect(() => {
-    const stored = getStoredInstruments();
-    setInstrumentsList(stored);
-    if (urlInstId) {
-      const match = stored.find((i) => i.id === urlInstId);
-      if (match) {
-        setSelectedInstrument(match);
-        setSteps(generateStepsForInstrument(match));
+    let isMounted = true;
+
+    async function initBenchData() {
+      // 1. Fetch live instruments list from API
+      try {
+        const instRes = await instrumentsApi.list();
+        if (isMounted && instRes?.instruments?.length > 0) {
+          const mapped: InstrumentItem[] = instRes.instruments.map((inst: any) => ({
+            id: inst.id,
+            model: inst.modelName,
+            manufacturer: inst.manufacturer?.companyName || "Domestic Manufacturer",
+            serialNumber: inst.physicalUnits?.[0]?.serialNumber || `SN-${inst.modelName.replace(/\s+/g, "")}-001`,
+            tacNumber: inst.patternDesignation || `IND-OIML-${inst.id.slice(0, 6).toUpperCase()}`,
+            accuracyClass: ("CLASS_" + (inst.accuracyClass?.code || "III")) as any,
+            maxCapacity: `${inst.maxCapacity} ${inst.unitOfMeasure || "kg"}`,
+            verificationInterval: `${inst.verificationScaleIntervalE} ${inst.unitOfMeasure || "kg"}`,
+            maxCapacityKg: Number(inst.maxCapacity) || 15,
+            verificationIntervalKg: Number(inst.verificationScaleIntervalE) || 0.005,
+            status: "VERIFIED",
+            createdAt: inst.createdAt,
+          }));
+          setInstrumentsList(mapped);
+
+          if (urlInstId) {
+            const found = mapped.find((m) => m.id === urlInstId);
+            if (found) {
+              setSelectedInstrument(found);
+              setSteps(generateStepsForInstrument(found));
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch instruments for bench:", err);
+      }
+
+      // 2. If session is specified in URL, load live session details & raw observations from PostgreSQL
+      if (urlSessionId) {
+        try {
+          const sessRes = await sessionsApi.getById(urlSessionId);
+          if (isMounted && sessRes?.session) {
+            const s = sessRes.session;
+            setActiveSessionId(s.id);
+            const model = s.instrumentUnit?.instrumentModel;
+            if (model) {
+              const instItem: InstrumentItem = {
+                id: model.id,
+                model: model.modelName,
+                manufacturer: model.manufacturer?.companyName || "Domestic Manufacturer",
+                serialNumber: s.instrumentUnit?.serialNumber || "SN-OIML-001",
+                tacNumber: model.patternDesignation || "IND-OIML-2024",
+                accuracyClass: ("CLASS_" + (model.accuracyClass?.code || "III")) as any,
+                maxCapacity: `${model.maxCapacity} ${model.unitOfMeasure || "kg"}`,
+                verificationInterval: `${model.verificationScaleIntervalE} ${model.unitOfMeasure || "kg"}`,
+                maxCapacityKg: Number(model.maxCapacity) || 15,
+                verificationIntervalKg: Number(model.verificationScaleIntervalE) || 0.005,
+                status: "VERIFIED",
+                createdAt: s.createdAt,
+              };
+              setSelectedInstrument(instItem);
+              const generated = generateStepsForInstrument(instItem);
+
+              if (s.rawObservations && s.rawObservations.length > 0) {
+                const updatedSteps = [...generated];
+                const newSavedSteps: Record<number, boolean> = {};
+                for (const obs of s.rawObservations) {
+                  const idx = obs.sequenceNumber - 1;
+                  if (updatedSteps[idx]) {
+                    updatedSteps[idx] = {
+                      ...updatedSteps[idx],
+                      appliedLoad: Number(obs.targetLoadL),
+                      indication: Number(obs.displayedIndicationI),
+                      deltaL: Number(obs.changeoverWeightDl),
+                      e0: Number(obs.zeroIndicationI0),
+                    };
+                    newSavedSteps[obs.sequenceNumber] = true;
+                  }
+                }
+                setSteps(updatedSteps);
+                setSavedSteps(newSavedSteps);
+              } else {
+                setSteps(generated);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load live session for bench:", err);
+        }
       }
     }
-  }, [urlInstId]);
+
+    initBenchData();
+    return () => {
+      isMounted = false;
+    };
+  }, [urlInstId, urlSessionId]);
 
   // Bench step navigation: ALWAYS start at Step #1 (Zero Load E0)
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -358,7 +448,7 @@ export function BenchWorkbenchView() {
 
     // Automatically buffer observation into IndexedDB
     enqueueOfflineObservation({
-      sessionId: `TS-${selectedInstrument.serialNumber}`,
+      sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
       stepNumber: activeObservation.stepNumber,
       nominalLoad: `${activeObservation.appliedLoad} ${activeObservation.unit}`,
       indication: `${activeObservation.indication} ${activeObservation.unit}`,
@@ -366,6 +456,27 @@ export function BenchWorkbenchView() {
       turningPointP: `${activeResult.P.toFixed(4)} ${activeObservation.unit}`,
       errorEc: `${activeResult.Ec.toFixed(4)} ${activeObservation.unit}`,
     }).catch(() => {});
+
+    // Save live to PostgreSQL database if active session exists
+    if (activeSessionId) {
+      observationsApi
+        .logObservation({
+          sessionId: activeSessionId,
+          formType: "Form 1",
+          loadStepIndex: activeObservation.stepNumber,
+          nominalLoad: activeObservation.appliedLoad,
+          scaleIndication: activeObservation.indication,
+          vernierLoadAdded: activeObservation.deltaL,
+          e: activeObservation.eVal,
+          e0: activeObservation.e0,
+          accuracyClass: selectedInstrument.accuracyClass,
+          loadUnit: activeObservation.unit || "kg",
+          loadDirection: activeObservation.direction,
+        })
+        .catch((err) => {
+          console.error("Live DB observation log note:", err);
+        });
+    }
 
     if (currentStepIndex < steps.length - 1) {
       setCurrentStepIndex(currentStepIndex + 1);

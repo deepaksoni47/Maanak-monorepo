@@ -6,7 +6,7 @@ import {
   validateStandardWeightSet,
   StandardWeightCheckInput,
 } from "@maanak/rules-engine";
-import { requireAuth, requireRole, Role } from "../auth/index.js";
+import { requireAuth, optionalAuth, requireRole, Role } from "../auth/index.js";
 
 export interface WeightsRouterOptions {
   db?: PrismaClient;
@@ -125,7 +125,7 @@ export function createWeightsRouter(
    */
   router.get(
     "/",
-    requireAuth,
+    optionalAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const labId =
