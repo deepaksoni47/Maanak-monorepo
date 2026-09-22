@@ -76,11 +76,26 @@ export function ObservationCard({
   const [indicationStr, setIndicationStr] = useState<string>(String(initialIndication));
   const [deltaLStr, setDeltaLStr] = useState<string>(String(initialDeltaL));
 
-  // Sync internal state if external observation prop changes
+  // Sync internal state when navigating between different steps
   useEffect(() => {
     setIndicationStr(String(initialIndication));
     setDeltaLStr(String(initialDeltaL));
-  }, [initialIndication, initialDeltaL]);
+  }, [observation.stepNumber]);
+
+  // Sync internal state only if numerical value actually changed externally (e.g. preset button or reset)
+  useEffect(() => {
+    const parsed = parseFloat(indicationStr);
+    if (!isNaN(parsed) && parsed !== initialIndication) {
+      setIndicationStr(String(initialIndication));
+    }
+  }, [initialIndication]);
+
+  useEffect(() => {
+    const parsed = parseFloat(deltaLStr);
+    if (!isNaN(parsed) && parsed !== initialDeltaL) {
+      setDeltaLStr(String(initialDeltaL));
+    }
+  }, [initialDeltaL]);
 
   const indication = parseFloat(indicationStr) || 0;
   const deltaL = parseFloat(deltaLStr) || 0;

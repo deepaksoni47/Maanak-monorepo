@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Info, Scales, ArrowRight, Lightbulb, HandPointing } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";

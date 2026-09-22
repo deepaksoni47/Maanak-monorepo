@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Scales,
   CheckCircle,
@@ -18,6 +19,9 @@ import {
   FileText,
   ArrowsClockwise,
   Table,
+  X,
+  Buildings,
+  Hash,
 } from "@phosphor-icons/react";
 import { Shell } from "@/components/layout/Shell";
 import { Badge } from "@/components/ui/Badge";
@@ -31,129 +35,156 @@ import { ToleranceSafetyGauge } from "./ToleranceSafetyGauge";
 import { OfficerGuidanceBanner } from "./OfficerGuidanceBanner";
 import { observationsApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { REGISTERED_INSTRUMENTS, InstrumentItem } from "@/components/instruments/InstrumentsListView";
 
-const INITIAL_STEPS: ObservationData[] = [
-  {
-    stepNumber: 1,
-    label: "Step #1 (Zero Load E₀)",
-    appliedLoad: 0.0,
-    indication: 0.0,
-    deltaL: 0.0025, // 0.5e
-    eVal: 0.005,
-    e0: 0.0,
-    mpeLimit: 0.0025, // ±0.5e
-    unit: "kg",
-    direction: "ASCENDING",
-  },
-  {
-    stepNumber: 2,
-    label: "Step #2 (Min = 20e)",
-    appliedLoad: 0.1,
-    indication: 0.1,
-    deltaL: 0.0025,
-    eVal: 0.005,
-    e0: 0.0,
-    mpeLimit: 0.0025,
-    unit: "kg",
-    direction: "ASCENDING",
-  },
-  {
-    stepNumber: 3,
-    label: "Step #3 (100e)",
-    appliedLoad: 0.5,
-    indication: 0.5,
-    deltaL: 0.0025,
-    eVal: 0.005,
-    e0: 0.0,
-    mpeLimit: 0.0025,
-    unit: "kg",
-    direction: "ASCENDING",
-  },
-  {
-    stepNumber: 4,
-    label: "Step #4 (500e MPE Transition)",
-    appliedLoad: 2.5,
-    indication: 2.5,
-    deltaL: 0.002, // Turning Point = 2.5005 kg, E = +0.5g
-    eVal: 0.005,
-    e0: 0.0,
-    mpeLimit: 0.0025,
-    unit: "kg",
-    direction: "ASCENDING",
-  },
-  {
-    stepNumber: 5,
-    label: "Step #5 (1000e)",
-    appliedLoad: 5.0,
-    indication: 5.0,
-    deltaL: 0.0025,
-    eVal: 0.005,
-    e0: 0.0,
-    mpeLimit: 0.005, // ±1.0e
-    unit: "kg",
-    direction: "ASCENDING",
-  },
-  {
-    stepNumber: 6,
-    label: "Step #6 (Half Max 1500e)",
-    appliedLoad: 7.5,
-    indication: 7.5,
-    deltaL: 0.0025,
-    eVal: 0.005,
-    e0: 0.0,
-    mpeLimit: 0.005,
-    unit: "kg",
-    direction: "ASCENDING",
-  },
-  {
-    stepNumber: 7,
-    label: "Step #7 (2000e MPE Transition)",
-    appliedLoad: 10.0,
-    indication: 10.0,
-    deltaL: 0.0025,
-    eVal: 0.005,
-    e0: 0.0,
-    mpeLimit: 0.005,
-    unit: "kg",
-    direction: "ASCENDING",
-  },
-  {
-    stepNumber: 8,
-    label: "Step #8 (Max = 3000e Full Load)",
-    appliedLoad: 15.0,
-    indication: 15.0,
-    deltaL: 0.0015, // Turning point = 15.001 kg, E = +1.0g
-    eVal: 0.005,
-    e0: 0.0,
-    mpeLimit: 0.0075, // ±1.5e
-    unit: "kg",
-    direction: "ASCENDING",
-  },
-  {
-    stepNumber: 9,
-    label: "Step #9 (Half Max Return Descending)",
-    appliedLoad: 7.5,
-    indication: 7.5,
-    deltaL: 0.0025,
-    eVal: 0.005,
-    e0: 0.0,
-    mpeLimit: 0.005,
-    unit: "kg",
-    direction: "DESCENDING",
-  },
-  {
-    stepNumber: 10,
-    label: "Step #10 (Zero Return)",
-    appliedLoad: 0.0,
-    indication: 0.0,
-    deltaL: 0.0025,
-    eVal: 0.005,
-    e0: 0.0,
-    mpeLimit: 0.0025,
-    unit: "kg",
-    direction: "DESCENDING",
-  },
-];
+// Dynamic OIML R-76 Clause A.4.4 Test Points Schedule Generator
+export function generateStepsForInstrument(inst: InstrumentItem): ObservationData[] {
+  const e = inst.verificationIntervalKg;
+  const max = inst.maxCapacityKg;
+  const isClassII = inst.accuracyClass === "CLASS_II";
+  const isClassI = inst.accuracyClass === "CLASS_I";
+
+  const minMultiplier = isClassI ? 100 : isClassII ? 50 : 20;
+  const mpe1Limit = isClassII ? 5000 * e : 500 * e;
+  const mpe2Limit = isClassII ? 20000 * e : 2000 * e;
+
+  const minLoad = +(minMultiplier * e).toFixed(6);
+  const step3Load = isClassII ? +(1000 * e).toFixed(6) : +(100 * e).toFixed(6);
+  const mpe1Load = Math.min(+(mpe1Limit).toFixed(6), +(max * 0.4).toFixed(6));
+  const intermediateLoad = isClassII ? +(10000 * e).toFixed(6) : +(1000 * e).toFixed(6);
+  const halfMaxLoad = +(max / 2).toFixed(6);
+  const mpe2Load = Math.min(+(mpe2Limit).toFixed(6), +(max * 0.8).toFixed(6));
+  const fullMaxLoad = max;
+
+  const getMpe = (L: number) => {
+    if (L <= mpe1Limit + 1e-9) return +(0.5 * e).toFixed(6);
+    if (L <= mpe2Limit + 1e-9) return +(1.0 * e).toFixed(6);
+    return +(1.5 * e).toFixed(6);
+  };
+
+  return [
+    {
+      stepNumber: 1,
+      label: "Step #1 (Zero Load E₀)",
+      appliedLoad: 0.0,
+      indication: 0.0,
+      deltaL: +(0.5 * e).toFixed(6),
+      eVal: e,
+      e0: 0.0,
+      mpeLimit: +(0.5 * e).toFixed(6),
+      unit: "kg",
+      direction: "ASCENDING",
+    },
+    {
+      stepNumber: 2,
+      label: `Step #2 (Min Load = ${minMultiplier}e)`,
+      appliedLoad: minLoad,
+      indication: minLoad,
+      deltaL: +(0.5 * e).toFixed(6),
+      eVal: e,
+      e0: 0.0,
+      mpeLimit: getMpe(minLoad),
+      unit: "kg",
+      direction: "ASCENDING",
+    },
+    {
+      stepNumber: 3,
+      label: `Step #3 (${isClassII ? "1000e" : "100e"})`,
+      appliedLoad: step3Load,
+      indication: step3Load,
+      deltaL: +(0.5 * e).toFixed(6),
+      eVal: e,
+      e0: 0.0,
+      mpeLimit: getMpe(step3Load),
+      unit: "kg",
+      direction: "ASCENDING",
+    },
+    {
+      stepNumber: 4,
+      label: `Step #4 (${isClassII ? "5000e" : "500e"} MPE-1 Transition)`,
+      appliedLoad: mpe1Load,
+      indication: mpe1Load,
+      deltaL: +(0.5 * e).toFixed(6),
+      eVal: e,
+      e0: 0.0,
+      mpeLimit: getMpe(mpe1Load),
+      unit: "kg",
+      direction: "ASCENDING",
+    },
+    {
+      stepNumber: 5,
+      label: `Step #5 (${isClassII ? "10000e" : "1000e"})`,
+      appliedLoad: intermediateLoad,
+      indication: intermediateLoad,
+      deltaL: +(0.5 * e).toFixed(6),
+      eVal: e,
+      e0: 0.0,
+      mpeLimit: getMpe(intermediateLoad),
+      unit: "kg",
+      direction: "ASCENDING",
+    },
+    {
+      stepNumber: 6,
+      label: "Step #6 (50% Max Load)",
+      appliedLoad: halfMaxLoad,
+      indication: halfMaxLoad,
+      deltaL: +(0.5 * e).toFixed(6),
+      eVal: e,
+      e0: 0.0,
+      mpeLimit: getMpe(halfMaxLoad),
+      unit: "kg",
+      direction: "ASCENDING",
+    },
+    {
+      stepNumber: 7,
+      label: `Step #7 (${isClassII ? "20000e" : "2000e"} MPE-2 Transition)`,
+      appliedLoad: mpe2Load,
+      indication: mpe2Load,
+      deltaL: +(0.5 * e).toFixed(6),
+      eVal: e,
+      e0: 0.0,
+      mpeLimit: getMpe(mpe2Load),
+      unit: "kg",
+      direction: "ASCENDING",
+    },
+    {
+      stepNumber: 8,
+      label: "Step #8 (100% Full Max)",
+      appliedLoad: fullMaxLoad,
+      indication: fullMaxLoad,
+      deltaL: +(0.5 * e).toFixed(6),
+      eVal: e,
+      e0: 0.0,
+      mpeLimit: getMpe(fullMaxLoad),
+      unit: "kg",
+      direction: "ASCENDING",
+    },
+    {
+      stepNumber: 9,
+      label: "Step #9 (50% Max Return)",
+      appliedLoad: halfMaxLoad,
+      indication: halfMaxLoad,
+      deltaL: +(0.5 * e).toFixed(6),
+      eVal: e,
+      e0: 0.0,
+      mpeLimit: getMpe(halfMaxLoad),
+      unit: "kg",
+      direction: "DESCENDING",
+    },
+    {
+      stepNumber: 10,
+      label: "Step #10 (Zero Return)",
+      appliedLoad: 0.0,
+      indication: 0.0,
+      deltaL: +(0.5 * e).toFixed(6),
+      eVal: e,
+      e0: 0.0,
+      mpeLimit: +(0.5 * e).toFixed(6),
+      unit: "kg",
+      direction: "DESCENDING",
+    },
+  ];
+}
 
 // Helper to calculate pseudo WELMEC hash snippet for an observation
 function calculateWelmecHashSnippet(step: ObservationData, P: number, Ec: number): string {
@@ -166,17 +197,61 @@ function calculateWelmecHashSnippet(step: ObservationData, P: number, Ec: number
   return `0x${(hash >>> 0).toString(16).padStart(8, "0").slice(0, 8)}...`;
 }
 
+function useSafeInstrumentId(): string | null {
+  try {
+    const searchParams = useSearchParams();
+    return searchParams ? searchParams.get("instrumentId") : null;
+  } catch {
+    return null;
+  }
+}
+
 export function BenchWorkbenchView() {
   const { user } = useAuth();
-  const [steps, setSteps] = useState<ObservationData[]>(INITIAL_STEPS);
-  const [currentStepIndex, setCurrentStepIndex] = useState<number>(3); // Default to Step #4 for interactive demo
-  const [savedSteps, setSavedSteps] = useState<Record<number, boolean>>({
-    1: true,
-    2: true,
-    3: true,
-  });
+  const urlInstId = useSafeInstrumentId();
 
-  const activeObservation = steps[currentStepIndex];
+  const initialInstrument =
+    REGISTERED_INSTRUMENTS.find((i) => i.id === urlInstId) || REGISTERED_INSTRUMENTS[0];
+
+  const [selectedInstrument, setSelectedInstrument] = useState<InstrumentItem>(initialInstrument);
+  const [steps, setSteps] = useState<ObservationData[]>(() =>
+    generateStepsForInstrument(initialInstrument)
+  );
+
+  // Bench step navigation: ALWAYS start at Step #1 (Zero Load E0)
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+  const [savedSteps, setSavedSteps] = useState<Record<number, boolean>>({});
+  const [isInstrumentSelectorOpen, setIsInstrumentSelectorOpen] = useState<boolean>(false);
+  const [isCompletedModalOpen, setIsCompletedModalOpen] = useState<boolean>(false);
+
+  // Sync if URL query param changes
+  useEffect(() => {
+    if (urlInstId && urlInstId !== selectedInstrument.id) {
+      const match = REGISTERED_INSTRUMENTS.find((i) => i.id === urlInstId);
+      if (match) {
+        setSelectedInstrument(match);
+        setSteps(generateStepsForInstrument(match));
+        setCurrentStepIndex(0);
+        setSavedSteps({});
+      }
+    }
+  }, [urlInstId]);
+
+  const handleSelectInstrument = (inst: InstrumentItem) => {
+    setSelectedInstrument(inst);
+    setSteps(generateStepsForInstrument(inst));
+    setCurrentStepIndex(0); // Reset to Step #1
+    setSavedSteps({});
+    setIsInstrumentSelectorOpen(false);
+
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("instrumentId", inst.id);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
+
+  const activeObservation = steps[currentStepIndex] || steps[0];
 
   // Helper to compute P, E, and Ec for any step
   const computeStepResult = (obs: ObservationData) => {
@@ -227,7 +302,7 @@ export function BenchWorkbenchView() {
     nextSteps[currentStepIndex] = updated;
     setSteps(nextSteps);
 
-    // Call live backend calculation asynchronously to ensure 100% real-time backend synchronization
+    // Call live backend calculation asynchronously
     observationsApi
       .calculateTurningPoint({
         indication: updated.indication,
@@ -235,11 +310,11 @@ export function BenchWorkbenchView() {
         e: updated.eVal,
         nominalLoad: updated.appliedLoad,
         e0: updated.e0,
-        accuracyClass: "CLASS_III",
+        accuracyClass: selectedInstrument.accuracyClass,
         loadUnit: updated.unit || "kg",
       })
       .catch(() => {
-        // Safe offline fallback already handled locally
+        // Safe offline fallback handled locally
       });
   };
 
@@ -248,7 +323,7 @@ export function BenchWorkbenchView() {
 
     // Automatically buffer observation into IndexedDB
     enqueueOfflineObservation({
-      sessionId: "TS-2026-0142",
+      sessionId: `TS-${selectedInstrument.serialNumber}`,
       stepNumber: activeObservation.stepNumber,
       nominalLoad: `${activeObservation.appliedLoad} ${activeObservation.unit}`,
       indication: `${activeObservation.indication} ${activeObservation.unit}`,
@@ -259,14 +334,8 @@ export function BenchWorkbenchView() {
 
     if (currentStepIndex < steps.length - 1) {
       setCurrentStepIndex(currentStepIndex + 1);
-    }
-  };
-
-  // Preset quick navigation for field officers (Zero, Min 20e, 1/4 Max, 1/2 Max, Max)
-  const jumpToPresetLoad = (loadValue: number) => {
-    const foundIdx = steps.findIndex((s) => Math.abs(s.appliedLoad - loadValue) < 0.001);
-    if (foundIdx !== -1) {
-      setCurrentStepIndex(foundIdx);
+    } else {
+      setIsCompletedModalOpen(true);
     }
   };
 
@@ -314,8 +383,8 @@ export function BenchWorkbenchView() {
       }
     >
       <div className="space-y-6">
-        {/* Session Info & Ambient Telemetry Strip */}
-        <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        {/* Session Info & Ambient Telemetry Strip with Instrument Switcher */}
+        <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-xs">
           <div className="flex items-start sm:items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Scales size={22} weight="duotone" />
@@ -323,17 +392,28 @@ export function BenchWorkbenchView() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-bold text-foreground">
-                  Session TS-2026-0142: Essae DS-215
+                  Session TS-2026-0142: {selectedInstrument.model}
                 </h3>
-                <Badge variant="pass" showIcon={false} className="py-0.5 px-2 text-[10px]">
-                  CLASS III
+                <Badge variant="pass" showIcon={false} className="py-0.5 px-2 text-[10px] font-mono">
+                  {selectedInstrument.accuracyClass === "CLASS_III" ? "CLASS III" : selectedInstrument.accuracyClass.replace("_", " ")}
                 </Badge>
                 <span className="text-[11px] font-mono text-muted-foreground">
-                  Max 15 kg | e = 5 g | TAC: IND/09/2026/042
+                  Max 15 kg | e = 5 g | TAC: {selectedInstrument.tacNumber}
                 </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsInstrumentSelectorOpen(true)}
+                  className="h-7 text-xs font-semibold px-2.5 rounded-lg border-primary/30 text-primary hover:bg-primary/10"
+                  leftIcon={<ArrowsClockwise size={13} />}
+                >
+                  Switch Instrument
+                </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Officer: {user ? `${user.fullName} (${user.role})` : "Guest Officer (Sign In to Sign & Stamp)"} | RRSL Faridabad Testing Bay #2
+                Serial: <span className="font-mono font-semibold">{selectedInstrument.serialNumber}</span> · Officer:{" "}
+                {user ? `${user.fullName} (${user.role})` : "Guest Officer (Sign In to Sign & Stamp)"} · Testing Bay #2
               </p>
             </div>
           </div>
@@ -358,7 +438,7 @@ export function BenchWorkbenchView() {
         </div>
 
         {/* Offline PWA Sync Status Banner */}
-        <OfflineSyncBanner sessionId="TS-2026-0142" />
+        <OfflineSyncBanner sessionId={`TS-${selectedInstrument.serialNumber}`} />
 
         {/* Officer Guided Mode Banner (Plain-English Field Instructions) */}
         <OfficerGuidanceBanner
@@ -381,58 +461,24 @@ export function BenchWorkbenchView() {
           mpeLimit={activeObservation.mpeLimit}
           currentStepIndex={currentStepIndex}
           totalSteps={steps.length}
-          unit={activeObservation.unit}
+          unit={activeObservation.unit || "kg"}
         />
 
-        {/* Officer Quick Load Preset Buttons */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <span className="text-xs font-semibold text-muted-foreground shrink-0 flex items-center gap-1">
-            <Scales size={14} className="text-primary" />
-            <span>Quick Load Presets:</span>
-          </span>
-          <button
-            type="button"
-            onClick={() => jumpToPresetLoad(0.0)}
-            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-accent text-xs font-mono font-medium transition-colors shrink-0"
-          >
-            Zero (0 kg)
-          </button>
-          <button
-            type="button"
-            onClick={() => jumpToPresetLoad(0.1)}
-            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-accent text-xs font-mono font-medium transition-colors shrink-0"
-          >
-            Min (0.1 kg)
-          </button>
-          <button
-            type="button"
-            onClick={() => jumpToPresetLoad(7.5)}
-            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-accent text-xs font-mono font-medium transition-colors shrink-0"
-          >
-            ½ Max (7.5 kg)
-          </button>
-          <button
-            type="button"
-            onClick={() => jumpToPresetLoad(15.0)}
-            className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-accent text-xs font-mono font-medium transition-colors shrink-0"
-          >
-            Full Max (15.0 kg)
-          </button>
-        </div>
-
-        {/* Step Progression Chip Strip */}
-        <div className="space-y-2">
+        {/* Step Progress Stepper Bar (Step #1 to #10) */}
+        <div className="rounded-3xl border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-            <span>Clause A.4.4.1 Test Load Schedule (10 Steps):</span>
+            <span className="text-foreground font-bold">
+              Clause A.4.4 Test Load Schedule ({steps.length} Statutory Points):
+            </span>
             <span>
-              {Object.keys(savedSteps).length} of {steps.length} Recorded
+              Step {currentStepIndex + 1} of {steps.length}
             </span>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2">
             {steps.map((step, idx) => {
               const isCurrent = idx === currentStepIndex;
-              const isSaved = savedSteps[step.stepNumber];
+              const isSaved = !!savedSteps[step.stepNumber];
               const res = computeStepResult(step);
 
               return (
@@ -440,63 +486,60 @@ export function BenchWorkbenchView() {
                   key={step.stepNumber}
                   type="button"
                   onClick={() => setCurrentStepIndex(idx)}
-                  className={`px-3 py-2 rounded-2xl text-xs font-medium border shrink-0 transition-all min-h-[48px] flex items-center gap-1.5 cursor-pointer ${
+                  className={`flex flex-col items-center justify-center p-2 rounded-2xl border text-xs transition-all ${
                     isCurrent
-                      ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold ring-2 ring-primary/30"
+                      ? "border-primary bg-primary/10 text-primary font-bold shadow-xs ring-2 ring-primary/20"
                       : isSaved
                       ? res.isPass
-                        ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-semibold"
-                        : "bg-destructive/10 border-destructive/40 text-destructive font-semibold"
-                      : "bg-card border-border text-foreground hover:bg-accent"
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold"
+                        : "border-destructive/40 bg-destructive/10 text-destructive font-semibold"
+                      : "border-border bg-background hover:bg-muted/40 text-muted-foreground"
                   }`}
                 >
-                  <span>#{step.stepNumber}</span>
-                  <span className="font-mono">
+                  <span className="font-mono text-[10px]">#{step.stepNumber}</span>
+                  <span className="sr-only">Step #{step.stepNumber}</span>
+                  <span className="text-[11px] font-mono truncate max-w-full font-bold">
                     {step.appliedLoad} {step.unit}
                   </span>
-                  {step.direction === "DESCENDING" && (
-                    <span className="text-[10px]">▼</span>
-                  )}
-                  {isSaved && res.isPass && (
-                    <Check size={12} weight="bold" className="text-emerald-500" />
-                  )}
+                  <div className="mt-1 flex items-center justify-center h-3 w-3">
+                    {isSaved ? (
+                      res.isPass ? (
+                        <Check size={12} weight="bold" className="text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <WarningCircle size={12} weight="bold" className="text-destructive" />
+                      )
+                    ) : (
+                      <span className="h-1.5 w-1.5 rounded-full bg-border" />
+                    )}
+                  </div>
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Main 2-Column Responsive Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Active Step ObservationCard (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
+        {/* Observation Interaction Area (Active Observation Card + Live Ledger) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-7">
             <ObservationCard
               observation={activeObservation}
               onChange={handleObservationChange}
-              onRetest={() => {
-                const next = [...steps];
-                next[currentStepIndex] = {
-                  ...activeObservation,
-                  indication: activeObservation.appliedLoad,
-                  deltaL: 0.0025,
-                };
-                setSteps(next);
-              }}
             />
           </div>
 
-          {/* Right Column: Complete Step Matrix Table & Formula Guidance (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
-            <Card>
-              <CardHeader className="pb-3 border-b border-border/60 flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-base">Weighing Run Matrix</CardTitle>
-                  <CardDescription>
-                    Clause A.4.4 10-load observation log
-                  </CardDescription>
+            {/* Live Progress Summary Table */}
+            <Card className="rounded-3xl border border-border overflow-hidden">
+              <CardHeader className="p-4 bg-muted/20 border-b border-border/70 flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Table size={18} className="text-primary" />
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Active Run Summary
+                  </CardTitle>
                 </div>
                 <Badge
                   variant={activeResult.isPass ? "pass" : "fail"}
+                  showIcon={false}
                   className="font-mono text-xs"
                 >
                   RUN STATUS: {activeResult.isPass ? "PASS" : "OVER MPE"}
@@ -595,6 +638,136 @@ export function BenchWorkbenchView() {
           }}
         />
       </div>
+
+      {/* Instrument Selection Modal */}
+      {isInstrumentSelectorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 w-full max-w-2xl shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3">
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+                  <Scales size={20} className="text-primary" />
+                  Select Non-Automatic Weighing Instrument (NAWI)
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Choose a target scale to generate its statutory OIML R-76 Clause A.4.4 verification schedule.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsInstrumentSelectorOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              {REGISTERED_INSTRUMENTS.map((inst) => {
+                const isCurrent = inst.id === selectedInstrument.id;
+                return (
+                  <div
+                    key={inst.id}
+                    onClick={() => handleSelectInstrument(inst)}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      isCurrent
+                        ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                        : "border-border hover:border-primary/50 hover:bg-muted/30"
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-foreground">{inst.model}</span>
+                        <Badge
+                          variant={inst.accuracyClass === "CLASS_I" ? "outline" : "pass"}
+                          showIcon={false}
+                          className="text-[10px] font-mono py-0.5 px-2"
+                        >
+                          {inst.accuracyClass.replace("_", " ")}
+                        </Badge>
+                        {isCurrent && (
+                          <Badge variant="neutral" showIcon={false} className="text-[10px] font-bold bg-primary text-primary-foreground">
+                            Active Scale
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                        <span>{inst.manufacturer}</span>
+                        <span>·</span>
+                        <span className="font-mono font-semibold">SN: {inst.serialNumber}</span>
+                        <span>·</span>
+                        <span className="font-mono">TAC: {inst.tacNumber}</span>
+                      </div>
+                      <div className="text-xs font-mono font-semibold text-foreground/90">
+                        Max Capacity: {inst.maxCapacity} | Scale Interval (e): {inst.verificationInterval}
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={isCurrent ? "default" : "outline"}
+                      className="text-xs font-bold shrink-0 self-start sm:self-auto"
+                    >
+                      {isCurrent ? "Currently Active" : "Select & Load Schedule"}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsInstrumentSelectorOpen(false)}
+                className="text-xs font-semibold"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Test Battery Complete Modal */}
+      {isCompletedModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-card border border-border rounded-3xl p-6 w-full max-w-md shadow-xl text-center space-y-4">
+            <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <CheckCircle size={32} weight="fill" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-foreground">
+                Weighing Performance Test Completed
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                All 10 OIML R-76 Clause A.4.4 test load points have been observed and cryptographically recorded for {selectedInstrument.model}.
+              </p>
+            </div>
+            <div className="p-3 rounded-2xl bg-muted/30 border border-border text-xs font-mono text-left space-y-1">
+              <div>Scale: <span className="font-bold">{selectedInstrument.model}</span></div>
+              <div>Serial: <span className="font-bold">{selectedInstrument.serialNumber}</span></div>
+              <div>Class: <span className="font-bold">{selectedInstrument.accuracyClass}</span></div>
+              <div>Completed Steps: <span className="font-bold text-emerald-600">10 / 10 Points</span></div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
+              <Link href="/review" className="w-full">
+                <Button className="w-full text-xs font-bold" rightIcon={<ArrowRight size={14} />}>
+                  Proceed to Audit Review
+                </Button>
+              </Link>
+              <Button
+                variant="outline"
+                className="w-full text-xs font-semibold"
+                onClick={() => setIsCompletedModalOpen(false)}
+              >
+                Stay on Bench
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Shell>
   );
 }

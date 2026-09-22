@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { ShieldCheck, Warning, CheckCircle, Info, Gauge } from "@phosphor-icons/react";
