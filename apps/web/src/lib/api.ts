@@ -1,0 +1,269 @@
+/**
+ * MAANAK Legal Metrology REST API Gateway Client
+ * Centralized, type-safe client connecting Next.js frontend to Express API (/api/v1).
+ */
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+export interface ApiResponse<T = any> {
+  success?: boolean;
+  data?: T;
+  error?: string;
+  code?: string;
+  details?: any;
+  [key: string]: any;
+}
+
+function getStoredToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("maanak_access_token");
+}
+
+export async function apiRequest<T = any>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  const token = getStoredToken();
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    "X-Request-Id": typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `req-${Date.now()}`,
+    ...((options.headers as Record<string, string>) || {}),
+  };
+
+  if (token && !headers["Authorization"]) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  const contentType = res.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
+  const data = isJson ? await res.json() : await res.text();
+
+  if (!res.ok) {
+    const errorMsg =
+      (typeof data === "object" && (data.error || data.message)) ||
+      `HTTP ${res.status}: ${res.statusText}`;
+    const err = new Error(errorMsg);
+    (err as any).status = res.status;
+    (err as any).response = data;
+    throw err;
+  }
+
+  return data as T;
+}
+
+// ----------------------------------------------------------------------
+// Sub-APIs
+// ----------------------------------------------------------------------
+
+export const authApi = {
+  login: (credentials: { email?: string; username?: string; password: string }) =>
+    apiRequest("/api/v1/auth/login", {
+      method: "POST",
+      body: JSON.stringify(credentials),
+    }),
+
+  getProfile: () => apiRequest("/api/v1/auth/me"),
+
+  refreshToken: (refreshToken: string) =>
+    apiRequest("/api/v1/auth/refresh", {
+      method: "POST",
+      body: JSON.stringify({ refreshToken }),
+    }),
+};
+
+export const sessionsApi = {
+  list: (params: { status?: string; search?: string; page?: number; limit?: number } = {}) => {
+    const query = new URLSearchParams();
+    if (params.status) query.append("status", params.status);
+    if (params.search) query.append("search", params.search);
+    if (params.page) query.append("page", String(params.page));
+    if (params.limit) query.append("limit", String(params.limit));
+    const qs = query.toString();
+    return apiRequest(`/api/v1/sessions${qs ? `?${qs}` : ""}`);
+  },
+
+  getById: (id: string) => apiRequest(`/api/v1/sessions/${id}`),
+
+  create: (sessionData: {
+    instrumentId: string;
+    sessionNumber?: string;
+    laboratoryId?: string;
+    testingBay?: string;
+    ambientTempC?: number | string;
+    relativeHumidityPct?: number | string;
+    atmosphericPressureHpa?: number | string;
+  }) =>
+    apiRequest("/api/v1/sessions", {
+      method: "POST",
+      body: JSON.stringify(sessionData),
+    }),
+
+  getPlan: (sessionId: string) => apiRequest(`/api/v1/sessions/${sessionId}/plan`),
+
+  updateStatus: (sessionId: string, status: string, notes?: string) =>
+    apiRequest(`/api/v1/sessions/${sessionId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, notes }),
+    }),
+};
+
+export const observationsApi = {
+  logObservation: (observationData: {
+    sessionId: string;
+    formType?: string;
+    loadStepIndex: number;
+    nominalLoad: number | string;
+    scaleIndication: number | string;
+    vernierLoadAdded: number | string;
+    e: number | string;
+    e0?: number | string;
+    accuracyClass?: string;
+    loadUnit?: string;
+    loadDirection?: "ASCENDING" | "DESCENDING";
+    temperatureC?: number | string;
+    pressureHpa?: number | string;
+  }) =>
+    apiRequest("/api/v1/observations", {
+      method: "POST",
+      body: JSON.stringify(observationData),
+    }),
+
+  getSessionObservations: (sessionId: string, formType?: string) => {
+    const qs = formType ? `?formType=${encodeURIComponent(formType)}` : "";
+    return apiRequest(`/api/v1/observations/session/${sessionId}${qs}`);
+  },
+
+  calculateTurningPoint: (calcData: {
+    indication: number | string;
+    deltaL: number | string;
+    e: number | string;
+    nominalLoad: number | string;
+    e0?: number | string;
+    accuracyClass?: string;
+    loadUnit?: string;
+  }) =>
+    apiRequest("/api/v1/observations/calculate", {
+      method: "POST",
+      body: JSON.stringify(calcData),
+    }),
+};
+
+export const weightsApi = {
+  list: (params: { oimlClass?: string; laboratoryId?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (params.oimlClass) query.append("oimlClass", params.oimlClass);
+    if (params.laboratoryId) query.append("laboratoryId", params.laboratoryId);
+    const qs = query.toString();
+    return apiRequest(`/api/v1/weights${qs ? `?${qs}` : ""}`);
+  },
+
+  register: (weightData: any) =>
+    apiRequest("/api/v1/weights", {
+      method: "POST",
+      body: JSON.stringify(weightData),
+    }),
+
+  precheck: (checkData: {
+    uncertaintyU: number | string;
+    targetLoad: number | string;
+    e: number | string;
+    accuracyClass: string;
+    uncertaintyUnit?: string;
+    loadUnit?: string;
+    eUnit?: string;
+    weightId?: string;
+    weightClass?: string;
+    mode?: string;
+  }) =>
+    apiRequest("/api/v1/weights/precheck", {
+      method: "POST",
+      body: JSON.stringify(checkData),
+    }),
+
+  batchPrecheck: (batchData: {
+    e: number | string;
+    accuracyClass: string;
+    unit?: string;
+    weights: Array<{
+      targetLoad: number | string;
+      uncertaintyU: number | string;
+      weightId?: string;
+    }>;
+  }) =>
+    apiRequest("/api/v1/weights/precheck/batch", {
+      method: "POST",
+      body: JSON.stringify(batchData),
+    }),
+};
+
+export const instrumentsApi = {
+  list: () => apiRequest("/api/v1/instruments"),
+
+  register: (instrumentData: any) =>
+    apiRequest("/api/v1/instruments", {
+      method: "POST",
+      body: JSON.stringify(instrumentData),
+    }),
+
+  classify: (spec: {
+    maxCapacity: string | number;
+    e: string | number;
+    d?: string | number;
+    accuracyClass: string;
+    minCapacity?: string | number;
+  }) =>
+    apiRequest("/api/v1/instruments/classify", {
+      method: "POST",
+      body: JSON.stringify(spec),
+    }),
+};
+
+export const rulesApi = {
+  list: () => apiRequest("/api/v1/rules"),
+  getActive: () => apiRequest("/api/v1/rules/active"),
+  getById: (id: string) => apiRequest(`/api/v1/rules/${id}`),
+};
+
+export const reviewApi = {
+  getAuditSummary: (sessionId: string) =>
+    apiRequest(`/api/v1/review/sessions/${sessionId}/audit`),
+
+  submitDecision: (decisionData: {
+    sessionId: string;
+    decision: "APPROVED" | "FLAGGED_FOR_CORRECTION" | "REJECTED";
+    notes?: string;
+  }) =>
+    apiRequest("/api/v1/review/decision", {
+      method: "POST",
+      body: JSON.stringify(decisionData),
+    }),
+};
+
+export const reportsApi = {
+  generate: (sessionId: string, options: { format?: "PDF" | "DOCX"; includeCurves?: boolean } = {}) =>
+    apiRequest(`/api/v1/reports/${sessionId}/generate`, {
+      method: "POST",
+      body: JSON.stringify(options),
+    }),
+
+  sign: (sessionId: string, signData: { pin: string; signatoryName?: string; signatoryRole?: string }) =>
+    apiRequest(`/api/v1/reports/${sessionId}/sign`, {
+      method: "POST",
+      body: JSON.stringify(signData),
+    }),
+
+  getById: (sessionId: string) => apiRequest(`/api/v1/reports/${sessionId}`),
+};
+
+export const verifyApi = {
+  verifyHash: (hash: string) => apiRequest(`/api/v1/verify/${encodeURIComponent(hash)}`),
+};

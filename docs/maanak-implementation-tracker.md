@@ -27,9 +27,9 @@
 |                                      TASK EXECUTION STATUS                                        |
 +-------------------+-------------------+-------------------+-------------------+-------------------+
 |   TOTAL TASKS     |      READY        |    IN_PROGRESS    |      BLOCKED      |     VERIFIED      |
-|       70          |        1          |        0          |        0          |        64         |
+|       70          |        2          |        0          |        0          |        65         |
 +-------------------+-------------------+-------------------+-------------------+-------------------+
-| PROGRESS: [███████████████████████████████████████████████            ] 91.4% Complete                  |
+| PROGRESS: [████████████████████████████████████████████████           ] 92.9% Complete                  |
 +---------------------------------------------------------------------------------------------------+
 ```
 
@@ -48,8 +48,8 @@
 | **MOD-08** | Node.js REST API Gateway            |   10   |   0   |    0    |      0      |   10     |    100%    |
 | **MOD-09** | Responsive Mobile Bench PWA & Web   |   12   |   0   |    0    |      0      |   12     |    100%    |
 | **MOD-10** | Ground Truth Test Verification      |   5    |   0   |    0    |      0      |    5     |    100%    |
-| **MOD-11** | Production Integration & Officer UX |   7    |   1   |    0    |      0      |    1     |    14.3%   |
-| **TOTAL**  | **Entire MAANAK Platform**          | **70** |  **1**|    **0**   |    **0**    |  **64**  |  **91.4%** |
+| **MOD-11** | Production Integration & Officer UX |   7    |   2   |    0    |      0      |    2     |    28.6%   |
+| **TOTAL**  | **Entire MAANAK Platform**          | **70** |  **2**|    **0**   |    **0**    |  **65**  |  **92.9%** |
 
 ---
 
@@ -204,21 +204,22 @@ graph TD
 | **`TASK-062`** | MOD-10 | Ground truth verification TC-04: Temperature drift overrun                                         | **`VERIFIED`** | `TASK-019` (Verified), `TASK-044` (Verified)                        | Verified: tc04_temp_drift.test.ts verifies Clause A.5.3.2 thermal drift, Form 2 ERR_TEMP_DRIFT_EXCEEDED (8.0°C/h > 5.0°C/h), AnomalyDetector environmental stability, and REST API /review/sessions/:id/audit (6/6 tests pass) | `pnpm run test:e2e` |
 | **`TASK-063`** | MOD-10 | Ground truth verification TC-05: WELMEC 7.2 tampering                                              | **`VERIFIED`** | `TASK-030` (Verified), `TASK-046` (Verified)                        | Verified: tc05_welmec_tamper.test.ts verifies direct SQL tampering detection, validateSessionProvenanceChain error reason, GET /api/v1/verify/:hash tamper verdict, and POST /api/v1/reports/:sessionId/generate 409 blockade (5/5 tests pass) | `pnpm run test:e2e` |
 | **`TASK-064`** | MOD-11 | Genuine End-to-End Authentication & Session Management                                             | **`VERIFIED`** | `TASK-038` (Verified), `TASK-048` (Verified)                        | Verified: /login page with role quick-fill, JWT token persistence, AuthContext, profile in Shell, and logout (108/108 tests pass) | Real login & JWT auth in frontend |
-| **`TASK-065`** | MOD-11 | Unified Live Backend API Client (`apps/web/src/lib/api.ts`)                                        |   **`READY`**  | `TASK-046` (Verified), `TASK-064` (Verified)                        | Ready for execution: Connect all views to http://localhost:4000/api/v1, eliminating simulated data | Live database fetch & mutate |
-| **`TASK-066`** | MOD-11 | Live Metrological Test Observation Ledger Table                                                    |   **`BLOCKED`**| `TASK-043` (Verified), `TASK-065`                                   | Blocked by TASK-065: Real-time data sheet table appending L, I, ΔL, P, E, Ec, MPE, and hash on each operation | Append observations to table |
-| **`TASK-067`** | MOD-11 | Decimal Precision Input Engine & Vernier Input Fix                                                 |   **`BLOCKED`**| `TASK-054` (Verified)                                               | Blocked by TASK-054: Buffer numeric input strings to allow smooth typing of 0.0025, 10.005, etc. | Smooth decimal input entry |
+| **`TASK-065`** | MOD-11 | Unified Live Backend API Client (`apps/web/src/lib/api.ts`)                                        | **`VERIFIED`** | `TASK-046` (Verified), `TASK-064` (Verified)                        | Verified: api.ts connects all views to http://localhost:4000/api/v1 with Bearer token injection, calculate route, and offline safety (111/111 tests pass) | Live database fetch & mutate |
+| **`TASK-066`** | MOD-11 | Live Metrological Test Observation Ledger Table                                                    |   **`READY`**  | `TASK-043` (Verified), `TASK-065` (Verified)                        | Ready for execution: Real-time data sheet table appending L, I, ΔL, P, E, Ec, MPE, and hash on each operation | Append observations to table |
+| **`TASK-067`** | MOD-11 | Decimal Precision Input Engine & Vernier Input Fix                                                 |   **`READY`**  | `TASK-054` (Verified), `TASK-065` (Verified)                        | Ready for execution: Buffer numeric input strings to allow smooth typing of 0.0025, 10.005, etc. without stripping periods | Smooth decimal input entry |
 | **`TASK-068`** | MOD-11 | Dynamic MPE Safety & Test Battery Progress Gauges                                                  |   **`BLOCKED`**| `TASK-066`                                                          | Blocked by TASK-066: Dynamic MPE tolerance consumption gauge and completion fraction | Real-time safety gauge |
-| **`TASK-069`** | MOD-11 | Navigation Routing & Missing Pages Completion                                                      |   **`BLOCKED`**| `TASK-048` (Verified), `TASK-065`                                   | Blocked by TASK-065: Resolve all 404s (/instruments, /reports, /verify, /rule-packs, /provenance, /review) | Zero 404 errors across navbar |
+| **`TASK-069`** | MOD-11 | Navigation Routing & Missing Pages Completion                                                      |   **`BLOCKED`**| `TASK-048` (Verified), `TASK-065` (Verified)                        | Blocked by TASK-065: Resolve all 404s (/instruments, /reports, /verify, /rule-packs, /provenance, /review) | Zero 404 errors across navbar |
 | **`TASK-070`** | MOD-11 | Non-Technical Officer Guided Mode & Intuitive Field UX                                             |   **`BLOCKED`**| `TASK-066`, `TASK-067`                                              | Blocked by TASK-066, TASK-067: Plain-English field guidance prompts, one-tap load presets, and statutory tooltips | Field guided testing mode |
 
 ---
 
 ## 4. Operational Instructions for Next Iteration
 
-1. **`TASK-001` through `TASK-064`** have been **`VERIFIED`**.
-2. The following task is now **`READY`** for immediate execution:
-   - **`TASK-065: Unified Live Backend API Client (apps/web/src/lib/api.ts)`** (Module 11)
-     - Builds centralized, type-safe API client targeting `http://localhost:4000/api/v1`.
-     - Connects `/dashboard`, `/bench`, `/review`, `/weights`, and `/instruments` to fetch live data from the backend, eliminating simulated data fallbacks when online.
-3. Recommended next step: **`TASK-065`**.
+1. **`TASK-001` through `TASK-065`** have been **`VERIFIED`**.
+2. The following tasks are now **`READY`** for immediate execution:
+   - **`TASK-066: Live Metrological Test Observation Ledger Table`** (Module 11)
+     - Builds real-time data sheet table appending $L, I, \Delta L, P, E, E_c, \text{MPE}$, and hash on every operation.
+   - **`TASK-067: Decimal Precision Input Engine & Vernier Input Fix`** (Module 11)
+     - Refactors numeric inputs to string-buffered state with `inputMode="decimal"` and `step="any"` so typing decimal numbers (e.g., `0.0025`, `10.005`) does not prematurely strip periods or jump focus.
+3. Recommended next step: **`TASK-066`** & **`TASK-067`**.
 

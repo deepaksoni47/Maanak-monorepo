@@ -496,6 +496,62 @@ export function createObservationsRouter(
     },
   );
 
+  // ---------------------------------------------------------------------------
+  // 3. POST /api/v1/observations/calculate - Real-time turning point & MPE math calculator
+  // ---------------------------------------------------------------------------
+  router.post(
+    "/calculate",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const {
+          indication,
+          deltaL = "0",
+          e,
+          nominalLoad,
+          e0 = "0",
+          accuracyClass = "CLASS_III",
+        } = req.body;
+
+        if (indication === undefined || e === undefined || nominalLoad === undefined) {
+          res.status(400).json({
+            error: "VALIDATION_ERROR",
+            message: "Fields 'indication', 'e', and 'nominalLoad' are required for calculation.",
+          });
+          return;
+        }
+
+        const indP = calculateIndicationP(String(indication), String(deltaL), String(e));
+        const rawE = calculateRawErrorE(indP.toString(), String(nominalLoad));
+        const zeroE0 = calculateRawErrorE(
+          calculateIndicationP("0", String(deltaL), String(e)).toString(),
+          "0",
+        );
+        const ec = calculateCorrectedErrorEc(rawE.toString(), String(e0 || zeroE0));
+
+        const mpeRes = getMpe(
+          String(nominalLoad),
+          String(e),
+          accuracyClass as any,
+        );
+
+        const compliance = evaluateCompliance(ec, mpeRes.mpeInMass);
+
+        res.status(200).json({
+          success: true,
+          turningPointP: indP.toString(),
+          rawErrorE: rawE.toString(),
+          correctedIntrinsicErrorEc: ec.toString(),
+          mpe: mpeRes.mpeInMass,
+          pass: compliance.pass,
+          ratioToMpe: compliance.ratioToMpe,
+          percentageOfMpe: compliance.percentageOfMpe,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
   return router;
 }
 
