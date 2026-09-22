@@ -15,6 +15,7 @@ import {
   createDigitalSignatureMetadata,
   generateProvenanceNode,
   GENESIS_PREV_HASH,
+  validateSessionProvenanceChain,
 } from "@maanak/crypto-provenance";
 import type { CalculationTraceItem } from "@maanak/types";
 import { requireAuth, requireRole, Role } from "../auth/index.js";
@@ -281,6 +282,22 @@ export function createReportsRouter(options: ReportsRouterOptions = {}): Router 
         }
 
         const { session, reportData } = built;
+
+        // Cryptographically validate entire WELMEC 7.2 provenance chain before report generation
+        if (session.provenanceNodes && session.provenanceNodes.length > 0) {
+          const chainValidation = validateSessionProvenanceChain(
+            session.provenanceNodes as any,
+          );
+          if (!chainValidation.valid) {
+            res.status(409).json({
+              error: "PROVENANCE_TAMPER_DETECTED",
+              message: `Cannot generate official report: WELMEC 7.2 provenance chain validation failed (${chainValidation.failureReason}) at sequence ${chainValidation.brokenAtIndex}. Direct database tampering or broken link detected.`,
+              details: chainValidation.details,
+              brokenAtIndex: chainValidation.brokenAtIndex,
+            });
+            return;
+          }
+        }
 
         // Compile PDF & DOCX in parallel
         const [pdfResult, docxResult] = await Promise.all([
