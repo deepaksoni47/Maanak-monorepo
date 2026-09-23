@@ -23,6 +23,7 @@ import {
   CaretLeft,
   CaretRight,
   CaretDown,
+  ArrowUpRight,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Navbar, Footer } from "@/components/layout";
@@ -503,35 +504,103 @@ export default function HomePage() {
       </section>
 
       {/* Section 5: Regional Reference Standard Laboratories (RRSL) */}
-      <section className="py-12 lg:py-16">
+      <section className="py-14 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
             <div>
               <div className="text-xs font-bold uppercase tracking-wider text-primary">National Laboratory Network</div>
-              <h2 className="text-xl sm:text-2xl font-bold text-foreground">Regional Reference Standard Laboratories</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Regional Reference Standard Laboratories</h2>
             </div>
-            <span className="text-xs text-muted-foreground">Authorized under Legal Metrology Act, 2009</span>
+            <span className="text-xs text-muted-foreground font-medium">Authorized under Legal Metrology Act, 2009</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
             {[
-              { code: "RRSL-FBD", city: "Faridabad", zone: "Northern Region" },
-              { code: "RRSL-BLR", city: "Bengaluru", zone: "Southern Region" },
-              { code: "RRSL-BBS", city: "Bhubaneswar", zone: "Eastern Region" },
-              { code: "RRSL-AMD", city: "Ahmedabad", zone: "Western Region" },
-              { code: "RRSL-GHY", city: "Guwahati", zone: "North-Eastern Region" },
+              {
+                code: "RRSL-FBD",
+                city: "Faridabad",
+                zone: "Northern Region",
+                mapImage: "/assets/maps/faridabad.png",
+                bgGradient: "bg-gradient-to-br from-[#ea580c] to-[#f97316]",
+              },
+              {
+                code: "RRSL-BLR",
+                city: "Bengaluru",
+                zone: "Southern Region",
+                mapImage: "/assets/maps/bangalore.png",
+                bgGradient: "bg-gradient-to-br from-[#7c3aed] to-[#8b5cf6]",
+              },
+              {
+                code: "RRSL-BBS",
+                city: "Bhubaneswar",
+                zone: "Eastern Region",
+                mapImage: "/assets/maps/bhubaneswar.png",
+                bgGradient: "bg-gradient-to-br from-[#0284c7] to-[#0ea5e9]",
+              },
+              {
+                code: "RRSL-AMD",
+                city: "Ahmedabad",
+                zone: "Western Region",
+                mapImage: "/assets/maps/ahmedabad.png",
+                bgGradient: "bg-gradient-to-br from-[#d97706] to-[#f59e0b]",
+              },
+              {
+                code: "RRSL-GHY",
+                city: "Guwahati",
+                zone: "North-Eastern Region",
+                mapImage: "/assets/maps/guwahati.png",
+                bgGradient: "bg-gradient-to-br from-[#e11d48] to-[#f43f5e]",
+              },
             ].map((item) => (
-              <div
+              <Link
                 key={item.code}
-                className="p-3.5 rounded-2xl bg-card border border-border space-y-1 hover:border-primary/40 transition-all"
+                href="/instruments"
+                className={cn(
+                  "group relative rounded-2xl p-5 sm:p-6 min-h-[220px] sm:min-h-[240px] flex flex-col justify-between overflow-hidden shadow-lg hover:shadow-xl hover:-translate-y-1.5 transition-all text-white cursor-pointer select-none",
+                  item.bgGradient
+                )}
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-xs text-foreground">{item.code}</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {/* Background Regional Map Image with Uniform Grayscale & Gray Overlay */}
+                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                  <Image
+                    src={item.mapImage}
+                    alt={`${item.city} Regional Map`}
+                    fill
+                    className="object-cover object-center grayscale contrast-125 brightness-95 opacity-25 mix-blend-luminosity group-hover:scale-105 group-hover:opacity-35 transition-all duration-500 ease-out"
+                  />
+                  {/* Uniform Gray Tint & Vignette Overlays */}
+                  <div className="absolute inset-0 bg-slate-900/35 mix-blend-multiply" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-black/10" />
                 </div>
-                <div className="text-xs font-semibold text-foreground">{item.city}</div>
-                <div className="text-[10px] text-muted-foreground">{item.zone}</div>
-              </div>
+
+                {/* Card Header Content */}
+                <div className="relative z-10 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/20 backdrop-blur-md text-white border border-white/20">
+                      {item.code}
+                    </span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse shadow-xs" />
+                  </div>
+
+                  <h3 className="font-extrabold text-xl sm:text-2xl text-white tracking-tight leading-tight drop-shadow-sm pt-1">
+                    {item.city}
+                  </h3>
+
+                  <p className="text-xs text-white/90 font-medium leading-relaxed">
+                    {item.zone}
+                  </p>
+                </div>
+
+                {/* Bottom Circular Arrow Button */}
+                <div className="relative z-10 pt-4 flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <ArrowUpRight size={16} weight="bold" />
+                  </div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-white/80 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Verify Bay →
+                  </span>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
