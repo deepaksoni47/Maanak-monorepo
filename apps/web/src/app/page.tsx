@@ -25,8 +25,7 @@ import {
   CaretDown,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { GridPattern } from "@/components/ui/grid-pattern";
-import { Navbar } from "@/components/layout";
+import { Navbar, Footer } from "@/components/layout";
 
 // Carousel Banners Metadata
 const CAROUSEL_SLIDES = [
@@ -489,50 +488,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card/60 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border/80">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl overflow-hidden border border-border bg-card flex items-center justify-center">
-                <Image
-                  src="/logo.avif"
-                  alt="MAANAK Logo"
-                  width={32}
-                  height={32}
-                  className="object-contain w-full h-full"
-                />
-              </div>
-              <div>
-                <span className="font-bold text-sm tracking-tight text-foreground">MAANAK (मानक)</span>
-                <p className="text-[11px] text-muted-foreground">
-                  Department of Consumer Affairs • Government of India
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
-              <Link href="/dashboard" className="hover:text-foreground transition-colors">
-                Console
-              </Link>
-              <Link href="/verify" className="hover:text-foreground transition-colors">
-                Verification
-              </Link>
-              <Link href="/reports" className="hover:text-foreground transition-colors">
-                Reports
-              </Link>
-            </div>
-          </div>
-
-          <div className="pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-muted-foreground">
-            <p>
-              Legal Metrology (Approval of Models) Rules, 2011/2019 & OIML Recommendation R-76.
-            </p>
-            <p className="font-mono text-[11px]">
-              OIML R-76 • NABL 129 • WELMEC 7.2
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
