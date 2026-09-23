@@ -384,70 +384,120 @@ export default function HomePage() {
       </section>
 
       {/* Section 4: Accuracy Classes Supported (Educational & Practical) */}
-      <section className="py-12 lg:py-16">
+      <section className="py-14 lg:py-20 border-t border-border/80 bg-muted/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
-            <span className="text-xs font-bold uppercase tracking-wider text-primary">All Weighing Categories</span>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Covers every scale class from lab to highway
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Built-in rules tailored for all 4 official OIML R-76 accuracy classes.
-            </p>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+            <div className="space-y-1.5 max-w-2xl">
+              <span className="text-xs font-bold uppercase tracking-wider text-primary">All Weighing Categories</span>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                Covers every scale class from lab to highway
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Automated tolerance calculation and statutory verification rules tailored for all 4 official OIML R-76 accuracy classes.
+              </p>
+            </div>
+            <Link
+              href="/instruments"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline underline-offset-4 shrink-0"
+            >
+              <span>Explore Rule Packs</span>
+              <ArrowRight size={14} weight="bold" />
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="rounded-sm bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
-              <div className="flex justify-between items-center">
-                <span className="font-mono text-xs font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10">
-                  Class I
-                </span>
-                <span className="text-[11px] text-muted-foreground">Special</span>
-              </div>
-              <h3 className="font-bold text-base text-foreground">Analytical & Gold Balances</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Precision down to 1 mg and 0.1 mg for precious metals, pharmaceuticals, and chemical research.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              {
+                classNumber: "Class I",
+                accuracyType: "Special Accuracy",
+                title: "Analytical & Gold Balances",
+                image: "/assets/classes/analytical-gold-balances.jpeg",
+                alt: "Class I Special Accuracy Analytical & Gold Balance",
+                specs: "e ≤ 1 mg • n ≥ 50,000",
+                description: "Micro & analytical balances for precious bullion, hallmarking centers, pharma labs, and chemical assaying.",
+                href: "/instruments",
+              },
+              {
+                classNumber: "Class II",
+                accuracyType: "High Accuracy",
+                title: "Jewellery & Pharmacy Scales",
+                image: "/assets/classes/jewellery-pharmacy-scales.jpeg",
+                alt: "Class II High Accuracy Jewellery & Pharmacy Scales",
+                specs: "1 mg ≤ e ≤ 50 mg • n ≤ 100,000",
+                description: "High-accuracy balances for retail jewelry counters, apothecary compounding, and precision manufacturing.",
+                href: "/instruments",
+              },
+              {
+                classNumber: "Class III",
+                accuracyType: "Medium Accuracy",
+                title: "Commercial Retail Scales",
+                image: "/assets/classes/commercial-retail-scales.jpeg",
+                alt: "Class III Medium Accuracy Commercial Retail Scales",
+                specs: "0.1 g ≤ e ≤ 2 g • n ≤ 10,000",
+                description: "Countertop grocery balances, supermarket checkout POS scales, price-computing scales, and postal weighing.",
+                href: "/instruments",
+              },
+              {
+                classNumber: "Class IIII",
+                accuracyType: "Ordinary Accuracy",
+                title: "Weighbridges & Industrial",
+                image: "/assets/classes/weighbriges-industrial-scales.jpeg",
+                alt: "Class IIII Ordinary Accuracy Heavy Industrial Weighbridges",
+                specs: "e ≥ 5 g • n ≤ 1,000",
+                description: "Heavy truck weighbridges, crane hoists, tank platform scales, and bulk cargo terminals in tough environments.",
+                href: "/instruments",
+              },
+            ].map((item) => (
+              <div
+                key={item.classNumber}
+                className="group rounded-xs bg-card border border-neutral-300 dark:border-neutral-700 overflow-hidden flex flex-col transition-all hover:shadow-md shadow-xs"
+              >
+                {/* Real Product Image Container */}
+                <div className="relative aspect-[16/10] w-full bg-muted/40 overflow-hidden border-b border-neutral-300 dark:border-neutral-700">
+                  <Image
+                    src={item.image}
+                    alt={item.alt}
+                    fill
+                    className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
+                  />
+                  {/* Class Badge Overlay */}
+                  <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xs bg-background/95 backdrop-blur-md border border-neutral-300 dark:border-neutral-700 text-[11px] font-bold text-foreground shadow-xs font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span>{item.classNumber}</span>
+                  </div>
+                  {/* Accuracy Sub-tag */}
+                  <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-xs bg-black/75 backdrop-blur-md text-[10px] font-semibold text-white">
+                    {item.accuracyType}
+                  </div>
+                </div>
 
-            <div className="rounded-sm bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
-              <div className="flex justify-between items-center">
-                <span className="font-mono text-xs font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10">
-                  Class II
-                </span>
-                <span className="text-[11px] text-muted-foreground">High</span>
-              </div>
-              <h3 className="font-bold text-base text-foreground">Jewelry & Pharmacy Scales</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                High accuracy scales up to 100,000 divisions for medical compounding and trade assaying.
-              </p>
-            </div>
+                {/* Card Content Body */}
+                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                  <div className="space-y-1.5">
+                    <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors leading-snug">
+                      {item.title}
+                    </h3>
+                    <div className="inline-block font-mono text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.2 rounded-xs border border-primary/20">
+                      {item.specs}
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed pt-1">
+                      {item.description}
+                    </p>
+                  </div>
 
-            <div className="rounded-sm bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
-              <div className="flex justify-between items-center">
-                <span className="font-mono text-xs font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10">
-                  Class III
-                </span>
-                <span className="text-[11px] text-muted-foreground">Medium</span>
+                  {/* Card Action Link */}
+                  <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
+                    <Link
+                      href={item.href}
+                      className="text-xs font-semibold text-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                    >
+                      <span>View Test Protocols</span>
+                      <ArrowRight size={12} weight="bold" className="transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-bold text-base text-foreground">Commercial Retail Scales</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Grocery balances, supermarket checkout scales, and parcel scales up to 10,000 divisions.
-              </p>
-            </div>
-
-            <div className="rounded-sm bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
-              <div className="flex justify-between items-center">
-                <span className="font-mono text-xs font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10">
-                  Class IIII
-                </span>
-                <span className="text-[11px] text-muted-foreground">Ordinary</span>
-              </div>
-              <h3 className="font-bold text-base text-foreground">Weighbridges & Industrial</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Heavy truck weighbridges, crane hoists, and bulk cargo scales operating in tough industrial environments.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
