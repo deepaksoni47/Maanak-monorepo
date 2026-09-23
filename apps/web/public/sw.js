@@ -2,7 +2,7 @@
 // Version: 1.0.0
 // Offline-first caching for OIML R-76 test bench and laboratory inspection bays.
 
-const CACHE_NAME = "maanak-v1-cache";
+const CACHE_NAME = "maanak-v3-cache";
 const STATIC_ASSETS = [
   "/",
   "/bench",
@@ -13,6 +13,7 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS).catch((err) => {
@@ -20,7 +21,6 @@ self.addEventListener("install", (event) => {
       });
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -38,7 +38,7 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Network-First with Cache Fallback for dynamic pages and API
+// Network-First strategy to ensure live stylesheet & component hot-reload updates
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
@@ -47,29 +47,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Next.js static chunks / fonts / images: Cache-First
-  if (
-    url.pathname.startsWith("/_next/static/") ||
-    url.pathname.match(/\.(png|jpg|jpeg|svg|webp|woff2|avif)$/)
-  ) {
-    event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        if (cachedResponse) return cachedResponse;
-        return fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return networkResponse;
-        });
-      })
-    );
-    return;
-  }
-
-  // Core navigation pages: Network-First with Cache Fallback
+  // Network-First with Cache Fallback for all navigation and CSS/JS chunks
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
@@ -84,7 +62,6 @@ self.addEventListener("fetch", (event) => {
       .catch(() => {
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
-          // Fallback to offline cached bench shell
           if (event.request.mode === "navigate") {
             return caches.match("/bench");
           }

@@ -22,17 +22,17 @@ export function MetricCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-5 h-28 flex flex-col justify-between space-y-2",
+        "rounded-sm border border-border bg-card p-5 h-28 flex flex-col justify-between space-y-2",
         className
       )}
     >
       <div className="flex items-center justify-between">
-        <Skeleton className="h-4 w-28 rounded-lg" />
-        <Skeleton className="h-7 w-7 rounded-xl" />
+        <Skeleton className="h-4 w-28 rounded-xs" />
+        <Skeleton className="h-7 w-7 rounded-xs" />
       </div>
       <div className="space-y-1">
-        <Skeleton className="h-6 w-20 rounded-lg" />
-        <Skeleton className="h-3 w-36 rounded-md" />
+        <Skeleton className="h-6 w-20 rounded-xs" />
+        <Skeleton className="h-3 w-36 rounded-xs" />
       </div>
     </div>
   );
@@ -53,19 +53,19 @@ export function TableSkeleton({
   return (
     <div className={cn("w-full space-y-2", className)}>
       {/* Table Header Placeholder */}
-      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-2xl border border-border/50">
+      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-sm border border-border/50">
         {Array.from({ length: columns }).map((_, i) => (
-          <Skeleton key={`th-${i}`} className="h-4 flex-1 rounded-lg" />
+          <Skeleton key={`th-${i}`} className="h-4 flex-1 rounded-xs" />
         ))}
       </div>
       {/* Table Row Placeholders */}
       {Array.from({ length: rows }).map((_, r) => (
         <div
           key={`tr-${r}`}
-          className="flex items-center gap-3 p-3.5 bg-card/40 rounded-2xl border border-border/40"
+          className="flex items-center gap-3 p-3.5 bg-card/40 rounded-sm border border-border/40"
         >
           {Array.from({ length: columns }).map((_, c) => (
-            <Skeleton key={`td-${r}-${c}`} className="h-4 flex-1 rounded-lg" />
+            <Skeleton key={`td-${r}-${c}`} className="h-4 flex-1 rounded-xs" />
           ))}
         </div>
       ))}
@@ -80,7 +80,7 @@ export function BenchCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-5 space-y-4 shadow-xs",
+        "rounded-sm border border-border bg-card p-5 space-y-4 shadow-xs",
         className
       )}
     >

@@ -62,7 +62,7 @@ export default function PublicVerifyLookupPage() {
     >
       <div className="space-y-6 max-w-4xl">
         {/* Verification Card */}
-        <Card className="rounded-3xl border border-border shadow-xs overflow-hidden">
+        <Card className="rounded-sm border border-border shadow-xs overflow-hidden">
           <CardHeader className="p-5 sm:p-6 bg-muted/20 border-b border-border/70">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -142,7 +142,7 @@ export default function PublicVerifyLookupPage() {
         </Card>
 
         {/* Statutory Assurance Banner */}
-        <div className="rounded-3xl border border-border/80 bg-muted/20 p-4 sm:p-5 flex items-start gap-3.5">
+        <div className="rounded-sm border border-border/80 bg-muted/20 p-4 sm:p-5 flex items-start gap-3.5">
           <div className="w-8 h-8 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
             <LockKey size={18} weight="duotone" />
           </div>

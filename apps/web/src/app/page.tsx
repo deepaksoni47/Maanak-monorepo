@@ -237,7 +237,7 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Step 1 */}
-            <div className="rounded-3xl bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
+            <div className="rounded-sm bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
               <div className="flex items-center justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
                   01
@@ -251,7 +251,7 @@ export default function HomePage() {
             </div>
 
             {/* Step 2 */}
-            <div className="rounded-3xl bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
+            <div className="rounded-sm bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
               <div className="flex items-center justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
                   02
@@ -265,7 +265,7 @@ export default function HomePage() {
             </div>
 
             {/* Step 3 */}
-            <div className="rounded-3xl bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
+            <div className="rounded-sm bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
               <div className="flex items-center justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
                   03
@@ -279,7 +279,7 @@ export default function HomePage() {
             </div>
 
             {/* Step 4 */}
-            <div className="rounded-3xl bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
+            <div className="rounded-sm bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
               <div className="flex items-center justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
                   04
@@ -297,7 +297,7 @@ export default function HomePage() {
 
       {/* Section 3: Interactive Live Tolerance Check Demonstration */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
-        <div className="rounded-3xl border border-border bg-card p-6 sm:p-10 shadow-xs">
+        <div className="rounded-sm border border-border bg-card p-6 sm:p-10 shadow-xs">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-5 space-y-3">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
@@ -337,7 +337,7 @@ export default function HomePage() {
             </div>
 
             {/* Interactive Output Card */}
-            <div className="lg:col-span-7 bg-background rounded-3xl border border-border p-5 sm:p-6 space-y-4">
+            <div className="lg:col-span-7 bg-background rounded-sm border border-border p-5 sm:p-6 space-y-4">
               <div className="flex items-center justify-between border-b border-border/80 pb-3">
                 <div className="flex items-center gap-2">
                   <Gauge size={18} weight="bold" className="text-primary" />
@@ -398,7 +398,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="rounded-3xl bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
+            <div className="rounded-sm bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
               <div className="flex justify-between items-center">
                 <span className="font-mono text-xs font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10">
                   Class I
@@ -411,7 +411,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-3xl bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
+            <div className="rounded-sm bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
               <div className="flex justify-between items-center">
                 <span className="font-mono text-xs font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10">
                   Class II
@@ -424,7 +424,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-3xl bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
+            <div className="rounded-sm bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
               <div className="flex justify-between items-center">
                 <span className="font-mono text-xs font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10">
                   Class III
@@ -437,7 +437,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-3xl bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
+            <div className="rounded-sm bg-card border border-border p-5 space-y-2 hover:border-primary/40 transition-all">
               <div className="flex justify-between items-center">
                 <span className="font-mono text-xs font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10">
                   Class IIII

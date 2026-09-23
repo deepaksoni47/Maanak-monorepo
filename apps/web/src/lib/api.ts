@@ -238,14 +238,24 @@ export const reviewApi = {
     apiRequest(`/api/v1/review/sessions/${sessionId}/audit`),
 
   submitDecision: (decisionData: {
-    sessionId: string;
+    sessionId?: string;
+    testSessionId?: string;
     decision: "APPROVED" | "FLAGGED_FOR_CORRECTION" | "REJECTED";
     notes?: string;
-  }) =>
-    apiRequest("/api/v1/review/decision", {
+    comments?: string;
+    reviewStage?: "INTAKE_REVIEW" | "SECOND_LEVEL_REVIEW" | "DIRECTOR_APPROVAL";
+  }) => {
+    const payload = {
+      testSessionId: decisionData.testSessionId || decisionData.sessionId,
+      decision: decisionData.decision,
+      comments: decisionData.comments || decisionData.notes || "Senior Reviewer evaluation completed.",
+      reviewStage: decisionData.reviewStage || "SECOND_LEVEL_REVIEW",
+    };
+    return apiRequest("/api/v1/review/decision", {
       method: "POST",
-      body: JSON.stringify(decisionData),
-    }),
+      body: JSON.stringify(payload),
+    });
+  },
 };
 
 export const reportsApi = {

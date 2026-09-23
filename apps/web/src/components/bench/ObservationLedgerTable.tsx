@@ -39,7 +39,7 @@ export function ObservationLedgerTable({
   className,
 }: ObservationLedgerTableProps) {
   return (
-    <Card className={cn("overflow-hidden rounded-3xl border border-border shadow-xs", className)}>
+    <Card className={cn("overflow-hidden rounded-sm border border-border shadow-xs", className)}>
       <CardHeader className="p-4 sm:p-5 border-b border-border/70 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-muted/20">
         <div>
           <div className="flex items-center gap-2">

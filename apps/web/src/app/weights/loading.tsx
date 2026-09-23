@@ -24,7 +24,7 @@ export default function WeightsLoading() {
       {/* 3 Metric Cards Skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="rounded-3xl border border-border bg-card p-5 space-y-3">
+          <div key={i} className="rounded-sm border border-border bg-card p-5 space-y-3">
             <Skeleton className="h-4 w-32 rounded-md" />
             <Skeleton className="h-8 w-24 rounded-lg" />
             <Skeleton className="h-3 w-40 rounded-md" />
@@ -33,7 +33,7 @@ export default function WeightsLoading() {
       </div>
 
       {/* Gatekeeper Simulator Card Skeleton */}
-      <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 space-y-4">
+      <div className="rounded-sm border border-border bg-card p-5 sm:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton className="h-6 w-64 rounded-lg" />
           <Skeleton className="h-7 w-28 rounded-full" />
@@ -50,7 +50,7 @@ export default function WeightsLoading() {
       </div>
 
       {/* Standard Weights Inventory Table Skeleton */}
-      <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 space-y-4">
+      <div className="rounded-sm border border-border bg-card p-5 sm:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton className="h-6 w-48 rounded-lg" />
           <Skeleton className="h-8 w-32 rounded-xl" />

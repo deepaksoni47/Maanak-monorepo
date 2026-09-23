@@ -25,13 +25,13 @@ export default function InstrumentIntakeLoading() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Form Fields Skeleton (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 space-y-4">
+          <div className="rounded-sm border border-border bg-card p-5 sm:p-6 space-y-4">
             <Skeleton className="h-6 w-52 rounded-lg" />
             <Skeleton className="h-4 w-80 rounded-md" />
             <FormSkeleton fields={4} />
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 space-y-4">
+          <div className="rounded-sm border border-border bg-card p-5 sm:p-6 space-y-4">
             <Skeleton className="h-6 w-60 rounded-lg" />
             <Skeleton className="h-4 w-72 rounded-md" />
             <FormSkeleton fields={4} />
@@ -40,7 +40,7 @@ export default function InstrumentIntakeLoading() {
 
         {/* Right Column: Live Table 3 Evaluation Card Skeleton (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 space-y-5">
+          <div className="rounded-sm border border-border bg-card p-5 sm:p-6 space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-border/60">
               <Skeleton className="h-5 w-44 rounded-lg" />
               <Skeleton className="h-7 w-28 rounded-full" />

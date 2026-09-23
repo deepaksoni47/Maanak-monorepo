@@ -144,46 +144,48 @@
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
 
-  /* Typography Font Sizes Scale (Enlarged) */
-  --text-xs: 0.9375rem;
-  --text-xs--line-height: 1.375rem;
-  --text-sm: 1.0625rem;
-  --text-sm--line-height: 1.5rem;
-  --text-base: 1.1875rem;
-  --text-base--line-height: 1.75rem;
-  --text-lg: 1.3125rem;
-  --text-lg--line-height: 1.875rem;
-  --text-xl: 1.5rem;
+  /* Typography Font Sizes Scale (Refined & Balanced) */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.375rem;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.625rem;
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.375rem;
   --text-xl--line-height: 2rem;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 2.25rem;
 
-  /* Radius Mapping */
-  --radius: 6px;
+  /* Radius Mapping (Subtle & Clean Corner Radius) */
+  --radius: 5px;
   --radius-xs: 2px;
   --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 6px;
+  --radius-md: 5px;
+  --radius-lg: 5px;
   --radius-xl: 6px;
-  --radius-2xl: 8px;
-  --radius-3xl: 8px;
-  --radius-4xl: 8px;
+  --radius-2xl: 6px;
+  --radius-3xl: 6px;
+  --radius-4xl: 6px;
 }
 
 @layer utilities {
   .text-xs {
-    font-size: 0.9375rem !important;
-    line-height: 1.375rem !important;
-  }
-  .text-\[10px\] {
     font-size: 0.8125rem !important;
     line-height: 1.25rem !important;
   }
+  .text-\[10px\] {
+    font-size: 0.6875rem !important;
+    line-height: 1rem !important;
+  }
   .text-\[11px\] {
-    font-size: 0.875rem !important;
-    line-height: 1.3rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1.125rem !important;
   }
   .text-sm {
-    font-size: 1.0625rem !important;
-    line-height: 1.5rem !important;
+    font-size: 0.9375rem !important;
+    line-height: 1.375rem !important;
   }
 }
 
@@ -192,7 +194,7 @@
     @apply border-border outline-ring/50;
   }
   html {
-    font-size: 17px;
+    font-size: 16.5px;
     -webkit-text-size-adjust: 100%;
   }
   body {
@@ -200,17 +202,24 @@
   }
 }
 
-/* Direct global card and container low border-radius enforcement */
+/* Direct subtle card and container corner-radius enforcement */
 .rounded-3xl,
 .rounded-2xl,
 .rounded-xl,
 .rounded-lg,
 .rounded-md,
+.rounded-sm,
 [class*="rounded-3xl"],
 [class*="rounded-2xl"],
 [class*="rounded-xl"],
-[class*="rounded-lg"] {
-  border-radius: 6px !important;
+[class*="rounded-lg"],
+[class*="rounded-md"],
+[class*="rounded-sm"] {
+  border-radius: 5px !important;
+}
+
+.bg-card {
+  border-radius: 5px !important;
 }
 
 .rounded-full {

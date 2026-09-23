@@ -26,7 +26,7 @@ export default function ReviewLoading() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-3xl border border-border bg-card p-5 space-y-3"
+            className="rounded-sm border border-border bg-card p-5 space-y-3"
           >
             <div className="flex items-center gap-3">
               <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
@@ -54,7 +54,7 @@ export default function ReviewLoading() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-3xl border border-border bg-card p-5 sm:p-6 space-y-4"
+            className="rounded-sm border border-border bg-card p-5 sm:p-6 space-y-4"
           >
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
               <div className="space-y-3 flex-1">

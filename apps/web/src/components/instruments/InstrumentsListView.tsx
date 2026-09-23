@@ -98,7 +98,7 @@ export function InstrumentsListView() {
       <div className="space-y-6">
         {/* KPI Strip */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="p-4 rounded-3xl border border-border bg-card flex items-center gap-3">
+          <Card className="p-4 rounded-sm border border-border bg-card flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Scales size={22} weight="duotone" />
             </div>
@@ -109,7 +109,7 @@ export function InstrumentsListView() {
               </div>
             </div>
           </Card>
-          <Card className="p-4 rounded-3xl border border-border bg-card flex items-center gap-3">
+          <Card className="p-4 rounded-sm border border-border bg-card flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <CheckCircle size={22} weight="duotone" />
             </div>
@@ -120,7 +120,7 @@ export function InstrumentsListView() {
               </div>
             </div>
           </Card>
-          <Card className="p-4 rounded-3xl border border-border bg-card flex items-center gap-3">
+          <Card className="p-4 rounded-sm border border-border bg-card flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <Flask size={22} weight="duotone" />
             </div>
@@ -152,7 +152,7 @@ export function InstrumentsListView() {
               return (
                 <Card
                   key={inst.id}
-                  className="rounded-3xl border border-border overflow-hidden shadow-xs hover:border-primary/40 transition-all"
+                  className="rounded-sm border border-border overflow-hidden shadow-xs hover:border-primary/40 transition-all"
                 >
                   <CardHeader className="p-4 sm:p-5 bg-muted/20 border-b border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-start sm:items-center gap-3">

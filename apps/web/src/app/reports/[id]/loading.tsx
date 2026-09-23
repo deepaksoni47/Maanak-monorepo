@@ -24,7 +24,7 @@ export default function ReportLoading() {
       </div>
 
       {/* Main Certificate Card Skeleton */}
-      <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-6">
+      <div className="rounded-sm border border-border bg-card p-6 sm:p-8 space-y-6">
         {/* Institutional Header Strip */}
         <div className="border-b border-border pb-6 space-y-2 text-center flex flex-col items-center">
           <Skeleton className="h-4 w-96 rounded-md" />

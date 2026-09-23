@@ -210,7 +210,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form Card */}
-        <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xl space-y-6">
+        <div className="rounded-sm border border-border bg-card p-6 sm:p-8 shadow-xl space-y-6">
           {error && (
             <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/30 text-destructive text-xs flex items-start gap-2.5">
               <WarningCircle size={18} className="shrink-0 mt-0.5" weight="bold" />

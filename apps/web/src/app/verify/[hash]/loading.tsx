@@ -17,7 +17,7 @@ export default function VerifyLoading() {
       </div>
 
       {/* Primary Verdict Card Skeleton */}
-      <div className="rounded-3xl border border-border bg-card p-6 space-y-3 flex flex-col items-center">
+      <div className="rounded-sm border border-border bg-card p-6 space-y-3 flex flex-col items-center">
         <Skeleton className="h-16 w-16 rounded-2xl" />
         <Skeleton className="h-6 w-52 rounded-full" />
         <Skeleton className="h-7 w-72 rounded-xl" />
@@ -26,7 +26,7 @@ export default function VerifyLoading() {
       </div>
 
       {/* Instrument Details Card Skeleton */}
-      <div className="rounded-3xl border border-border bg-card p-6 space-y-4">
+      <div className="rounded-sm border border-border bg-card p-6 space-y-4">
         <div className="flex justify-between items-center border-b border-border pb-3">
           <Skeleton className="h-5 w-60 rounded-md" />
           <Skeleton className="h-5 w-28 rounded-full" />
@@ -43,7 +43,7 @@ export default function VerifyLoading() {
       </div>
 
       {/* Cryptographic Provenance Block Skeleton */}
-      <div className="rounded-3xl border border-border bg-card p-6 space-y-3">
+      <div className="rounded-sm border border-border bg-card p-6 space-y-3">
         <div className="flex justify-between items-center">
           <Skeleton className="h-5 w-52 rounded-md" />
           <Skeleton className="h-5 w-28 rounded-full" />

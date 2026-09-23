@@ -142,7 +142,7 @@ export function ObservationCard({
   return (
     <Card
       className={cn(
-        "rounded-3xl border transition-all overflow-hidden",
+        "rounded-sm border transition-all overflow-hidden",
         isPass
           ? "border-border hover:border-emerald-500/30"
           : "border-destructive/40 bg-destructive/5 hover:border-destructive/60",

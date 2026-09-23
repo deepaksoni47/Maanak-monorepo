@@ -540,7 +540,7 @@ export function BenchWorkbenchView() {
     >
       <div className="space-y-6">
         {/* Session Info & Ambient Telemetry Strip with Instrument Switcher */}
-        <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-xs">
+        <div className="rounded-sm border border-border bg-card p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-xs">
           <div className="flex items-start sm:items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Scales size={22} weight="duotone" />
@@ -640,7 +640,7 @@ export function BenchWorkbenchView() {
         />
 
         {/* Step Progress Stepper Bar (Step #1 to #10) */}
-        <div className="rounded-3xl border border-border bg-card p-4 space-y-3">
+        <div className="rounded-sm border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
             <span className="text-foreground font-bold">
               Clause A.4.4 Test Load Schedule ({steps.length} Statutory Points):
@@ -704,7 +704,7 @@ export function BenchWorkbenchView() {
 
           <div className="lg:col-span-5 space-y-4">
             {/* Live Progress Summary Table */}
-            <Card className="rounded-3xl border border-border overflow-hidden">
+            <Card className="rounded-sm border border-border overflow-hidden">
               <CardHeader className="p-4 bg-muted/20 border-b border-border/70 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Table size={18} className="text-primary" />
@@ -788,7 +788,7 @@ export function BenchWorkbenchView() {
             </Card>
 
             {/* Metrological Guidance Card */}
-            <div className="rounded-3xl border border-border/80 bg-muted/20 p-4 space-y-2 text-xs">
+            <div className="rounded-sm border border-border/80 bg-muted/20 p-4 space-y-2 text-xs">
               <div className="flex items-center gap-1.5 font-bold text-foreground">
                 <FileText size={16} className="text-primary" />
                 <span>OIML R-76 Clause A.4.4.3 Turning Point Formula:</span>
@@ -817,7 +817,7 @@ export function BenchWorkbenchView() {
       {/* Edit Scale Metadata Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 w-full max-w-lg shadow-xl space-y-4">
+          <div className="bg-card border border-border rounded-sm p-5 sm:p-6 w-full max-w-lg shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-border/70 pb-3">
               <div>
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -912,7 +912,7 @@ export function BenchWorkbenchView() {
       {/* Instrument Selection Modal */}
       {isInstrumentSelectorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 w-full max-w-2xl shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-card border border-border rounded-sm p-5 sm:p-6 w-full max-w-2xl shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border/70 pb-3">
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
@@ -1013,7 +1013,7 @@ export function BenchWorkbenchView() {
       {/* Test Battery Complete Modal */}
       {isCompletedModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-card border border-border rounded-3xl p-6 w-full max-w-md shadow-xl text-center space-y-4">
+          <div className="bg-card border border-border rounded-sm p-6 w-full max-w-md shadow-xl text-center space-y-4">
             <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <CheckCircle size={32} weight="fill" />
             </div>

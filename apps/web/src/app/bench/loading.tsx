@@ -22,7 +22,7 @@ export default function BenchLoading() {
       </div>
 
       {/* Session Metadata & Ambient Conditions Strip Skeleton */}
-      <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="rounded-sm border border-border bg-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10 rounded-2xl shrink-0" />
           <div className="space-y-1.5">
@@ -51,7 +51,7 @@ export default function BenchLoading() {
         </div>
 
         {/* Right Column: Step Observation Matrix Skeleton (5 cols) */}
-        <div className="lg:col-span-5 rounded-3xl border border-border bg-card p-5 space-y-4">
+        <div className="lg:col-span-5 rounded-sm border border-border bg-card p-5 space-y-4">
           <div className="flex items-center justify-between">
             <Skeleton className="h-5 w-40 rounded-md" />
             <Skeleton className="h-6 w-20 rounded-full" />

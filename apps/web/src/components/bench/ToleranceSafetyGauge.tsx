@@ -39,7 +39,7 @@ export function ToleranceSafetyGauge({
   const completionPercent = totalSteps > 0 ? ((currentStepIndex + 1) / totalSteps) * 100 : 0;
 
   return (
-    <Card className={cn("rounded-3xl border border-border bg-card p-4 sm:p-5 space-y-4", className)}>
+    <Card className={cn("rounded-sm border border-border bg-card p-4 sm:p-5 space-y-4", className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">

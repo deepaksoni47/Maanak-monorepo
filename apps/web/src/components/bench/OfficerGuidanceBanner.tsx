@@ -40,7 +40,7 @@ export function OfficerGuidanceBanner({
   return (
     <div
       className={cn(
-        "rounded-3xl border border-primary/30 bg-primary/5 p-4 sm:p-5 space-y-3",
+        "rounded-sm border border-primary/30 bg-primary/5 p-4 sm:p-5 space-y-3",
         className
       )}
     >

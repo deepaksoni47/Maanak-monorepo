@@ -345,7 +345,7 @@ export function DashboardView() {
         </div>
 
         {/* NABL 129 Standards & Compliance Health Alert Banner */}
-        <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="rounded-sm border border-emerald-500/30 bg-emerald-500/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
               <ShieldCheck size={22} weight="fill" />

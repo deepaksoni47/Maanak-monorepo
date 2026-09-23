@@ -32,10 +32,10 @@ export default function DashboardLoading() {
       </div>
 
       {/* Quick Action / Notice Banner Skeleton */}
-      <Skeleton className="h-16 w-full rounded-3xl" />
+      <Skeleton className="h-16 w-full rounded-sm" />
 
       {/* Recent Sessions Table Skeleton */}
-      <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 space-y-4">
+      <div className="rounded-sm border border-border bg-card p-5 sm:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton className="h-6 w-48 rounded-lg" />
           <Skeleton className="h-8 w-28 rounded-xl" />

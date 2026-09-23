@@ -125,7 +125,7 @@ export function createWeightsRouter(
    */
   router.get(
     "/",
-    optionalAuth,
+    requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const labId =

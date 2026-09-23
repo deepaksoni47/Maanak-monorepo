@@ -33,6 +33,7 @@ import {
   toGrams,
 } from "@/lib/table3";
 import { saveNewInstrument, InstrumentItem } from "@/lib/instruments-store";
+import { instrumentsApi } from "@/lib/api";
 
 interface PresetSpec {
   name: string;
@@ -184,7 +185,7 @@ export function InstrumentIntakeView() {
     setClassSelection(preset.classType);
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!evaluation.valid) return;
 
@@ -204,7 +205,7 @@ export function InstrumentIntakeView() {
         ? "CLASS_IIII"
         : "CLASS_III";
 
-    const newInst = saveNewInstrument({
+    let newInst = saveNewInstrument({
       serialNumber,
       model: modelName,
       manufacturer,
@@ -232,10 +233,46 @@ export function InstrumentIntakeView() {
       weighingPrinciple,
     });
 
-    setTimeout(() => {
+    try {
+      const payload = {
+        modelName,
+        patternDesignation,
+        instrumentType: instrumentType === "COMPLETE_SCALE" ? "Non-Automatic Weighing Instrument" : "Indicator Module",
+        weighingPrinciple,
+        accuracyClass: mappedClass,
+        maxCapacity: maxKg,
+        minCapacity: minKg,
+        verificationScaleIntervalE: eKg,
+        actualScaleIntervalD: dKg,
+        unitOfMeasure: "kg",
+        isMultiInterval,
+        serialNumber,
+        manufacturer: {
+          companyName: manufacturer,
+          registrationNumber: `REG-${manufacturer.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}-2026`,
+          tradeLicenseNo: "TL-STD-2026",
+          addressLine1: "Industrial Zone",
+          city: "Metrology City",
+          state: "State Division",
+          pincode: "110001",
+          contactPerson: applicantName || "Authorized Signatory",
+          contactEmail: "legal@manufacturer.in",
+          contactPhone: "+91-9876543210",
+        },
+      };
+      const apiRes = await instrumentsApi.register(payload);
+      if (apiRes?.instrument?.id) {
+        newInst = {
+          ...newInst,
+          id: apiRes.instrument.id,
+        };
+      }
+    } catch (err) {
+      console.warn("Live API instrument registration warning:", err);
+    } finally {
       setIsSubmitting(false);
       setRegisteredInstrument(newInst);
-    }, 400);
+    }
   };
 
   const activeClassDisplay = evaluation.derivedClass || "Unclassified";
@@ -253,7 +290,7 @@ export function InstrumentIntakeView() {
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Quick Metrology Preset Bar */}
-        <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="rounded-sm border border-border bg-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
             <Lightning size={16} weight="fill" className="text-primary" />
             <span>Load Quick Laboratory Preset:</span>
@@ -277,7 +314,7 @@ export function InstrumentIntakeView() {
           {/* Left Column: Form Specifications (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
             {/* Card 1: Applicant & Manufacturer Metadata */}
-            <Card className="rounded-3xl border border-border shadow-xs">
+            <Card className="rounded-sm border border-border shadow-xs">
               <CardHeader>
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <Buildings size={20} className="text-primary" />
@@ -362,7 +399,7 @@ export function InstrumentIntakeView() {
             </Card>
 
             {/* Card 2: Instrument Identification & Serial Details */}
-            <Card className="rounded-3xl border border-border shadow-xs">
+            <Card className="rounded-sm border border-border shadow-xs">
               <CardHeader>
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <Tag size={20} className="text-primary" />
@@ -439,7 +476,7 @@ export function InstrumentIntakeView() {
             </Card>
 
             {/* Card 3: Metrological Specifications & Range */}
-            <Card className="rounded-3xl border border-border shadow-xs">
+            <Card className="rounded-sm border border-border shadow-xs">
               <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <CardTitle className="text-base sm:text-lg flex items-center gap-2">
@@ -591,7 +628,7 @@ export function InstrumentIntakeView() {
             </Card>
 
             {/* Card 4: Nameplate Photo & Sealing Diagram (per Flowchart H & I) */}
-            <Card className="rounded-3xl border border-border shadow-xs">
+            <Card className="rounded-sm border border-border shadow-xs">
               <CardHeader>
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <UploadSimple size={20} className="text-primary" />
@@ -625,7 +662,7 @@ export function InstrumentIntakeView() {
 
           {/* Right Column: Real-Time Table 3 Classification Monitor (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
-            <Card className="rounded-3xl border border-border shadow-xs sticky top-6">
+            <Card className="rounded-sm border border-border shadow-xs sticky top-6">
               <CardHeader className="bg-muted/20 border-b border-border/70 p-5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">

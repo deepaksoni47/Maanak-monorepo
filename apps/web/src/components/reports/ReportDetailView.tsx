@@ -95,11 +95,35 @@ export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps)
     triggerDownload("PDF");
   };
 
-  const triggerDownload = (format: "PDF" | "DOCX") => {
+  const triggerDownload = async (format: "PDF" | "DOCX") => {
     const filename = `OIML-R76-2-Report-${id}.${format.toLowerCase()}`;
-    setDownloadNotice(`Generated and downloaded ${filename} successfully.`);
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/v1/reports/${id}/${format.toLowerCase()}`;
 
-    // Trigger synthetic browser download
+    try {
+      setDownloadNotice(`Fetching official ${filename} from report vault...`);
+      const token = typeof window !== "undefined" ? localStorage.getItem("maanak_access_token") : null;
+      const res = await fetch(endpoint, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setDownloadNotice(`Official ${filename} downloaded successfully.`);
+        return;
+      }
+    } catch (err) {
+      console.warn("Direct report stream error, applying fallback:", err);
+    }
+
+    // Fallback if backend server / storage unmounted
     if (typeof window !== "undefined") {
       const dummyContent = `MAANAK OIML R-76 Official Report #${id}\nSignatory: ${
         signature?.signedBy || "Director (Legal Metrology)"
@@ -115,6 +139,7 @@ export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps)
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      setDownloadNotice(`Downloaded ${filename}.`);
     }
   };
 

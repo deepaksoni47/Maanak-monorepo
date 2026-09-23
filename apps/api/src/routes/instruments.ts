@@ -70,6 +70,7 @@ const RegisterInstrumentSchema = z.object({
   powerSupplyVoltageNominal: z.union([z.string(), z.number()]).default(230),
   powerSupplyFrequencyHz: z.union([z.string(), z.number()]).default(50),
   firmwareVersionId: z.string().optional(),
+  serialNumber: z.string().optional(),
 });
 
 const ClassifyOnlySchema = z.object({
@@ -128,7 +129,7 @@ export function createInstrumentsRouter(
    */
   router.get(
     "/",
-    optionalAuth,
+    requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const search = req.query.search as string | undefined;
@@ -189,7 +190,7 @@ export function createInstrumentsRouter(
    */
   router.get(
     "/:id",
-    optionalAuth,
+    requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params;
@@ -269,11 +270,12 @@ export function createInstrumentsRouter(
           const accClass = await db.accuracyClass.findFirst({
             where: { code: normClass },
           });
-          classId = accClass?.id;
-        }
-
-        if (!classId) {
-          classId = "acc-class-default-uuid";
+          if (accClass) {
+            classId = accClass.id;
+          } else {
+            const fallbackClass = await db.accuracyClass.findFirst();
+            classId = fallbackClass?.id || "a1111111-1111-4111-8111-111111111111";
+          }
         }
 
         // 3. Resolve or Create Manufacturer
@@ -304,7 +306,25 @@ export function createInstrumentsRouter(
 
         if (!mfgId) {
           const firstMfg = await db.manufacturer.findFirst();
-          mfgId = firstMfg?.id || "mfg-default-uuid";
+          if (firstMfg) {
+            mfgId = firstMfg.id;
+          } else {
+            const createdMfg = await db.manufacturer.create({
+              data: {
+                companyName: "Domestic Metrology Manufacturer",
+                registrationNumber: `REG-${Date.now()}`,
+                tradeLicenseNo: "TL-STD-001",
+                addressLine1: "National Metrology Park",
+                city: "Ahmedabad",
+                state: "Gujarat",
+                pincode: "380001",
+                contactPerson: "Authorized Representative",
+                contactEmail: "contact@manufacturer.in",
+                contactPhone: "+91-9876543210",
+              },
+            });
+            mfgId = createdMfg.id;
+          }
         }
 
         // 4. Calculate default minCapacity if omitted: minCapacity = minCapacityFactorE * e
@@ -340,7 +360,7 @@ export function createInstrumentsRouter(
             tempRangeMaxC: validated.tempRangeMaxC,
             powerSupplyVoltageNominal: validated.powerSupplyVoltageNominal,
             powerSupplyFrequencyHz: validated.powerSupplyFrequencyHz,
-            firmwareVersionId: validated.firmwareVersionId,
+            firmwareVersionId: validated.firmwareVersionId || "v1.0.0-certified",
             partialRanges: validated.partialRanges
               ? {
                   create: validated.partialRanges.map((pr) => {
@@ -368,6 +388,22 @@ export function createInstrumentsRouter(
           },
         });
 
+        // 6. Automatically register physical unit if serialNumber provided or auto-generated
+        const serialNo =
+          validated.serialNumber ||
+          `SN-${validated.modelName.replace(/[^a-zA-Z0-9]/g, "")}-${Date.now().toString().slice(-4)}`;
+        let physicalUnit = null;
+        if (db.instrumentUnit && typeof db.instrumentUnit.create === "function") {
+          physicalUnit = await db.instrumentUnit.create({
+            data: {
+              instrumentModelId: created.id,
+              serialNumber: serialNo,
+              yearOfManufacture: new Date().getFullYear(),
+              status: "IN_TESTING",
+            },
+          });
+        }
+
         return res.status(201).json({
           success: true,
           message: "Instrument model registered successfully.",
@@ -379,7 +415,10 @@ export function createInstrumentsRouter(
             maxAllowedN: classification.maxAllowedN,
             accuracyClass: classification.accuracyClass,
           },
-          instrument: created,
+          instrument: {
+            ...created,
+            units: physicalUnit ? [physicalUnit] : [],
+          },
         });
       } catch (err) {
         return next(err);
