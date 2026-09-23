@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MobileNav, MAIN_NAV_ITEMS } from "./MobileNav";
 import { Breadcrumbs, BreadcrumbItem } from "./Breadcrumbs";
+import { Navbar } from "./Navbar";
 import {
   User,
   ShieldCheck,
@@ -36,39 +37,36 @@ export function Shell({
   const { user, logout, isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row">
-      {/* Mobile Navigation Header & Drawer (< 1024px) */}
-      <MobileNav />
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {/* Top Navigation Bar: Department of Consumer Affairs */}
+      <Navbar />
 
-      {/* Desktop Persistent Sidebar (>= 1024px) */}
-      <aside className="hidden lg:flex w-64 shrink-0 bg-sidebar border-r border-sidebar-border min-h-screen flex-col justify-between sticky top-0 h-screen z-30">
-        <div>
-          {/* Sidebar Top Header */}
-          <div className="p-5 border-b border-sidebar-border flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3 group focus:outline-none">
-              <div className="w-10 h-10 rounded-2xl overflow-hidden border border-border bg-card flex items-center justify-center shadow-xs group-hover:border-primary/50 transition-all">
-                <Image
-                  src="/logo.avif"
-                  alt="MAANAK Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain w-full h-full"
-                  priority
-                />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-base tracking-tight text-sidebar-foreground">MAANAK</span>
-                  <span className="text-[10px] font-bold text-primary px-1.5 py-0.2 rounded-full bg-primary/10 border border-primary/20">
-                    मानक
-                  </span>
-                </div>
-                <span className="text-[11px] text-muted-foreground font-medium">
-                  Legal Metrology Division
-                </span>
-              </div>
-            </Link>
-          </div>
+      {/* Breadcrumbs Top Bar (Directly below Navigation Bar) */}
+      <div className="border-b border-border bg-card/40 px-4 sm:px-6 lg:px-8 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sticky top-[106px] md:top-[88px] z-30 backdrop-blur-md">
+        <Breadcrumbs items={breadcrumbs} />
+
+        {headerActions && (
+          <div className="flex items-center gap-2 shrink-0">{headerActions}</div>
+        )}
+      </div>
+
+      {/* Main Body Layout: Sidebar + Content Area */}
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
+        {/* Mobile Navigation Drawer (< 1024px) */}
+        <MobileNav />
+
+        {/* Desktop Persistent Sidebar (>= 1024px) */}
+        <aside className="hidden lg:flex w-64 shrink-0 bg-sidebar border-r border-sidebar-border flex-col justify-between sticky top-[138px] h-[calc(100vh-138px)] z-20">
+          <div>
+            {/* Sidebar Top Title */}
+            <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Testing Tools
+              </span>
+              <span className="text-[10px] font-mono font-bold text-primary px-1.5 py-0.5 rounded-xs bg-primary/10 border border-primary/20">
+                OIML R-76
+              </span>
+            </div>
 
           {/* Navigation Links */}
           <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-170px)] scrollbar-none">
@@ -183,14 +181,6 @@ export function Shell({
 
       {/* Main Workbench Area */}
       <div className="flex-1 flex flex-col min-w-0 pb-20 lg:pb-8">
-        {/* Desktop Header Top Bar (Breadcrumbs & Title Strip) */}
-        <div className="border-b border-border bg-card/30 px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sticky top-0 lg:static z-20 backdrop-blur-md lg:backdrop-blur-none">
-          <Breadcrumbs items={breadcrumbs} />
-
-          {headerActions && (
-            <div className="flex items-center gap-2 shrink-0">{headerActions}</div>
-          )}
-        </div>
 
         {/* Optional Page Title Header Strip */}
         {(pageTitle || pageSubtitle) && (
@@ -215,6 +205,7 @@ export function Shell({
           {children}
         </main>
       </div>
+    </div>
 
       {/* Sticky Bottom Action Bar Slot (e.g. for bench observation logging) */}
       {bottomActionBar && (
