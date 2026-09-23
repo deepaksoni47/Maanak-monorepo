@@ -223,9 +223,9 @@ export default function HomePage() {
       </section>
 
       {/* Section 2: Step-by-Step Lab Testing Journey */}
-      <section className="py-12 lg:py-16">
+      <section className="py-14 lg:py-20 bg-neutral-50/60 dark:bg-slate-950/40 border-y border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
+          <div className="text-center max-w-2xl mx-auto space-y-2 mb-12 lg:mb-14">
             <span className="text-xs font-bold uppercase tracking-wider text-primary">Simple 4-Step Process</span>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
               How a test session works
@@ -235,62 +235,101 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Step 1 */}
-            <div className="rounded-sm bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                  01
-                </div>
-                <Scales size={22} weight="duotone" className="text-primary" />
-              </div>
-              <h3 className="font-bold text-base text-foreground">Scale Intake</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Enter model details and capacity. The system automatically verifies scale division limits (n = Max/e).
-              </p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                stepNumber: "01",
+                title: "Scale Intake",
+                image: "/assets/flow/scale_intake.png",
+                alt: "Step 1: Scale Intake & Division Verification",
+                icon: Scales,
+                description:
+                  "Enter model details and capacity. The system automatically verifies scale division limits (n = Max/e).",
+                highlight: "Auto n-verification",
+                tag: "OIML R-76",
+              },
+              {
+                stepNumber: "02",
+                title: "Weight Check",
+                image: "/assets/flow/weight-check.png",
+                alt: "Step 2: Reference Standard Weight Selection",
+                icon: ShieldCheck,
+                description:
+                  "Picks certified test weights and checks uncertainty. Blocks testing if reference weights are not accurate enough.",
+                highlight: "NABL 129 Gatekeeper",
+                tag: "Class E2–M1",
+              },
+              {
+                stepNumber: "03",
+                title: "Log Readings",
+                image: "/assets/flow/Log Readings.png",
+                alt: "Step 3: Log Turning Point & Small Weight Observations",
+                icon: Flask,
+                description:
+                  "Enter reading and small changeover weights on tablet or phone. Pre-rounding error is calculated instantly.",
+                highlight: "Zero-error Turn Points",
+                tag: "Live MPE",
+              },
+              {
+                stepNumber: "04",
+                title: "Sign & Export",
+                image: "/assets/flow/sign-report.png",
+                alt: "Step 4: Tamper-evident Digital Signature & QR Certificate",
+                icon: FilePdf,
+                description:
+                  "Review automated derivation trees, apply digital signature, and export official OIML PDF with verification QR.",
+                highlight: "Merkle Provenance",
+                tag: "QR Verify",
+              },
+            ].map((step) => (
+              <div
+                key={step.stepNumber}
+                className="group rounded-xs bg-card border border-neutral-300 dark:border-neutral-700 overflow-hidden flex flex-col transition-all duration-300 hover:shadow-md hover:border-primary/50 shadow-xs"
+              >
+                {/* Flow Illustration Header */}
+                <div className="relative aspect-[16/10] w-full bg-neutral-100 dark:bg-neutral-900 overflow-hidden border-b border-neutral-200 dark:border-neutral-800">
+                  <Image
+                    src={step.image}
+                    alt={step.alt}
+                    fill
+                    className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
+                  />
+                  {/* Step Number Badge */}
+                  <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-background/95 backdrop-blur-md border border-neutral-300 dark:border-neutral-700 text-[11px] font-bold text-foreground font-mono shadow-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span>Step {step.stepNumber}</span>
+                  </div>
 
-            {/* Step 2 */}
-            <div className="rounded-sm bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                  02
+                  {/* Flow Icon Indicator */}
+                  <div className="absolute top-2.5 right-2.5 w-7 h-7 rounded-xs bg-background/95 backdrop-blur-md border border-neutral-300 dark:border-neutral-700 flex items-center justify-center text-primary shadow-xs">
+                    <step.icon size={15} weight="duotone" />
+                  </div>
                 </div>
-                <ShieldCheck size={22} weight="duotone" className="text-emerald-500" />
-              </div>
-              <h3 className="font-bold text-base text-foreground">Weight Check</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Picks certified test weights and checks uncertainty. Blocks testing if reference weights are not accurate enough.
-              </p>
-            </div>
 
-            {/* Step 3 */}
-            <div className="rounded-sm bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                  03
-                </div>
-                <Flask size={22} weight="duotone" className="text-primary" />
-              </div>
-              <h3 className="font-bold text-base text-foreground">Log Readings</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Enter reading and small changeover weights on tablet or phone. Pre-rounding error is calculated instantly.
-              </p>
-            </div>
+                {/* Card Content Body */}
+                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                  <div className="space-y-1.5">
+                    <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors leading-snug">
+                      {step.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {step.description}
+                    </p>
+                  </div>
 
-            {/* Step 4 */}
-            <div className="rounded-sm bg-card border border-border p-5 space-y-3 relative hover:border-primary/40 transition-all">
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                  04
+                  {/* Footer Meta */}
+                  <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-[11px]">
+                    <span className="inline-flex items-center gap-1 text-muted-foreground font-medium">
+                      <CheckCircle size={13} weight="fill" className="text-emerald-500 shrink-0" />
+                      <span>{step.highlight}</span>
+                    </span>
+                    <span className="font-mono text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-xs border border-primary/20">
+                      {step.tag}
+                    </span>
+                  </div>
                 </div>
-                <FilePdf size={22} weight="duotone" className="text-emerald-500" />
               </div>
-              <h3 className="font-bold text-base text-foreground">Sign & Export</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Review automated derivation trees, apply digital signature, and export official OIML PDF with verification QR.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -560,17 +599,15 @@ export default function HomePage() {
                   item.bgGradient
                 )}
               >
-                {/* Background Regional Map Image with Uniform Grayscale & Gray Overlay */}
+                {/* Background Regional Map Image */}
                 <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                   <Image
                     src={item.mapImage}
                     alt={`${item.city} Regional Map`}
                     fill
-                    className="object-cover object-center grayscale contrast-125 brightness-95 opacity-25 mix-blend-luminosity group-hover:scale-105 group-hover:opacity-35 transition-all duration-500 ease-out"
+                    className="object-cover object-center opacity-30 mix-blend-multiply dark:mix-blend-luminosity group-hover:scale-105 group-hover:opacity-40 transition-all duration-500 ease-out"
                   />
-                  {/* Uniform Gray Tint & Vignette Overlays */}
-                  <div className="absolute inset-0 bg-slate-900/35 mix-blend-multiply" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-black/10" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
                 </div>
 
                 {/* Card Header Content */}
