@@ -41,22 +41,13 @@ export function Shell({
       {/* Top Navigation Bar: Department of Consumer Affairs */}
       <Navbar />
 
-      {/* Breadcrumbs Top Bar (Directly below Navigation Bar) */}
-      <div className="border-b border-border bg-card/40 px-4 sm:px-6 lg:px-8 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sticky top-[106px] md:top-[88px] z-30 backdrop-blur-md">
-        <Breadcrumbs items={breadcrumbs} />
-
-        {headerActions && (
-          <div className="flex items-center gap-2 shrink-0">{headerActions}</div>
-        )}
-      </div>
-
       {/* Main Body Layout: Sidebar + Content Area */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Mobile Navigation Drawer (< 1024px) */}
         <MobileNav />
 
         {/* Desktop Persistent Sidebar (>= 1024px) */}
-        <aside className="hidden lg:flex w-64 shrink-0 bg-sidebar border-r border-sidebar-border flex-col justify-between sticky top-[138px] h-[calc(100vh-138px)] z-20">
+        <aside className="hidden lg:flex w-64 shrink-0 bg-sidebar border-r border-sidebar-border flex-col justify-between sticky top-[88px] h-[calc(100vh-88px)] z-20">
           <div>
             {/* Sidebar Top Title */}
             <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
@@ -181,27 +172,37 @@ export function Shell({
 
       {/* Main Workbench Area */}
       <div className="flex-1 flex flex-col min-w-0 pb-20 lg:pb-8">
+        {/* Content Container with inline Breadcrumbs directly above Heading */}
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl w-full mx-auto">
+          {/* Breadcrumbs & Heading Block */}
+          {(breadcrumbs || pageTitle || pageSubtitle || headerActions) && (
+            <div className="mb-6 space-y-3">
+              {/* Breadcrumbs + Actions Row */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <Breadcrumbs items={breadcrumbs} />
+                {headerActions && (
+                  <div className="flex items-center gap-2 shrink-0">{headerActions}</div>
+                )}
+              </div>
 
-        {/* Optional Page Title Header Strip */}
-        {(pageTitle || pageSubtitle) && (
-          <div className="border-b border-border/60 bg-background px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              {pageTitle && (
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                  {pageTitle}
-                </h1>
-              )}
-              {pageSubtitle && (
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  {pageSubtitle}
-                </p>
+              {/* Page Heading & Subtitle */}
+              {(pageTitle || pageSubtitle) && (
+                <div className="pt-1">
+                  {pageTitle && (
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                      {pageTitle}
+                    </h1>
+                  )}
+                  {pageSubtitle && (
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                      {pageSubtitle}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Content Container (Mobile-first responsive with zero overflow) */}
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl w-full mx-auto">
           {children}
         </main>
       </div>

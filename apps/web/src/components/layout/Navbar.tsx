@@ -134,7 +134,7 @@ export function Navbar() {
                     href={link.href}
                     className={`transition-colors shrink-0 ${
                       isActive
-                        ? "text-amber-600 dark:text-amber-500 font-bold hover:text-amber-700 dark:hover:text-amber-400"
+                        ? "text-primary font-bold hover:text-primary/90"
                         : "text-muted-foreground hover:text-foreground font-medium"
                     }`}
                   >
