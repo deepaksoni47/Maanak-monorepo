@@ -20,13 +20,65 @@ import {
   Shield,
   Gauge,
   Sparkle,
+  CaretLeft,
+  CaretRight,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { GridPattern } from "@/components/ui/grid-pattern";
 
+// Carousel Banners Metadata
+const CAROUSEL_SLIDES = [
+  {
+    src: "/assets/carousel/Banner1b.d80b8a0b4ce3d22c648e.jpg",
+    alt: "MAANAK Legal Metrology Banner 1",
+    badge: "OIML R-76 Statutory Workbench",
+    title: "Automated Non-Automatic Weighing Instrument Testing",
+    subtitle: "Government of India Legal Metrology Portal under Section 22 of the Legal Metrology Act, 2009.",
+    primaryAction: { label: "Open Testing Console", href: "/dashboard" },
+    secondaryAction: { label: "Verify Certificate", href: "/verify" },
+  },
+  {
+    src: "/assets/carousel/Banner2b.bf77a947cab6007a419a.jpg",
+    alt: "MAANAK Legal Metrology Banner 2",
+    badge: "NABL 129 Standard Weights Gatekeeper",
+    title: "Precision Error Calculation & Class I–IIII Evaluation",
+    subtitle: "Zero-error turning point calculations, MPE compliance enforcement, and real-time tolerance safety margins.",
+    primaryAction: { label: "Start Test Battery", href: "/bench" },
+    secondaryAction: { label: "Standard Weights", href: "/weights" },
+  },
+  {
+    src: "/assets/carousel/Banner3b.48c75ac3c59b300d3193.jpg",
+    alt: "MAANAK Legal Metrology Banner 3",
+    badge: "Cryptographic Merkle Provenance",
+    title: "Tamper-Evident Digital Certificates & QR Verification",
+    subtitle: "Every observation is cryptographically sealed with SHA-256 Merkle provenance chains and e-Sign PIN authorization.",
+    primaryAction: { label: "Public QR Verification", href: "/verify" },
+    secondaryAction: { label: "View Reports", href: "/reports" },
+  },
+];
+
 export default function HomePage() {
   // Simple interactive demonstration for load evaluation
   const [selectedLoad, setSelectedLoad] = useState<number>(2.5); // 2.5 kg = 500e for Class III (e=5g)
+  const [currentSlide, setCurrentSlide] = useState<number>(0);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+
+  // Auto-advance carousel every 5.5 seconds unless hovered
+  React.useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % CAROUSEL_SLIDES.length);
+    }, 5500);
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
+  const handlePrevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + CAROUSEL_SLIDES.length) % CAROUSEL_SLIDES.length);
+  };
+
+  const handleNextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % CAROUSEL_SLIDES.length);
+  };
 
   // Quick calculations for the interactive demo (Class III: e = 0.005 kg, Max = 15 kg)
   const eVal = 0.005; // 5g
@@ -92,14 +144,14 @@ export default function HomePage() {
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/verify"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-2xl border border-border bg-card px-4 py-2.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-all min-h-[44px]"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-sm border border-border bg-card px-4 py-2 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-all"
             >
               <QrCode size={16} weight="bold" />
               <span>Verify Report</span>
             </Link>
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/90 transition-all shadow-sm min-h-[48px] min-w-[48px]"
+              className="inline-flex items-center justify-center gap-2 rounded-sm bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/90 transition-all shadow-sm"
             >
               <span>Open Console</span>
               <ArrowRight size={16} weight="bold" />
@@ -108,114 +160,125 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-8 pb-14 lg:pt-14 lg:pb-20">
-        <GridPattern
-          width={40}
-          height={40}
-          x={-1}
-          y={-1}
-          strokeDasharray="0"
-          squares={[
-            [4, 4],
-            [5, 1],
-            [8, 2],
-            [5, 3],
-            [5, 5],
-            [10, 10],
-            [12, 15],
-            [15, 10],
-            [10, 15],
-            [15, 10],
-            [10, 15],
-            [15, 10],
-            [2, 3],
-            [7, 6],
-            [14, 4],
-            [18, 7],
-            [22, 2],
-            [25, 5],
-          ]}
-          className={cn(
-            "stroke-neutral-300/80 dark:stroke-neutral-700/80 fill-primary/15 dark:fill-primary/20",
-            "inset-x-0 inset-y-[-10%] h-[120%]"
-          )}
-          style={{
-            WebkitMaskImage: "radial-gradient(ellipse 75% 65% at 50% 35%, white 25%, transparent 85%)",
-            maskImage: "radial-gradient(ellipse 75% 65% at 50% 35%, white 25%, transparent 85%)",
-          }}
-        />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-center">
-            {/* Left Column (Columns 1-6): Clean, Concise, Human Copy */}
-            <div className="lg:col-span-6 space-y-5 text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent border border-primary/20 text-xs font-semibold text-accent-foreground">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Department of Consumer Affairs</span>
-                <span className="text-border">|</span>
-                <span className="text-primary font-bold">OIML R-76 Standard</span>
-              </div>
-
-              <h1 className="text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-foreground leading-[1.14]">
-                Accurate testing & approval for{" "}
-                <span className="text-primary relative inline-block">
-                  weighing scales
-                  <span className="absolute -bottom-1 left-0 w-full h-1 bg-primary/30 rounded-full" />
-                </span>
-              </h1>
-
-              {/* Short, clear, readable text without walls or complex jargon */}
-              <p className="text-base sm:text-lg text-muted-foreground font-normal leading-relaxed max-w-xl">
-                Automated error calculation, instant Pass/Fail results, and official test reports for
-                laboratory testing officers and legal metrology inspectors.
-              </p>
-
-              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary text-primary-foreground px-7 py-3.5 text-base font-semibold hover:bg-primary/90 transition-all shadow-md min-h-[48px]"
+      {/* Hero Section with Full-Width Loop Animated Carousel */}
+      <section 
+        className="relative w-full overflow-hidden border-b border-border bg-card group"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        {/* Slides Track */}
+        <div className="relative w-full h-[460px] sm:h-[520px] md:h-[580px] lg:h-[640px] overflow-hidden">
+          <div
+            className="flex w-full h-full transition-transform duration-700 ease-out"
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          >
+            {CAROUSEL_SLIDES.map((slide, index) => {
+              const isActive = index === currentSlide;
+              return (
+                <div
+                  key={slide.src}
+                  className="relative w-full min-w-full h-full shrink-0 overflow-hidden"
                 >
-                  <Scales size={20} weight="bold" />
-                  <span>Start New Test</span>
-                  <ArrowRight size={18} weight="bold" />
-                </Link>
-                <Link
-                  href="/verify"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card border border-border text-foreground px-6 py-3.5 text-base font-medium hover:bg-accent hover:text-accent-foreground transition-all min-h-[48px]"
-                >
-                  <QrCode size={20} weight="duotone" className="text-primary" />
-                  <span>Verify by QR Code</span>
-                </Link>
-              </div>
+                  {/* Background Image with subtle zoom on active */}
+                  <Image
+                    src={slide.src}
+                    alt={slide.alt}
+                    fill
+                    priority={index === 0}
+                    className={cn(
+                      "object-cover object-center transition-transform duration-1000 ease-out",
+                      isActive ? "scale-100" : "scale-105"
+                    )}
+                  />
 
-              {/* Clean summary chips */}
-              <div className="pt-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle size={16} weight="fill" className="text-emerald-500" />
-                  <span>Zero math errors</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle size={16} weight="fill" className="text-emerald-500" />
-                  <span>Official PDF & Word reports</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle size={16} weight="fill" className="text-emerald-500" />
-                  <span>Works offline on mobile</span>
-                </span>
-              </div>
-            </div>
+                  {/* Gradient Overlays for Optimal Text Legibility on Right Half */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20 lg:hidden" />
+                  <div className="absolute inset-0 hidden lg:block bg-gradient-to-r from-transparent via-black/40 to-black/90" />
 
-            {/* Right Column (Columns 7-12): Free-floating hero illustration */}
-            <div className="lg:col-span-6 w-full flex justify-center lg:justify-end items-center">
-              <div className="relative w-full max-w-lg xl:max-w-xl flex justify-center">
-                <Image
-                  src="/hero.avif"
-                  alt="MAANAK Legal Metrology Workbench in Action"
-                  width={750}
-                  height={560}
-                  className="w-full h-auto object-contain drop-shadow-lg select-none pointer-events-none"
-                  priority
-                />
+                  {/* Slide Content: 2-Column Split (Left Empty, Right Text) */}
+                  <div className="absolute inset-0 z-20 flex items-center py-10 sm:py-14 lg:py-16">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                        {/* Left Half: Empty to showcase banner artwork */}
+                        <div className="hidden lg:block" aria-hidden="true" />
+
+                        {/* Right Half: Text & Action Content */}
+                        <div className="space-y-4 max-w-2xl lg:max-w-none">
+                          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/25 backdrop-blur-md border border-primary/40 text-xs font-semibold text-white w-fit shadow-sm">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                            <span>{slide.badge}</span>
+                          </div>
+
+                          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.65rem] font-extrabold tracking-tight text-white leading-[1.18] drop-shadow-lg">
+                            {slide.title}
+                          </h1>
+
+                          <p className="text-sm sm:text-base md:text-lg text-neutral-200 font-normal leading-relaxed drop-shadow-md">
+                            {slide.subtitle}
+                          </p>
+
+                          <div className="pt-2 flex flex-wrap items-center gap-3">
+                            <Link
+                              href={slide.primaryAction.href}
+                              className="inline-flex items-center justify-center gap-2 rounded-sm bg-primary text-primary-foreground px-6 py-2.5 text-sm font-semibold hover:bg-primary/90 transition-all shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0"
+                            >
+                              <Scales size={18} weight="bold" />
+                              <span>{slide.primaryAction.label}</span>
+                              <ArrowRight size={16} weight="bold" />
+                            </Link>
+                            <Link
+                              href={slide.secondaryAction.href}
+                              className="inline-flex items-center justify-center gap-2 rounded-sm bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white px-5 py-2.5 text-sm font-medium transition-all hover:-translate-y-0.5 active:translate-y-0"
+                            >
+                              <QrCode size={18} weight="duotone" />
+                              <span>{slide.secondaryAction.label}</span>
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Left & Right Arrow Navigation Controls */}
+          <button
+            type="button"
+            onClick={handlePrevSlide}
+            aria-label="Previous Slide"
+            className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-sm bg-black/40 hover:bg-black/80 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all opacity-80 hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary shadow-lg"
+          >
+            <CaretLeft size={24} weight="bold" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNextSlide}
+            aria-label="Next Slide"
+            className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-sm bg-black/40 hover:bg-black/80 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all opacity-80 hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary shadow-lg"
+          >
+            <CaretRight size={24} weight="bold" />
+          </button>
+
+          {/* Bottom Slide Indicators with Auto-Loop Animation Bar */}
+          <div className="absolute bottom-6 left-0 right-0 z-30 pointer-events-none">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
+              <div className="pointer-events-auto flex items-center gap-2.5 bg-black/50 backdrop-blur-md px-3.5 py-2 rounded-sm border border-white/20 shadow-md">
+                {CAROUSEL_SLIDES.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setCurrentSlide(idx)}
+                    aria-label={`Jump to slide ${idx + 1}`}
+                    className={cn(
+                      "h-2 rounded-full transition-all cursor-pointer",
+                      idx === currentSlide
+                        ? "w-8 bg-primary"
+                        : "w-2.5 bg-white/40 hover:bg-white/70"
+                    )}
+                  />
+                ))}
               </div>
             </div>
           </div>

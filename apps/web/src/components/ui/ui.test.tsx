@@ -21,20 +21,20 @@ import {
 
 describe("TASK-049: Shared Metrological UI Library", () => {
   describe("Button Component", () => {
-    test("enforces minimum 48px touch target on default button", () => {
+    test("enforces compact y-axis height on default button", () => {
       const html = renderToStaticMarkup(<Button>Test Action</Button>);
-      assert.ok(html.includes("min-h-[48px]"), "Must have min-h-[48px] for touch target");
-      assert.ok(html.includes("rounded-2xl"), "Must have Twitter theme pill radius rounded-2xl");
+      assert.ok(html.includes("h-9.5"), "Must have compact h-9.5");
+      assert.ok(html.includes("px-5"), "Must have px-5 padding");
     });
 
-    test("enforces minimum 48px x 48px bounding box on icon buttons", () => {
+    test("renders compact bounding box on icon buttons", () => {
       const html = renderToStaticMarkup(
         <Button size="icon" aria-label="Settings">
           <span>⚙</span>
         </Button>
       );
-      assert.ok(html.includes("min-h-[48px]"), "Icon button must have min-h-[48px]");
-      assert.ok(html.includes("min-w-[48px]"), "Icon button must have min-w-[48px]");
+      assert.ok(html.includes("h-9"), "Icon button must have h-9");
+      assert.ok(html.includes("w-9"), "Icon button must have w-9");
     });
 
     test("renders primary and destructive variant color tokens", () => {

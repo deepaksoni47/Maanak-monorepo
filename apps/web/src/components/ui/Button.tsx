@@ -38,10 +38,10 @@ const variantStyles: Record<ButtonVariant, string> = {
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  default: "h-11 min-h-[48px] px-6 text-sm font-medium",
-  sm: "h-11 min-h-[48px] px-4 text-xs font-semibold",
-  lg: "h-12 min-h-[48px] px-8 text-base font-semibold",
-  icon: "h-12 w-12 min-h-[48px] min-w-[48px] p-0 justify-center",
+  default: "h-9.5 py-1.5 px-5 text-sm font-medium",
+  sm: "h-8 py-1 px-3.5 text-xs font-semibold",
+  lg: "h-11 py-2 px-7 text-base font-semibold",
+  icon: "h-9 w-9 p-0 justify-center",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
