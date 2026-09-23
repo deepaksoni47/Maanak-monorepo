@@ -216,21 +216,21 @@ export default function HomePage() {
                 </Link>
               </nav>
 
-              {/* Action Buttons: Verify & Login */}
+              {/* Action Buttons: Verify & Start Session */}
               <div className="relative shrink-0 flex items-center gap-2.5">
                 <Link
                   href="/verify"
-                  className="hidden lg:inline-flex items-center gap-1.5 rounded-xs border border-border bg-card px-3.5 py-1 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-all"
+                  className="hidden lg:inline-flex items-center gap-1.5 rounded-xs border border-border bg-card px-3.5 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-all"
                 >
                   <QrCode size={15} weight="bold" />
                   <span>Verify Report</span>
                 </Link>
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-1.5 rounded-xs border-2 border-slate-800 dark:border-slate-300 bg-transparent px-4 py-1 text-xs sm:text-sm font-bold tracking-wider text-slate-900 dark:text-slate-100 hover:bg-slate-900 hover:text-white dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-all shadow-xs uppercase"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xs bg-primary text-primary-foreground px-4 sm:px-5 py-1.5 text-xs sm:text-sm font-semibold hover:bg-primary/90 transition-all shadow-xs"
                 >
-                  <span>LOGIN</span>
-                  <CaretDown size={14} weight="bold" />
+                  <span>Start Session</span>
+                  <ArrowRight size={15} weight="bold" />
                 </Link>
               </div>
             </div>
@@ -282,8 +282,7 @@ export default function HomePage() {
 
                         {/* Right Half: Text & Action Content */}
                         <div className="space-y-4 max-w-2xl lg:max-w-none">
-                          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/25 backdrop-blur-md border border-primary/40 text-xs font-semibold text-white w-fit shadow-sm">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                          <div className="inline-flex items-center px-3 py-1 rounded-xs bg-primary/20 backdrop-blur-md border border-primary/40 text-xs font-semibold text-white w-fit shadow-xs">
                             <span>{slide.badge}</span>
                           </div>
 
@@ -342,7 +341,7 @@ export default function HomePage() {
           {/* Bottom Slide Indicators with Auto-Loop Animation Bar */}
           <div className="absolute bottom-6 left-0 right-0 z-30 pointer-events-none">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
-              <div className="pointer-events-auto flex items-center gap-2.5 bg-black/50 backdrop-blur-md px-3.5 py-2 rounded-sm border border-white/20 shadow-md">
+              <div className="pointer-events-auto flex items-center gap-2.5 bg-black/50 backdrop-blur-md px-3.5 py-2 rounded-xs border border-white/20 shadow-md">
                 {CAROUSEL_SLIDES.map((_, idx) => (
                   <button
                     key={idx}
@@ -350,7 +349,7 @@ export default function HomePage() {
                     onClick={() => setCurrentSlide(idx)}
                     aria-label={`Jump to slide ${idx + 1}`}
                     className={cn(
-                      "h-2 rounded-full transition-all cursor-pointer",
+                      "h-2 rounded-xs transition-all cursor-pointer",
                       idx === currentSlide
                         ? "w-8 bg-primary"
                         : "w-2.5 bg-white/40 hover:bg-white/70"
