@@ -50,10 +50,10 @@
   --sidebar-ring: oklch(0.6818 0.1584 243.354);
 
   /* Font Families & Radii */
-  --font-sans: "Open Sans", sans-serif;
+  --font-sans: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-serif: "Georgia", serif;
-  --font-mono: "Menlo", monospace;
-  --radius: 1.3rem;
+  --font-mono: "JetBrains Mono", "Menlo", "Consolas", monospace;
+  --radius: 0.25rem;
 
   /* Elevation Shadows */
   --shadow-color: rgba(29, 161, 242, 0.15);
@@ -144,17 +144,75 @@
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Typography Font Sizes Scale (Enlarged) */
+  --text-xs: 0.9375rem;
+  --text-xs--line-height: 1.375rem;
+  --text-sm: 1.0625rem;
+  --text-sm--line-height: 1.5rem;
+  --text-base: 1.1875rem;
+  --text-base--line-height: 1.75rem;
+  --text-lg: 1.3125rem;
+  --text-lg--line-height: 1.875rem;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 2rem;
+
+  /* Radius Mapping */
+  --radius: 6px;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
+  --radius-xl: 6px;
+  --radius-2xl: 8px;
+  --radius-3xl: 8px;
+  --radius-4xl: 8px;
+}
+
+@layer utilities {
+  .text-xs {
+    font-size: 0.9375rem !important;
+    line-height: 1.375rem !important;
+  }
+  .text-\[10px\] {
+    font-size: 0.8125rem !important;
+    line-height: 1.25rem !important;
+  }
+  .text-\[11px\] {
+    font-size: 0.875rem !important;
+    line-height: 1.3rem !important;
+  }
+  .text-sm {
+    font-size: 1.0625rem !important;
+    line-height: 1.5rem !important;
+  }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
+  html {
+    font-size: 17px;
+    -webkit-text-size-adjust: 100%;
   }
+  body {
+    @apply bg-background text-foreground font-sans antialiased text-base leading-relaxed;
+  }
+}
+
+/* Direct global card and container low border-radius enforcement */
+.rounded-3xl,
+.rounded-2xl,
+.rounded-xl,
+.rounded-lg,
+.rounded-md,
+[class*="rounded-3xl"],
+[class*="rounded-2xl"],
+[class*="rounded-xl"],
+[class*="rounded-lg"] {
+  border-radius: 6px !important;
+}
+
+.rounded-full {
+  border-radius: 9999px !important;
 }

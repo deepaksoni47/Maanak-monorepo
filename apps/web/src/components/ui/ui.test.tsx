@@ -113,7 +113,7 @@ describe("TASK-049: Shared Metrological UI Library", () => {
   });
 
   describe("Card Compound Components", () => {
-    test("renders card with rounded-3xl geometry and standard slots", () => {
+    test("renders card with rounded-xl geometry and standard slots", () => {
       const html = renderToStaticMarkup(
         <Card>
           <CardHeader>
@@ -128,7 +128,7 @@ describe("TASK-049: Shared Metrological UI Library", () => {
           </CardFooter>
         </Card>
       );
-      assert.ok(html.includes("rounded-3xl"));
+      assert.ok(html.includes("rounded-xl"));
       assert.ok(html.includes("Session TS-2026-0089"));
       assert.ok(html.includes("OIML R-76 Weighing Form"));
     });
@@ -145,7 +145,7 @@ describe("TASK-049: Shared Metrological UI Library", () => {
     test("renders MetricCardSkeleton preserving 112px height", () => {
       const html = renderToStaticMarkup(<MetricCardSkeleton />);
       assert.ok(html.includes("h-28")); // 112px fixed height
-      assert.ok(html.includes("rounded-3xl"));
+      assert.ok(html.includes("rounded-xl"));
       assert.ok(html.includes("animate-pulse"));
     });
 
@@ -155,7 +155,7 @@ describe("TASK-049: Shared Metrological UI Library", () => {
 
       const benchHtml = renderToStaticMarkup(<BenchCardSkeleton />);
       assert.ok(benchHtml.includes("grid grid-cols-2"));
-      assert.ok(benchHtml.includes("rounded-3xl"));
+      assert.ok(benchHtml.includes("rounded-xl"));
     });
 
     test("renders FormSkeleton matching input shapes", () => {

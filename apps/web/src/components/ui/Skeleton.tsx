@@ -22,7 +22,7 @@ export function MetricCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-3xl border border-border bg-card p-5 h-28 flex flex-col justify-between space-y-2",
+        "rounded-xl border border-border bg-card p-5 h-28 flex flex-col justify-between space-y-2",
         className
       )}
     >
@@ -80,7 +80,7 @@ export function BenchCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-3xl border border-border bg-card p-5 space-y-4 shadow-xs",
+        "rounded-xl border border-border bg-card p-5 space-y-4 shadow-xs",
         className
       )}
     >

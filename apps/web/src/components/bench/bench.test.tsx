@@ -104,7 +104,7 @@ describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
   describe("BenchCardSkeleton Component", () => {
     test("renders zero-CLS geometry matching observation card layout", () => {
       const html = renderToStaticMarkup(<BenchCardSkeleton />);
-      assert.ok(html.includes("rounded-3xl"));
+      assert.ok(html.includes("rounded-xl"));
       assert.ok(html.includes("animate-pulse"));
       assert.ok(html.includes("grid grid-cols-2"));
       assert.ok(html.includes("grid grid-cols-5")); // Keypad slot
