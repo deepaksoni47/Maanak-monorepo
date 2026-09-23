@@ -22,6 +22,7 @@ import {
   Sparkle,
   CaretLeft,
   CaretRight,
+  CaretDown,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { GridPattern } from "@/components/ui/grid-pattern";
@@ -91,71 +92,148 @@ export default function HomePage() {
   const sampleErrorG = selectedLoad === 0.1 ? 0.0 : selectedLoad === 2.5 ? 0.5 : selectedLoad === 10 ? 1.0 : 1.5;
   const isPass = Math.abs(sampleErrorG) <= mpeLimitG;
 
+  // State for Language selection & Login dropdown
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("English");
+  const [isLoginOpen, setIsLoginOpen] = useState<boolean>(false);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary">
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-ring rounded-2xl p-1"
-          >
-            <div className="relative w-10 h-10 rounded-2xl overflow-hidden border border-border bg-card flex items-center justify-center shadow-xs group-hover:border-primary/50 transition-all">
-              <Image
-                src="/logo.avif"
-                alt="MAANAK Logo"
-                width={40}
-                height={40}
-                className="object-contain w-full h-full"
-                priority
-              />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-lg tracking-tight text-foreground">MAANAK</span>
-                <span className="font-semibold text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                  मानक
-                </span>
+      {/* Top Navigation Bar: Department of Consumer Affairs / Government of India Standard */}
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-md shadow-xs">
+        <div className="w-full flex flex-col md:flex-row items-stretch">
+          {/* Left Brand Identity: Satyamev Jayate Emblem & MAANAK Portal Logo */}
+          <div className="flex items-center gap-3.5 px-4 sm:px-6 py-2.5 bg-background shrink-0 border-b md:border-b-0 md:border-r-4 md:border-amber-500">
+            <Link
+              href="/"
+              className="flex items-center gap-3.5 group focus:outline-none focus:ring-2 focus:ring-ring rounded-xs p-0.5"
+            >
+              {/* Satyamev Jayate (State Emblem of India) */}
+              <div className="relative w-11 h-14 shrink-0 flex items-center justify-center">
+                <Image
+                  src="/assets/satyamev-jayate.svg"
+                  alt="State Emblem of India - Satyamev Jayate"
+                  width={44}
+                  height={56}
+                  className="object-contain h-full w-auto"
+                  priority
+                />
               </div>
-              <span className="text-[11px] text-muted-foreground hidden sm:inline font-medium">
-                Legal Metrology Testing Platform
+
+              {/* Portal Icon & Typography */}
+              <div className="flex items-center gap-2.5">
+                <div className="relative w-10 h-10 rounded-sm overflow-hidden border border-border bg-card flex items-center justify-center shadow-xs group-hover:border-primary/50 transition-all">
+                  <Image
+                    src="/logo.avif"
+                    alt="MAANAK Portal Logo"
+                    width={40}
+                    height={40}
+                    className="object-contain w-full h-full"
+                    priority
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-xl tracking-tight text-foreground leading-none">MAANAK</span>
+                    <span className="font-semibold text-[11px] text-amber-600 dark:text-amber-500 bg-amber-500/10 px-1.5 py-0.2 rounded-xs border border-amber-500/20">
+                      मानक
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-muted-foreground font-medium hidden sm:inline leading-tight mt-0.5">
+                    Legal Metrology Testing Portal
+                  </span>
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          {/* Right Navigation & Utility Sections */}
+          <div className="flex-1 flex flex-col justify-between min-w-0">
+            {/* Top Tier: Department of Consumer Affairs Government Utility Bar */}
+            <div className="bg-slate-100 dark:bg-slate-900 border-b border-border/80 px-4 sm:px-6 py-1 flex items-center justify-between text-xs gap-3">
+              <span className="font-bold text-[11px] sm:text-xs tracking-wider text-slate-800 dark:text-slate-200 uppercase truncate">
+                DEPARTMENT OF CONSUMER AFFAIRS | GOVERNMENT OF INDIA
               </span>
+
+              <div className="flex items-center gap-2.5 shrink-0">
+                <a
+                  href="#main-content"
+                  className="hidden sm:inline-flex items-center rounded-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Skip to Main Content
+                </a>
+
+                {/* Accessibility Icon */}
+                <div
+                  title="Accessibility Options"
+                  className="w-5 h-5 rounded-full bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 flex items-center justify-center text-[10px] font-bold shadow-xs cursor-pointer select-none"
+                >
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z" />
+                  </svg>
+                </div>
+
+                <span className="text-slate-300 dark:text-slate-700 text-xs font-light">|</span>
+
+                {/* Language Selector */}
+                <div className="relative inline-flex items-center">
+                  <select
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    aria-label="Select Language"
+                    className="bg-transparent text-[11px] sm:text-xs font-semibold text-slate-800 dark:text-slate-200 pr-5 py-0.5 rounded-xs cursor-pointer border-none focus:outline-none focus:ring-1 focus:ring-primary appearance-none"
+                  >
+                    <option value="English" className="bg-background text-foreground">English</option>
+                    <option value="Hindi" className="bg-background text-foreground">हिन्दी (Hindi)</option>
+                  </select>
+                  <CaretDown size={12} weight="bold" className="absolute right-0.5 pointer-events-none text-slate-600 dark:text-slate-300" />
+                </div>
+              </div>
             </div>
-          </Link>
 
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">
-              Dashboard
-            </Link>
-            <Link href="/instruments" className="hover:text-foreground transition-colors">
-              Instruments
-            </Link>
-            <Link href="/bench" className="hover:text-foreground transition-colors">
-              Bench Testing
-            </Link>
-            <Link href="/reports" className="hover:text-foreground transition-colors">
-              Reports
-            </Link>
-            <Link href="/verify" className="hover:text-foreground transition-colors">
-              Verify
-            </Link>
-          </nav>
+            {/* Bottom Tier: Primary Navigation Links & Actions */}
+            <div className="px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
+              <nav className="flex items-center gap-5 sm:gap-7 text-sm font-medium text-muted-foreground overflow-x-auto no-scrollbar py-0.5">
+                <Link
+                  href="/"
+                  className="text-amber-600 dark:text-amber-500 font-bold hover:text-amber-700 dark:hover:text-amber-400 transition-colors shrink-0"
+                >
+                  Home
+                </Link>
+                <Link href="/dashboard" className="hover:text-foreground transition-colors shrink-0">
+                  Dashboard
+                </Link>
+                <Link href="/instruments" className="hover:text-foreground transition-colors shrink-0">
+                  Instruments
+                </Link>
+                <Link href="/bench" className="hover:text-foreground transition-colors shrink-0">
+                  Bench Testing
+                </Link>
+                <Link href="/reports" className="hover:text-foreground transition-colors shrink-0">
+                  Reports
+                </Link>
+                <Link href="/verify" className="hover:text-foreground transition-colors shrink-0">
+                  Verify
+                </Link>
+              </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/verify"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-sm border border-border bg-card px-4 py-2 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-all"
-            >
-              <QrCode size={16} weight="bold" />
-              <span>Verify Report</span>
-            </Link>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center justify-center gap-2 rounded-sm bg-primary text-primary-foreground px-5 py-2 text-sm font-semibold hover:bg-primary/90 transition-all shadow-sm"
-            >
-              <span>Open Console</span>
-              <ArrowRight size={16} weight="bold" />
-            </Link>
+              {/* Action Buttons: Verify & Login */}
+              <div className="relative shrink-0 flex items-center gap-2.5">
+                <Link
+                  href="/verify"
+                  className="hidden lg:inline-flex items-center gap-1.5 rounded-xs border border-border bg-card px-3.5 py-1 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-all"
+                >
+                  <QrCode size={15} weight="bold" />
+                  <span>Verify Report</span>
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-1.5 rounded-xs border-2 border-slate-800 dark:border-slate-300 bg-transparent px-4 py-1 text-xs sm:text-sm font-bold tracking-wider text-slate-900 dark:text-slate-100 hover:bg-slate-900 hover:text-white dark:hover:bg-slate-100 dark:hover:text-slate-900 transition-all shadow-xs uppercase"
+                >
+                  <span>LOGIN</span>
+                  <CaretDown size={14} weight="bold" />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </header>
