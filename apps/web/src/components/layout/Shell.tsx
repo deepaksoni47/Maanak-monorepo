@@ -108,7 +108,7 @@ export function Shell({
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl text-primary flex items-center justify-center shrink-0">
                     <User size={16} weight="bold" />
                   </div>
                   <div className="truncate text-left min-w-0">

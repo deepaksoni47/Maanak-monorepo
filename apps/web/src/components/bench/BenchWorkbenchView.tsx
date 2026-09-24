@@ -542,7 +542,7 @@ export function BenchWorkbenchView() {
         {/* Session Info & Ambient Telemetry Strip with Instrument Switcher */}
         <div className="rounded-sm border border-border bg-card p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-xs">
           <div className="flex items-start sm:items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl text-primary flex items-center justify-center shrink-0">
               <Scales size={22} weight="duotone" />
             </div>
             <div>
@@ -661,7 +661,7 @@ export function BenchWorkbenchView() {
                   key={step.stepNumber}
                   type="button"
                   onClick={() => setCurrentStepIndex(idx)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-2xl border text-xs transition-all ${
+                  className={`flex flex-col justify-between p-1.5 sm:p-2 rounded-2xl border text-xs transition-all min-h-[64px] ${
                     isCurrent
                       ? "border-primary bg-primary/10 text-primary font-bold shadow-xs ring-2 ring-primary/20"
                       : isSaved
@@ -671,12 +671,16 @@ export function BenchWorkbenchView() {
                       : "border-border bg-background hover:bg-muted/40 text-muted-foreground"
                   }`}
                 >
-                  <span className="font-mono text-[10px]">#{step.stepNumber}</span>
+                  <div className="w-full flex items-center justify-between">
+                    <span className="font-mono text-[10px] font-bold opacity-75">#{step.stepNumber}</span>
+                  </div>
                   <span className="sr-only">Step #{step.stepNumber}</span>
-                  <span className="text-[11px] font-mono truncate max-w-full font-bold">
-                    {step.appliedLoad} {step.unit}
-                  </span>
-                  <div className="mt-1 flex items-center justify-center h-3 w-3">
+                  <div className="w-full my-auto flex flex-col items-center justify-center text-center">
+                    <span className="text-xs sm:text-sm font-mono truncate max-w-full font-extrabold tracking-tight">
+                      {step.appliedLoad} {step.unit}
+                    </span>
+                  </div>
+                  <div className="w-full flex items-center justify-center h-3">
                     {isSaved ? (
                       res.isPass ? (
                         <Check size={12} weight="bold" className="text-emerald-600 dark:text-emerald-400" />
@@ -1014,7 +1018,7 @@ export function BenchWorkbenchView() {
       {isCompletedModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in">
           <div className="bg-card border border-border rounded-sm p-6 w-full max-w-md shadow-xl text-center space-y-4">
-            <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <div className="w-14 h-14 mx-auto rounded-full text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <CheckCircle size={32} weight="fill" />
             </div>
             <div className="space-y-1">

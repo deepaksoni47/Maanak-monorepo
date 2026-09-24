@@ -298,7 +298,7 @@ export function DashboardView() {
               <span className="text-xs sm:text-sm font-bold tracking-tight text-foreground uppercase leading-snug">
                 Approved Today
               </span>
-              <div className="w-8 h-8 rounded-full bg-foreground text-background group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center shrink-0 shadow-xs transition-colors duration-300">
+              <div className="w-8 h-8 rounded-full border-1.5 border-foreground/80 dark:border-foreground/90 group-hover:border-primary group-hover:text-primary flex items-center justify-center text-foreground shrink-0 transition-all duration-300">
                 <Check size={16} weight="bold" />
               </div>
             </div>

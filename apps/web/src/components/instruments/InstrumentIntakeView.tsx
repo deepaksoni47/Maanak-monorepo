@@ -640,7 +640,7 @@ export function InstrumentIntakeView() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="border-2 border-dashed border-border/80 rounded-2xl p-4 text-center space-y-2 bg-muted/10">
-                  <div className="w-10 h-10 mx-auto rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                  <div className="w-10 h-10 mx-auto rounded-2xl text-primary flex items-center justify-center">
                     <UploadSimple size={20} />
                   </div>
                   <div className="text-xs text-foreground font-semibold">

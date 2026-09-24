@@ -99,7 +99,7 @@ export function DerivationTreeModal({
                 {item.sessionNumber}
               </span>
               <span className="text-muted-foreground">({item.model})</span>
-              <span className="px-2 py-0.5 rounded-full font-mono font-bold bg-primary/10 text-primary border border-primary/20 text-[10px]">
+              <span className="px-2 py-0.5 rounded-full font-mono font-bold bg-transparent text-primary border border-primary/40 text-[10px]">
                 Class {item.accuracyClass}
               </span>
             </div>

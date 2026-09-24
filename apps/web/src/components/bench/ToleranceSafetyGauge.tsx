@@ -42,7 +42,7 @@ export function ToleranceSafetyGauge({
     <Card className={cn("rounded-sm border border-border bg-card p-4 sm:p-5 space-y-4", className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+          <div className="w-8 h-8 rounded-2xl text-primary flex items-center justify-center">
             <Gauge size={18} weight="duotone" />
           </div>
           <div>

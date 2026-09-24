@@ -339,7 +339,7 @@ export default function HomePage() {
         <div className="rounded-sm border border-border bg-card p-6 sm:p-10 shadow-xs">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-5 space-y-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-transparent border border-primary/40 text-primary text-xs font-semibold">
                 <Calculator size={15} weight="bold" />
                 <span>Try Live Calculation</span>
               </div>
@@ -384,7 +384,7 @@ export default function HomePage() {
                     Applied Test Load: {selectedLoad.toFixed(3)} kg
                   </span>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs font-mono">
+                <span className="px-2.5 py-0.5 rounded-full bg-transparent border border-emerald-500/50 text-emerald-600 dark:text-emerald-400 font-bold text-xs font-mono">
                   {isPass ? "PASS" : "FAIL"}
                 </span>
               </div>

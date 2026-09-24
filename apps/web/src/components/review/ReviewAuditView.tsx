@@ -379,7 +379,7 @@ export function ReviewAuditView() {
         {/* Audit Queue List */}
         {filteredItems.length === 0 ? (
           <Card className="p-12 text-center border-dashed border-border/80">
-            <div className="inline-flex p-4 rounded-full bg-emerald-500/10 text-emerald-400 mb-3">
+            <div className="inline-flex p-4 rounded-full text-emerald-500 mb-3">
               <CheckCircle className="h-8 w-8" weight="duotone" />
             </div>
             <h3 className="text-base font-semibold text-foreground">

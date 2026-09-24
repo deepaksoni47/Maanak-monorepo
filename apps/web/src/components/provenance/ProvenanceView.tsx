@@ -116,7 +116,7 @@ export function ProvenanceView() {
         {/* KPI Strip */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="p-4 rounded-sm border border-border bg-card flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl text-primary flex items-center justify-center shrink-0">
               <LockKey size={22} weight="duotone" />
             </div>
             <div>
@@ -125,7 +125,7 @@ export function ProvenanceView() {
             </div>
           </Card>
           <Card className="p-4 rounded-sm border border-border bg-card flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <ShieldCheck size={22} weight="duotone" />
             </div>
             <div>
@@ -136,7 +136,7 @@ export function ProvenanceView() {
             </div>
           </Card>
           <Card className="p-4 rounded-sm border border-border bg-card flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
               <LinkSimple size={22} weight="duotone" />
             </div>
             <div>
