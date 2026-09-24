@@ -402,7 +402,7 @@ export function DashboardView() {
           {/* Desktop Table View (>= 640px) */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-muted/40 text-muted-foreground border-b border-border/60">
+              <thead className="bg-muted/50 text-foreground border-b-2 border-neutral-300 dark:border-neutral-700">
                 <tr>
                   <th scope="col" className="py-3.5 px-5 font-semibold">Session ID</th>
                   <th scope="col" className="py-3.5 px-4 font-semibold">Instrument Model</th>
@@ -413,7 +413,7 @@ export function DashboardView() {
                   <th scope="col" className="py-3.5 px-5 text-right font-semibold">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60">
+              <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700">
                 {sessions.map((session) => (
                   <tr
                     key={session.id}
@@ -467,11 +467,11 @@ export function DashboardView() {
           </div>
 
           {/* Mobile Collapsible Cards (< 640px) */}
-          <div className="block sm:hidden divide-y divide-border/60 p-4 space-y-3">
+          <div className="block sm:hidden divide-y divide-neutral-300 dark:divide-neutral-700 p-4 space-y-3">
             {sessions.map((session) => (
               <div
                 key={session.id}
-                className="pt-3 first:pt-0 space-y-2.5 bg-card/50 rounded-2xl p-3 border border-border/60"
+                className="pt-3 first:pt-0 space-y-2.5 bg-card rounded-2xl p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs"
               >
                 <div className="flex items-center justify-between">
                   <div className="font-mono font-bold text-xs text-foreground">

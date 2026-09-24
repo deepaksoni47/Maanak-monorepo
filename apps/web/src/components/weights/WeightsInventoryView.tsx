@@ -481,7 +481,7 @@ export function WeightsInventoryView() {
           {/* Desktop Table View (>= 640px) */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-muted/40 text-muted-foreground border-b border-border/60">
+              <thead className="bg-muted/50 text-foreground border-b-2 border-neutral-300 dark:border-neutral-700">
                 <tr>
                   <th scope="col" className="py-3.5 px-5 font-semibold">Set Code</th>
                   <th scope="col" className="py-3.5 px-4 font-semibold">OIML Class</th>
@@ -492,7 +492,7 @@ export function WeightsInventoryView() {
                   <th scope="col" className="py-3.5 px-5 text-right font-semibold">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60">
+              <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700">
                 {filteredInventory.map((set) => (
                   <tr key={set.id} className="hover:bg-accent/40 transition-colors group">
                     <td className="py-4 px-5 font-mono font-bold text-foreground whitespace-nowrap">

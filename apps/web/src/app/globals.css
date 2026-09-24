@@ -28,8 +28,8 @@
   --destructive-foreground: oklch(1 0 0);
 
   /* Borders, Inputs & Focus Rings */
-  --border: oklch(0.9317 0.0118 231.6594);
-  --input: oklch(0.9809 0.0025 228.7836);
+  --border: oklch(0.86 0.015 240);
+  --input: oklch(0.96 0.005 230);
   --ring: oklch(0.6818 0.1584 243.354);
 
   /* Data Visualization / Chart Palettes */
@@ -94,7 +94,7 @@
   --destructive-foreground: oklch(1 0 0);
 
   /* Dark Mode Borders & Inputs */
-  --border: oklch(0.2674 0.0047 248.0045);
+  --border: oklch(0.36 0.012 245);
   --input: oklch(0.302 0.0288 244.8244);
   --ring: oklch(0.6818 0.1584 243.354);
 

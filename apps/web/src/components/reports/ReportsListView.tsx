@@ -191,7 +191,7 @@ export function ReportsListView() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-muted/40 text-muted-foreground border-b border-border/70 font-mono text-[11px] uppercase tracking-wider">
+                  <thead className="bg-muted/50 text-foreground border-b-2 border-neutral-300 dark:border-neutral-700 font-mono text-[11px] uppercase tracking-wider">
                     <tr>
                       <th scope="col" className="py-3 px-4">Certificate #</th>
                       <th scope="col" className="py-3 px-4">Instrument / Serial</th>
@@ -202,7 +202,7 @@ export function ReportsListView() {
                       <th scope="col" className="py-3 px-4 text-right">View / Verify</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/60">
+                  <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700">
                     {reports.map((item) => (
                       <tr key={item.id} className="hover:bg-accent/40 transition-colors">
                         <td className="py-3.5 px-4 font-mono font-bold text-foreground">
