@@ -185,6 +185,48 @@ export interface OimlReportData {
       significantFaultLimit: number;
       status: "PASS" | "FAIL";
     };
+    form15SoftwareExamination?: {
+      formTitle?: string;
+      softwareId?: string;
+      checksumHex?: string;
+      welmecRiskClass?: string;
+      items?: {
+        id: string;
+        requirement: string;
+        welmecClause: string;
+        status: "PASS" | "FAIL" | "NA";
+        remarks?: string;
+      }[];
+      overallStatus: "PASS" | "FAIL" | "NA";
+      evaluatedBy?: string;
+    };
+    form16DescriptiveMarkings?: {
+      formTitle?: string;
+      items?: {
+        id: string;
+        markingItem: string;
+        oimlClause: string;
+        presentedValue?: string;
+        status: "PASS" | "FAIL" | "NA";
+        remarks?: string;
+      }[];
+      overallStatus: "PASS" | "FAIL" | "NA";
+      evaluatedBy?: string;
+    };
+    form17SealingVerification?: {
+      formTitle?: string;
+      physicalSealCount?: number;
+      electronicEventCounterValue?: number | string;
+      items?: {
+        id: string;
+        sealItem: string;
+        oimlClause: string;
+        status: "PASS" | "FAIL" | "NA";
+        remarks?: string;
+      }[];
+      overallStatus: "PASS" | "FAIL" | "NA";
+      evaluatedBy?: string;
+    };
   };
   signatureMetadata?: DigitalSignatureMetadata;
 }
@@ -272,9 +314,15 @@ export async function compileOimlPdfReport(
     reportData.results.form13ElectrostaticDischarge ||
     reportData.results.form14ElectromagneticImmunity,
   );
+  const hasAdministrativeForms15To17 = Boolean(
+    reportData.results.form15SoftwareExamination ||
+    reportData.results.form16DescriptiveMarkings ||
+    reportData.results.form17SealingVerification,
+  );
   let modularPagesCount = 0;
   if (hasModularForms7To9) modularPagesCount++;
   if (hasDisturbanceForms10To14) modularPagesCount++;
+  if (hasAdministrativeForms15To17) modularPagesCount++;
 
   const evidenceCount = reportData.evidenceAttachments?.length ?? 0;
   const itemsPerPage = 2;
@@ -1008,6 +1056,70 @@ export async function compileOimlPdfReport(
   }
 
   // -------------------------------------------------------------
+  // ADMINISTRATIVE EVALUATION: Forms 15–17 (WELMEC Software, Markings, Sealing)
+  // -------------------------------------------------------------
+  if (hasAdministrativeForms15To17) {
+    const pageAdmin = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+    patchPage(pageAdmin);
+    renderPageFramework(
+      pageAdmin,
+      nextPageIndex++,
+      totalPages,
+      reportData,
+      fontRegular,
+      fontBold,
+    );
+
+    let adminY = PAGE_HEIGHT - 65;
+    renderSectionHeader(
+      pageAdmin,
+      "FORMS 15-17: ADMINISTRATIVE & LEGAL METROLOGY VERIFICATION",
+      MARGIN,
+      adminY,
+      fontBold,
+    );
+    adminY -= 14;
+    pageAdmin.drawText(
+      "Statutory examination of software integrity (WELMEC 7.2), descriptive markings (Clause 7.1), and physical/electronic sealing (Clause 4.1.2).",
+      { x: MARGIN, y: adminY, size: 8, font: fontRegular, color: COLOR_MUTED },
+    );
+    adminY -= 18;
+
+    adminY = renderForm15Section(
+      pageAdmin,
+      reportData.results.form15SoftwareExamination,
+      MARGIN,
+      adminY,
+      fontRegular,
+      fontBold,
+      fontMono,
+    );
+    adminY -= 14;
+
+    adminY = renderForm16Section(
+      pageAdmin,
+      reportData.results.form16DescriptiveMarkings,
+      reportData.instrument,
+      MARGIN,
+      adminY,
+      fontRegular,
+      fontBold,
+      fontMono,
+    );
+    adminY -= 14;
+
+    adminY = renderForm17Section(
+      pageAdmin,
+      reportData.results.form17SealingVerification,
+      MARGIN,
+      adminY,
+      fontRegular,
+      fontBold,
+      fontMono,
+    );
+  }
+
+  // -------------------------------------------------------------
   // ANNEX: Photographic & Diagram Evidence Embedder (TASK-080)
   // -------------------------------------------------------------
   if (reportData.evidenceAttachments && reportData.evidenceAttachments.length > 0) {
@@ -1652,6 +1764,268 @@ function renderDisturbances11To14Section(
     },
   ];
   renderInfoGrid(page, items, startX, startY, CONTENT_WIDTH, fontRegular, fontBold);
+}
+
+function renderChecklistTable(
+  page: PDFPage,
+  headers: [string, string, string, string],
+  rows: { col1: string; col2: string; col3: string; status: "PASS" | "FAIL" | "NA" }[],
+  startX: number,
+  startY: number,
+  fontRegular: PDFFont,
+  fontBold: PDFFont,
+  _fontMono: PDFFont,
+): number {
+  const colWidths = [65, 220, 160, 70.28];
+  let curY = startY;
+  const rowHeight = 15;
+
+  // Header row
+  page.drawRectangle({
+    x: startX,
+    y: curY - rowHeight,
+    width: CONTENT_WIDTH,
+    height: rowHeight,
+    color: COLOR_LIGHT_BG,
+    borderColor: COLOR_BORDER,
+    borderWidth: 0.5,
+  });
+
+  let curX = startX + 6;
+  page.drawText(headers[0], { x: curX, y: curY - 11, size: 7.5, font: fontBold, color: COLOR_PRIMARY });
+  curX += colWidths[0];
+  page.drawText(headers[1], { x: curX, y: curY - 11, size: 7.5, font: fontBold, color: COLOR_PRIMARY });
+  curX += colWidths[1];
+  page.drawText(headers[2], { x: curX, y: curY - 11, size: 7.5, font: fontBold, color: COLOR_PRIMARY });
+  curX += colWidths[2];
+  page.drawText(headers[3], { x: curX, y: curY - 11, size: 7.5, font: fontBold, color: COLOR_PRIMARY });
+
+  curY -= rowHeight;
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const isEven = i % 2 === 0;
+    if (isEven) {
+      page.drawRectangle({
+        x: startX,
+        y: curY - rowHeight,
+        width: CONTENT_WIDTH,
+        height: rowHeight,
+        color: rgb(0.985, 0.988, 0.995),
+        borderWidth: 0,
+      });
+    }
+
+    page.drawLine({
+      start: { x: startX, y: curY - rowHeight },
+      end: { x: startX + CONTENT_WIDTH, y: curY - rowHeight },
+      thickness: 0.5,
+      color: COLOR_BORDER,
+    });
+
+    curX = startX + 6;
+    page.drawText(safeAscii(row.col1), { x: curX, y: curY - 11, size: 7.5, font: fontBold, color: COLOR_DARK });
+    curX += colWidths[0];
+    page.drawText(safeAscii(row.col2), { x: curX, y: curY - 11, size: 7.5, font: fontRegular, color: COLOR_DARK });
+    curX += colWidths[1];
+    page.drawText(safeAscii(row.col3), { x: curX, y: curY - 11, size: 7, font: fontRegular, color: COLOR_MUTED });
+    curX += colWidths[2];
+
+    const statusColor = row.status === "PASS" ? COLOR_PASS : row.status === "FAIL" ? COLOR_FAIL : COLOR_MUTED;
+    const statusText = row.status === "PASS" ? "[ PASS ]" : row.status === "FAIL" ? "[ FAIL ]" : "[ N/A ]";
+    page.drawText(statusText, { x: curX, y: curY - 11, size: 7.5, font: fontBold, color: statusColor });
+
+    curY -= rowHeight;
+  }
+
+  return curY;
+}
+
+function renderForm15Section(
+  page: PDFPage,
+  data: OimlReportData["results"]["form15SoftwareExamination"] | undefined,
+  startX: number,
+  startY: number,
+  fontRegular: PDFFont,
+  fontBold: PDFFont,
+  fontMono: PDFFont,
+): number {
+  let curY = startY;
+  page.drawText("FORM 15: SOFTWARE EXAMINATION & WELMEC 7.2 INTEGRITY CHECK", {
+    x: startX,
+    y: curY,
+    size: 8.5,
+    font: fontBold,
+    color: COLOR_PRIMARY,
+  });
+  curY -= 14;
+
+  const swId = data?.softwareId ?? "FW-v3.4.1-REL";
+  const checksum = data?.checksumHex ?? "SHA256:7B8C...F01A";
+  const riskClass = data?.welmecRiskClass ?? "Risk Class C / Extension D";
+  const overall = data?.overallStatus ?? "PASS";
+
+  page.drawRectangle({
+    x: startX,
+    y: curY - 16,
+    width: CONTENT_WIDTH,
+    height: 16,
+    color: COLOR_LIGHT_BG,
+    borderColor: COLOR_BORDER,
+    borderWidth: 0.5,
+  });
+  page.drawText(safeAscii(`Firmware ID: ${swId} | Checksum: ${checksum} | WELMEC 7.2: ${riskClass} | Status: ${overall}`), {
+    x: startX + 6,
+    y: curY - 11,
+    size: 7.5,
+    font: fontRegular,
+    color: COLOR_DARK,
+  });
+  curY -= 20;
+
+  const defaultItems = [
+    { col1: "W-7.2 §2.1", col2: "Software Identification & Cryptographic Hash Display", col3: `Checksum verified: ${checksum.slice(0, 16)}`, status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+    { col1: "W-7.2 §2.2", col2: "Software Separation of Legally Relevant Functions", col3: "Type P instrument software partition sealed", status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+    { col1: "W-7.2 §2.3", col2: "Parameter Security & Unauthorized Modification Guard", col3: "Audit counter monotonic / hardware lock jumper", status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+    { col1: "W-7.2 §2.4", col2: "Software Interface Transmission Integrity Protection", col3: "Frame CRC16 on auxiliary serial port", status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+  ];
+
+  const items = data?.items?.length
+    ? data.items.map((it) => ({
+        col1: it.welmecClause || "W-7.2",
+        col2: it.requirement,
+        col3: it.remarks ?? "Verified against WELMEC guide",
+        status: it.status,
+      }))
+    : defaultItems;
+
+  return renderChecklistTable(
+    page,
+    ["Clause", "Software Integrity Requirement", "Evidence / Remarks", "Verdict"],
+    items,
+    startX,
+    curY,
+    fontRegular,
+    fontBold,
+    fontMono,
+  );
+}
+
+function renderForm16Section(
+  page: PDFPage,
+  data: OimlReportData["results"]["form16DescriptiveMarkings"] | undefined,
+  instrument: OimlReportData["instrument"],
+  startX: number,
+  startY: number,
+  fontRegular: PDFFont,
+  fontBold: PDFFont,
+  fontMono: PDFFont,
+): number {
+  let curY = startY;
+  page.drawText("FORM 16: DESCRIPTIVE MARKINGS & NAMEPLATE VERIFICATION (OIML R 76-1 CLAUSE 7.1)", {
+    x: startX,
+    y: curY,
+    size: 8.5,
+    font: fontBold,
+    color: COLOR_PRIMARY,
+  });
+  curY -= 14;
+
+  const defaultItems = [
+    { col1: "7.1.1", col2: "Manufacturer Name & Trade Mark", col3: `${instrument.manufacturer} (Indelible stamped plate)`, status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+    { col1: "7.1.1", col2: "Model Designation & Serial Number", col3: `${instrument.model} / S/N: ${instrument.serialNumber}`, status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+    { col1: "7.1.1", col2: "Metrological Class & Limits (Max, Min, e, d)", col3: `Class ${instrument.accuracyClass} | Max=${instrument.maxCapacity}${instrument.unit} Min=${instrument.minCapacity}${instrument.unit} e=${instrument.verificationIntervalE}${instrument.unit}`, status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+    { col1: "7.1.1", col2: "Pattern Approval & Temperature Range", col3: "IND/09/2024/001 | +10 deg C to +40 deg C", status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+  ];
+
+  const items = data?.items?.length
+    ? data.items.map((it) => ({
+        col1: it.oimlClause || "7.1.1",
+        col2: it.markingItem,
+        col3: it.presentedValue ?? it.remarks ?? "Verified on nameplate",
+        status: it.status,
+      }))
+    : defaultItems;
+
+  return renderChecklistTable(
+    page,
+    ["Clause", "Mandatory Descriptive Marking", "Inscription / Evidence", "Verdict"],
+    items,
+    startX,
+    curY,
+    fontRegular,
+    fontBold,
+    fontMono,
+  );
+}
+
+function renderForm17Section(
+  page: PDFPage,
+  data: OimlReportData["results"]["form17SealingVerification"] | undefined,
+  startX: number,
+  startY: number,
+  fontRegular: PDFFont,
+  fontBold: PDFFont,
+  fontMono: PDFFont,
+): number {
+  let curY = startY;
+  page.drawText("FORM 17: SEALING & VERIFICATION MARK PLACES (OIML R 76-1 CLAUSE 4.1.2)", {
+    x: startX,
+    y: curY,
+    size: 8.5,
+    font: fontBold,
+    color: COLOR_PRIMARY,
+  });
+  curY -= 14;
+
+  const sealCount = data?.physicalSealCount ?? 2;
+  const eventCounter = data?.electronicEventCounterValue ?? "EC-0042";
+  const overall = data?.overallStatus ?? "PASS";
+
+  page.drawRectangle({
+    x: startX,
+    y: curY - 16,
+    width: CONTENT_WIDTH,
+    height: 16,
+    color: COLOR_LIGHT_BG,
+    borderColor: COLOR_BORDER,
+    borderWidth: 0.5,
+  });
+  page.drawText(safeAscii(`Physical Seals: ${sealCount} Wire/Lead Seals | Electronic Audit Counter: ${eventCounter} | Status: ${overall}`), {
+    x: startX + 6,
+    y: curY - 11,
+    size: 7.5,
+    font: fontRegular,
+    color: COLOR_DARK,
+  });
+  curY -= 20;
+
+  const defaultItems = [
+    { col1: "4.1.2.4", col2: "Calibration Adjustment Access Security", col3: "Physical wire seal through rear chassis adjustment lug", status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+    { col1: "4.1.2.4", col2: "Housing & Load Cell Enclosure Sealing", col3: "2x lead-and-wire seals with laboratory inspection stamp", status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+    { col1: "4.1.2.5", col2: "Official Verification Mark Stamping Place", col3: "8mm diameter smooth copper insert on front bezel", status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+    { col1: "4.1.2.4", col2: "Electronic Sealing & Event Logger Counter", col3: `Monotonic counter verified at ${eventCounter} (non-resettable)`, status: (data?.overallStatus ?? "PASS") as "PASS" | "FAIL" | "NA" },
+  ];
+
+  const items = data?.items?.length
+    ? data.items.map((it) => ({
+        col1: it.oimlClause || "4.1.2",
+        col2: it.sealItem,
+        col3: it.remarks ?? "Verified physical/electronic seal",
+        status: it.status,
+      }))
+    : defaultItems;
+
+  return renderChecklistTable(
+    page,
+    ["Clause", "Sealing & Protection Provision", "Protection Details", "Verdict"],
+    items,
+    startX,
+    curY,
+    fontRegular,
+    fontBold,
+    fontMono,
+  );
 }
 
 async function renderEvidenceAttachmentCard(

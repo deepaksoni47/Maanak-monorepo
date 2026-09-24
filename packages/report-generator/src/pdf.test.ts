@@ -759,5 +759,182 @@ describe("TASK-034: Official OIML R 76-2 Multi-Page PDF Compiler (pdf.ts)", () =
       assert.ok(result.pdfBuffer.length > 5000);
     });
   });
+
+  describe("TASK-090: Forms 15–17 Administrative Checklist & Marking Verification", () => {
+    it("compiles 6-page PDF report with Forms 15–17 (Software examination, markings, sealing) on dedicated Administrative Page", async () => {
+      const adminReportData: OimlReportData = {
+        ...sampleReportData,
+        reportNumber: "RRSL-DEL-2026-ADMIN-01",
+        results: {
+          ...sampleReportData.results,
+          form15SoftwareExamination: {
+            softwareId: "FW-v3.4.1-REL",
+            checksumHex: "SHA256:7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2E",
+            welmecRiskClass: "Risk Class C / Extension D",
+            items: [
+              {
+                id: "item-15-1",
+                requirement: "Software Identification & Checksum Display",
+                welmecClause: "W-7.2 §2.1",
+                status: "PASS",
+                remarks: "Checksum matches reference firmware binary",
+              },
+              {
+                id: "item-15-2",
+                requirement: "Software Separation of Legally Relevant Functions",
+                welmecClause: "W-7.2 §2.2",
+                status: "PASS",
+                remarks: "Type P instrument software partition sealed",
+              },
+            ],
+            overallStatus: "PASS",
+          },
+          form16DescriptiveMarkings: {
+            items: [
+              {
+                id: "item-16-1",
+                markingItem: "Manufacturer Name & Trade Mark",
+                oimlClause: "7.1.1",
+                presentedValue: "Avery Weigh-Tronix India",
+                status: "PASS",
+              },
+              {
+                id: "item-16-2",
+                markingItem: "Metrological Limits (Max, Min, e, d)",
+                oimlClause: "7.1.1",
+                presentedValue: "Class III | Max=15kg Min=100g e=5g",
+                status: "PASS",
+              },
+            ],
+            overallStatus: "PASS",
+          },
+          form17SealingVerification: {
+            physicalSealCount: 3,
+            electronicEventCounterValue: "EC-0089",
+            items: [
+              {
+                id: "item-17-1",
+                sealItem: "Calibration Lock Switch Hardware Seal",
+                oimlClause: "4.1.2.4",
+                status: "PASS",
+                remarks: "Lead-and-wire seal intact with RRSL stamp",
+              },
+              {
+                id: "item-17-2",
+                sealItem: "Official Verification Mark Stamping Area",
+                oimlClause: "4.1.2.5",
+                status: "PASS",
+                remarks: "8mm diameter smooth copper insert on front bezel",
+              },
+            ],
+            overallStatus: "PASS",
+          },
+        },
+      };
+
+      const result = await compileOimlPdfReport(adminReportData);
+      assert.equal(result.pageCount, 6);
+      assert.ok(result.pdfBuffer.length > 5000);
+      assert.ok(result.compilationTimeMs < 1500);
+
+      // Verify the PDF can be parsed cleanly
+      const loadedDoc = await PDFDocument.load(result.pdfBuffer);
+      assert.equal(loadedDoc.getPageCount(), 6);
+    });
+
+    it("compiles 8-page PDF report with complete Forms 1–17 suite (Standard 1–6 + Modular 7–9 + Disturbances 10–14 + Administrative 15–17)", async () => {
+      const fullCompleteReportData: OimlReportData = {
+        ...sampleReportData,
+        reportNumber: "RRSL-DEL-2026-COMPLETE-17",
+        results: {
+          ...sampleReportData.results,
+          form7WarmUp: {
+            warmUpMinutes: 30,
+            zeroErrorAtStart: 0.0005,
+            zeroErrorAfterWarmUp: 0.0001,
+            loadErrorAtStart: 0.001,
+            loadErrorAfterWarmUp: 0.0002,
+            testLoad: 15.0,
+            mpe: 0.005,
+            status: "PASS",
+          },
+          form8SpanStability: {
+            initialSpan: 15.0,
+            finalSpan: 15.0002,
+            spanDrift: 0.0002,
+            maxAllowedDrift: 0.0025,
+            testLoad: 15.0,
+            status: "PASS",
+          },
+          form9TareAccuracy: {
+            tareLoad: 2.5,
+            netLoad: 10.0,
+            netIndication: 10.0,
+            netError: 0.0,
+            mpe: 0.005,
+            status: "PASS",
+          },
+          form10VoltageVariation: {
+            nominalVoltage: 230,
+            testedVoltages: [],
+            status: "PASS",
+          },
+          form11MainsDips: {
+            reductionPercent: 100,
+            cyclesCount: 10,
+            maxObservedFault: 0.0001,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+          form12ElectricalBursts: {
+            testVoltageKv: 1.0,
+            couplingLines: "Power Mains AC",
+            maxObservedFault: 0.0001,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+          form13ElectrostaticDischarge: {
+            contactDischargeKv: 6.0,
+            airDischargeKv: 8.0,
+            dischargesCount: 10,
+            maxObservedFault: 0.0001,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+          form14ElectromagneticImmunity: {
+            fieldStrengthVPerM: 10,
+            frequencyRangeMhz: "80-2000 MHz",
+            maxObservedFault: 0.0001,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+          form15SoftwareExamination: {
+            softwareId: "FW-v3.4.1-REL",
+            checksumHex: "SHA256:7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2E",
+            welmecRiskClass: "Risk Class C / Extension D",
+            items: [],
+            overallStatus: "PASS",
+          },
+          form16DescriptiveMarkings: {
+            items: [],
+            overallStatus: "PASS",
+          },
+          form17SealingVerification: {
+            physicalSealCount: 2,
+            electronicEventCounterValue: "EC-0042",
+            items: [],
+            overallStatus: "PASS",
+          },
+        },
+      };
+
+      const result = await compileOimlPdfReport(fullCompleteReportData);
+      assert.equal(result.pageCount, 8);
+      assert.ok(result.pdfBuffer.length > 5000);
+
+      const loadedDoc = await PDFDocument.load(result.pdfBuffer);
+      assert.equal(loadedDoc.getPageCount(), 8);
+    });
+  });
 });
 

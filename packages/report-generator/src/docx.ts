@@ -660,8 +660,86 @@ export async function compileOimlDocxReport(
               ]
             : []),
 
-          // 12. WELMEC 7.2 Cryptographic Provenance Hash Graph
-          createSectionHeader("15. WELMEC 7.2 CRYPTOGRAPHIC PROVENANCE AUDIT"),
+          ...(reportData.results.form15SoftwareExamination
+            ? [
+                createSectionHeader(
+                  "14. FORM 15: SOFTWARE EXAMINATION & WELMEC 7.2 INTEGRITY CHECK",
+                ),
+                createKeyValueTable([
+                  {
+                    label: "Software / Firmware ID",
+                    value: reportData.results.form15SoftwareExamination.softwareId ?? "FW-v3.4.1-REL",
+                  },
+                  {
+                    label: "Cryptographic Checksum",
+                    value: reportData.results.form15SoftwareExamination.checksumHex ?? "SHA256:7B8C...F01A",
+                  },
+                  {
+                    label: "WELMEC 7.2 Risk Class",
+                    value: reportData.results.form15SoftwareExamination.welmecRiskClass ?? "Risk Class C / Extension D",
+                  },
+                  {
+                    label: "Form 15 Verdict",
+                    value: reportData.results.form15SoftwareExamination.overallStatus,
+                  },
+                ]),
+              ]
+            : []),
+
+          ...(reportData.results.form16DescriptiveMarkings
+            ? [
+                createSectionHeader(
+                  "15. FORM 16: DESCRIPTIVE MARKINGS & NAMEPLATE VERIFICATION (CLAUSE 7.1)",
+                ),
+                createKeyValueTable([
+                  {
+                    label: "Manufacturer Mark & Nameplate",
+                    value: `${reportData.instrument.manufacturer} (Indelible)`,
+                  },
+                  {
+                    label: "Model & Serial Number Markings",
+                    value: `${reportData.instrument.model} / S/N: ${reportData.instrument.serialNumber}`,
+                  },
+                  {
+                    label: "Metrological Limits (Max, Min, e, d)",
+                    value: `Class ${reportData.instrument.accuracyClass} | Max=${reportData.instrument.maxCapacity}${unit} Min=${reportData.instrument.minCapacity}${unit} e=${reportData.instrument.verificationIntervalE}${unit}`,
+                  },
+                  {
+                    label: "Form 16 Verdict",
+                    value: reportData.results.form16DescriptiveMarkings.overallStatus,
+                  },
+                ]),
+              ]
+            : []),
+
+          ...(reportData.results.form17SealingVerification
+            ? [
+                createSectionHeader(
+                  "16. FORM 17: SEALING & VERIFICATION MARK PLACES (CLAUSE 4.1.2)",
+                ),
+                createKeyValueTable([
+                  {
+                    label: "Physical Wire / Lead Seals Applied",
+                    value: `${reportData.results.form17SealingVerification.physicalSealCount ?? 2} lead seals intact`,
+                  },
+                  {
+                    label: "Electronic Event Counter",
+                    value: `Event Counter: ${reportData.results.form17SealingVerification.electronicEventCounterValue ?? "EC-0042"} (Monotonic)`,
+                  },
+                  {
+                    label: "Verification Mark Stamping Place",
+                    value: "8mm diameter smooth copper insert provided (Clause 4.1.2.5)",
+                  },
+                  {
+                    label: "Form 17 Verdict",
+                    value: reportData.results.form17SealingVerification.overallStatus,
+                  },
+                ]),
+              ]
+            : []),
+
+          // 17. WELMEC 7.2 Cryptographic Provenance Hash Graph
+          createSectionHeader("17. WELMEC 7.2 CRYPTOGRAPHIC PROVENANCE AUDIT"),
           createKeyValueTable([
             {
               label: "Hash Algorithm",

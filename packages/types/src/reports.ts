@@ -164,6 +164,59 @@ export interface Form14ElectromagneticImmunityReportData {
   status: "PASS" | "FAIL";
 }
 
+export type ChecklistItemStatus = "PASS" | "FAIL" | "NA";
+
+export interface Form15ChecklistItem {
+  id: string;
+  requirement: string;
+  welmecClause: string;
+  status: ChecklistItemStatus;
+  remarks?: string;
+}
+
+export interface Form15SoftwareExaminationReportData {
+  formTitle?: string;
+  softwareId?: string;
+  checksumHex?: string;
+  welmecRiskClass?: string;
+  items: Form15ChecklistItem[];
+  overallStatus: "PASS" | "FAIL" | "NA";
+  evaluatedBy?: string;
+}
+
+export interface Form16MarkingChecklistItem {
+  id: string;
+  markingItem: string;
+  oimlClause: string;
+  presentedValue?: string;
+  status: ChecklistItemStatus;
+  remarks?: string;
+}
+
+export interface Form16DescriptiveMarkingsReportData {
+  formTitle?: string;
+  items: Form16MarkingChecklistItem[];
+  overallStatus: "PASS" | "FAIL" | "NA";
+  evaluatedBy?: string;
+}
+
+export interface Form17SealingChecklistItem {
+  id: string;
+  sealItem: string;
+  oimlClause: string;
+  status: ChecklistItemStatus;
+  remarks?: string;
+}
+
+export interface Form17SealingVerificationReportData {
+  formTitle?: string;
+  physicalSealCount?: number;
+  electronicEventCounterValue?: number | string;
+  items: Form17SealingChecklistItem[];
+  overallStatus: "PASS" | "FAIL" | "NA";
+  evaluatedBy?: string;
+}
+
 export interface OimlReportData {
   reportNumber: string;
   issueDate: string;
@@ -215,6 +268,9 @@ export interface OimlReportData {
     form12ElectricalBursts?: Form12ElectricalBurstsReportData;
     form13ElectrostaticDischarge?: Form13ElectrostaticDischargeReportData;
     form14ElectromagneticImmunity?: Form14ElectromagneticImmunityReportData;
+    form15SoftwareExamination?: Form15SoftwareExaminationReportData;
+    form16DescriptiveMarkings?: Form16DescriptiveMarkingsReportData;
+    form17SealingVerification?: Form17SealingVerificationReportData;
   };
   signatureMetadata?: DigitalSignatureMetadata;
 }

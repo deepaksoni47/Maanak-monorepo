@@ -308,6 +308,69 @@ describe("TASK-035: Editable Word Document (.docx) Compiler (docx.ts)", () => {
     assert.ok(docXml.includes("VOLTAGE VARIATIONS TEST"), "Must contain Form 10 Header");
     assert.ok(docXml.includes("ELECTRICAL DISTURBANCES"), "Must contain Forms 11-14 Header");
   });
+
+  it("compiles .docx document containing Forms 15, 16, and 17 administrative checklist and marking verification (TASK-090)", async () => {
+    const adminReportData: OimlReportData = {
+      ...sampleReportData,
+      reportNumber: "RRSL-DEL-2026-DOCX-ADMIN",
+      results: {
+        ...sampleReportData.results,
+        form15SoftwareExamination: {
+          softwareId: "FW-v3.4.1-REL",
+          checksumHex: "SHA256:7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2E",
+          welmecRiskClass: "Risk Class C / Extension D",
+          items: [
+            {
+              id: "chk-15-1",
+              requirement: "Software Identification Display",
+              welmecClause: "W-7.2 §2.1",
+              status: "PASS",
+              remarks: "Checksum matches reference binary",
+            },
+          ],
+          overallStatus: "PASS",
+        },
+        form16DescriptiveMarkings: {
+          items: [
+            {
+              id: "chk-16-1",
+              markingItem: "Manufacturer Name & Trade Mark",
+              oimlClause: "7.1.1",
+              presentedValue: "Avery Weigh-Tronix",
+              status: "PASS",
+            },
+          ],
+          overallStatus: "PASS",
+        },
+        form17SealingVerification: {
+          physicalSealCount: 3,
+          electronicEventCounterValue: "EC-0089",
+          items: [
+            {
+              id: "chk-17-1",
+              sealItem: "Calibration Lock Switch",
+              oimlClause: "4.1.2.4",
+              status: "PASS",
+              remarks: "Lead seal wire intact",
+            },
+          ],
+          overallStatus: "PASS",
+        },
+      },
+    };
+
+    const result = await compileOimlDocxReport(adminReportData);
+    assert.ok(result.docxBuffer);
+    assert.equal(result.docxBuffer.subarray(0, 2).toString(), "PK");
+
+    const docXml = extractZipEntry(result.docxBuffer, "word/document.xml");
+    assert.ok(docXml);
+    assert.ok(docXml.includes("SOFTWARE EXAMINATION"), "Must contain Form 15 Header");
+    assert.ok(docXml.includes("DESCRIPTIVE MARKINGS"), "Must contain Form 16 Header");
+    assert.ok(docXml.includes("SEALING"), "Must contain Form 17 Header");
+    assert.ok(docXml.includes("FW-v3.4.1-REL"), "Must contain Firmware ID");
+    assert.ok(docXml.includes("EC-0089"), "Must contain Event Counter");
+  });
 });
 
 function extractZipEntry(zipBuffer: Buffer, entryName: string): string | null {
