@@ -3,6 +3,7 @@ import helmet from "helmet";
 import cors from "cors";
 import { randomUUID } from "node:crypto";
 import { errorHandler, notFoundHandler } from "./middleware/error.js";
+import { tenantMiddleware } from "./middleware/tenant.js";
 import { createAuthRouter, authRouter, AuthService } from "./auth/index.js";
 import {
   createRulesRouter,
@@ -83,6 +84,7 @@ export function createApp(options: AppOptions = {}): Express {
   // 4. Body Parsers with 10MB payload threshold for large PDF/signature data
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+  app.use(tenantMiddleware);
 
   // 5. Root & Health Check Endpoints
   const healthResponse = () => ({

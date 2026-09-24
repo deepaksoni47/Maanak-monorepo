@@ -7,6 +7,10 @@ import {
   StandardWeightCheckInput,
 } from "@maanak/rules-engine";
 import { requireAuth, optionalAuth, requireRole, Role } from "../auth/index.js";
+import {
+  getTenantWhereClause,
+  isTenantAccessAllowed,
+} from "../middleware/tenant.js";
 
 export interface WeightsRouterOptions {
   db?: PrismaClient;
@@ -128,8 +132,11 @@ export function createWeightsRouter(
     requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
       try {
+        const tenantFilter = getTenantWhereClause(req);
         const labId =
-          (req.query.laboratoryId as string) || req.user?.laboratoryId;
+          tenantFilter.laboratoryId ||
+          (req.query.laboratoryId as string) ||
+          req.user?.laboratoryId;
         const oimlClass = req.query.oimlClass as string | undefined;
         const activeOnly = req.query.activeOnly !== "false";
 
@@ -181,7 +188,22 @@ export function createWeightsRouter(
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const validated = RegisterWeightSetSchema.parse(req.body);
-        const labId = validated.laboratoryId || req.user?.laboratoryId;
+        let labId = req.user?.laboratoryId;
+        if (req.user?.role === Role.ADMIN) {
+          labId = validated.laboratoryId || req.user?.laboratoryId;
+        } else if (
+          validated.laboratoryId &&
+          validated.laboratoryId !== req.user?.laboratoryId
+        ) {
+          return res.status(403).json({
+            error: "CROSS_TENANT_ACCESS_DENIED",
+            message:
+              "Testing officers cannot register standard weights to other laboratory facilities.",
+            code: "FORBIDDEN",
+            path: req.originalUrl,
+            requestId: req.headers["x-request-id"],
+          });
+        }
 
         if (!labId) {
           return res.status(400).json({

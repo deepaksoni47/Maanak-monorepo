@@ -14,6 +14,11 @@ import {
 import { IReportStorage } from "@maanak/report-generator";
 import { requireAuth, optionalAuth, requireRole, Role } from "../auth/index.js";
 import { createApproveAndSignHandler } from "./reports.js";
+import {
+  tenantMiddleware,
+  getTenantWhereClause,
+  isTenantAccessAllowed,
+} from "../middleware/tenant.js";
 
 export interface SessionsRouterOptions {
   db?: PrismaClient;
@@ -109,7 +114,20 @@ export function createSessionsRouter(
       try {
         const validated = CreateSessionRequestSchema.parse(req.body);
         const officerId = req.user!.sub;
-        const laboratoryId = validated.laboratoryId || req.user!.laboratoryId;
+        let laboratoryId = req.user!.laboratoryId;
+        if (req.user!.role === Role.ADMIN) {
+          laboratoryId = validated.laboratoryId || req.user!.laboratoryId;
+        } else if (
+          validated.laboratoryId &&
+          validated.laboratoryId !== req.user!.laboratoryId
+        ) {
+          res.status(403).json({
+            error: "CROSS_TENANT_ACCESS_DENIED",
+            message:
+              "Testing officers cannot create test sessions for other laboratory facilities.",
+          });
+          return;
+        }
 
         if (!laboratoryId) {
           res.status(400).json({
@@ -269,11 +287,12 @@ export function createSessionsRouter(
 
         const where: any = {};
 
-        // Scope to user's lab if inspector, unless lab is specified or user is admin
-        if (laboratoryId) {
+        // Multi-tenant laboratory scoping (TASK-085)
+        const tenantFilter = getTenantWhereClause(req);
+        if (tenantFilter.laboratoryId) {
+          where.laboratoryId = tenantFilter.laboratoryId;
+        } else if (laboratoryId) {
           where.laboratoryId = laboratoryId as string;
-        } else if (req.user && req.user.role === Role.INSPECTOR && req.user.laboratoryId) {
-          where.laboratoryId = req.user.laboratoryId;
         }
 
         if (status) {
@@ -381,7 +400,7 @@ export function createSessionsRouter(
           include: sessionWithDetailsInclude,
         });
 
-        if (!session) {
+        if (!session || !isTenantAccessAllowed(req, session.laboratoryId)) {
           res.status(404).json({
             error: "NOT_FOUND",
             message: `Test session with ID "${id}" not found.`,
@@ -430,7 +449,7 @@ export function createSessionsRouter(
           },
         });
 
-        if (!session) {
+        if (!session || !isTenantAccessAllowed(req, session.laboratoryId)) {
           res.status(404).json({
             error: "NOT_FOUND",
             message: `Test session with ID "${id}" not found.`,
@@ -485,7 +504,7 @@ export function createSessionsRouter(
           where: { id },
         });
 
-        if (!session) {
+        if (!session || !isTenantAccessAllowed(req, session.laboratoryId)) {
           res.status(404).json({
             error: "NOT_FOUND",
             message: `Test session with ID "${id}" not found.`,
@@ -638,7 +657,7 @@ export function createSessionsRouter(
           where: { id },
         });
 
-        if (!session) {
+        if (!session || !isTenantAccessAllowed(req, session.laboratoryId)) {
           res.status(404).json({
             error: "NOT_FOUND",
             message: `Test session with ID "${id}" not found.`,
@@ -692,7 +711,7 @@ export function createSessionsRouter(
           where: { id },
         });
 
-        if (!session) {
+        if (!session || !isTenantAccessAllowed(req, session.laboratoryId)) {
           res.status(404).json({
             error: "NOT_FOUND",
             message: `Test session with ID "${id}" not found.`,

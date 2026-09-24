@@ -713,4 +713,160 @@ describe("TASK-042: Test Session & Dynamic Plan Routes (/api/v1/sessions)", () =
       assert.equal(delRes.body.deletedId, draftId);
     });
   });
+
+  describe("TASK-085: Multi-Tenant Laboratory Scoping Middleware & Cross-Facility Isolation", () => {
+    const otherLabId = "99999999-8888-7777-6666-555555555555";
+
+    const otherLabInspectorTokens = generateTokens({
+      sub: "usr-insp-blr",
+      username: "inspector.bengaluru",
+      email: "inspector.blr@rrsl.gov.in",
+      role: Role.INSPECTOR,
+      laboratoryId: otherLabId,
+      permissions: ["sessions:create", "observations:create"],
+    });
+
+    const superAdminTokens = generateTokens({
+      sub: "usr-adm-global",
+      username: "superadmin.metrology",
+      email: "dg@rrsl.gov.in",
+      role: Role.ADMIN,
+      laboratoryId: "",
+      permissions: ["*"],
+    });
+
+    let mockLabSessionId: string;
+    let otherLabSessionId: string;
+
+    beforeEach(async () => {
+      // 1. Create a session belonging to mockLabId (Ahmedabad)
+      const res1 = await request(app)
+        .post("/api/v1/sessions")
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({
+          instrumentUnitId: "44444444-4444-4444-4444-444444444444",
+          sessionNumber: "SES-AHM-TENANT-001",
+        });
+      assert.equal(res1.status, 201);
+      mockLabSessionId = res1.body.session.id;
+
+      // 2. Create a session belonging to otherLabId (Bengaluru)
+      const res2 = await request(app)
+        .post("/api/v1/sessions")
+        .set("Authorization", `Bearer ${otherLabInspectorTokens.accessToken}`)
+        .send({
+          instrumentUnitId: "44444444-4444-4444-4444-444444444444",
+          sessionNumber: "SES-BLR-TENANT-002",
+        });
+      assert.equal(res2.status, 201);
+      otherLabSessionId = res2.body.session.id;
+    });
+
+    it("rejects officer attempt to create session for a foreign facility with 403 CROSS_TENANT_ACCESS_DENIED", async () => {
+      const res = await request(app)
+        .post("/api/v1/sessions")
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({
+          instrumentUnitId: "44444444-4444-4444-4444-444444444444",
+          sessionNumber: "SES-FORBIDDEN-CREATION",
+          laboratoryId: otherLabId,
+        });
+
+      assert.equal(res.status, 403);
+      assert.equal(res.body.error, "CROSS_TENANT_ACCESS_DENIED");
+      assert.ok(res.body.message.includes("Testing officers cannot create test sessions for other laboratory facilities"));
+    });
+
+    it("scopes session list query strictly to the officer's assigned facility", async () => {
+      // Ahmedabad officer should only see Ahmedabad sessions
+      const resAhm = await request(app)
+        .get("/api/v1/sessions")
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`);
+
+      assert.equal(resAhm.status, 200);
+      assert.ok(resAhm.body.sessions.length >= 1);
+      assert.ok(resAhm.body.sessions.every((s: any) => s.laboratoryId === mockLabId));
+      assert.ok(resAhm.body.sessions.some((s: any) => s.id === mockLabSessionId));
+      assert.ok(!resAhm.body.sessions.some((s: any) => s.id === otherLabSessionId));
+
+      // Bengaluru officer should only see Bengaluru sessions
+      const resBlr = await request(app)
+        .get("/api/v1/sessions")
+        .set("Authorization", `Bearer ${otherLabInspectorTokens.accessToken}`);
+
+      assert.equal(resBlr.status, 200);
+      assert.ok(resBlr.body.sessions.length >= 1);
+      assert.ok(resBlr.body.sessions.every((s: any) => s.laboratoryId === otherLabId));
+      assert.ok(resBlr.body.sessions.some((s: any) => s.id === otherLabSessionId));
+      assert.ok(!resBlr.body.sessions.some((s: any) => s.id === mockLabSessionId));
+    });
+
+    it("allows ADMIN to view all facilities and filter by ?laboratoryId", async () => {
+      // Unfiltered admin query sees sessions across all facilities
+      const resAll = await request(app)
+        .get("/api/v1/sessions")
+        .set("Authorization", `Bearer ${superAdminTokens.accessToken}`);
+
+      assert.equal(resAll.status, 200);
+      assert.ok(resAll.body.sessions.some((s: any) => s.id === mockLabSessionId));
+      assert.ok(resAll.body.sessions.some((s: any) => s.id === otherLabSessionId));
+
+      // Filtered admin query
+      const resFilter = await request(app)
+        .get(`/api/v1/sessions?laboratoryId=${mockLabId}`)
+        .set("Authorization", `Bearer ${superAdminTokens.accessToken}`);
+
+      assert.equal(resFilter.status, 200);
+      assert.ok(resFilter.body.sessions.every((s: any) => s.laboratoryId === mockLabId));
+    });
+
+    it("prevents cross-tenant GET /:id details access (returns 404 NOT_FOUND)", async () => {
+      // Bengaluru officer attempting to view Ahmedabad session
+      const res = await request(app)
+        .get(`/api/v1/sessions/${mockLabSessionId}`)
+        .set("Authorization", `Bearer ${otherLabInspectorTokens.accessToken}`);
+
+      assert.equal(res.status, 404);
+      assert.equal(res.body.error, "NOT_FOUND");
+    });
+
+    it("prevents cross-tenant GET /:id/plan access (returns 404 NOT_FOUND)", async () => {
+      const res = await request(app)
+        .get(`/api/v1/sessions/${mockLabSessionId}/plan`)
+        .set("Authorization", `Bearer ${otherLabInspectorTokens.accessToken}`);
+
+      assert.equal(res.status, 404);
+      assert.equal(res.body.error, "NOT_FOUND");
+    });
+
+    it("prevents cross-tenant PATCH /:id/status lifecycle transition (returns 404 NOT_FOUND)", async () => {
+      const res = await request(app)
+        .patch(`/api/v1/sessions/${mockLabSessionId}/status`)
+        .set("Authorization", `Bearer ${otherLabInspectorTokens.accessToken}`)
+        .send({ status: "IN_PROGRESS" });
+
+      assert.equal(res.status, 404);
+      assert.equal(res.body.error, "NOT_FOUND");
+    });
+
+    it("prevents cross-tenant PATCH /:id metadata update (returns 404 NOT_FOUND)", async () => {
+      const res = await request(app)
+        .patch(`/api/v1/sessions/${mockLabSessionId}`)
+        .set("Authorization", `Bearer ${otherLabInspectorTokens.accessToken}`)
+        .send({ deviceId: "CROSS_TENANT_PROBE" });
+
+      assert.equal(res.status, 404);
+      assert.equal(res.body.error, "NOT_FOUND");
+    });
+
+    it("allows ADMIN to access sessions across facilities", async () => {
+      const res = await request(app)
+        .get(`/api/v1/sessions/${otherLabSessionId}`)
+        .set("Authorization", `Bearer ${superAdminTokens.accessToken}`);
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.session.id, otherLabSessionId);
+    });
+  });
 });
+

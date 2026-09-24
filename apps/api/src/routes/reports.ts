@@ -20,6 +20,7 @@ import {
 } from "@maanak/crypto-provenance";
 import type { CalculationTraceItem } from "@maanak/types";
 import { requireAuth, optionalAuth, requireRole, Role } from "../auth/index.js";
+import { isTenantAccessAllowed } from "../middleware/tenant.js";
 
 export interface ReportsRouterOptions {
   db?: PrismaClient;
@@ -297,7 +298,7 @@ export function createApproveAndSignHandler(options: {
         }
       }
 
-      if (!session) {
+      if (!session || !isTenantAccessAllowed(req, session.laboratoryId)) {
         res.status(404).json({
           error: "NOT_FOUND",
           message: `Test session with ID "${id}" not found.`,
