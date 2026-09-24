@@ -27,29 +27,36 @@
 |                                      TASK EXECUTION STATUS                                        |
 +-------------------+-------------------+-------------------+-------------------+-------------------+
 |   TOTAL TASKS     |      READY        |    IN_PROGRESS    |      BLOCKED      |     VERIFIED      |
-|       70          |        0          |        0          |        0          |        70         |
+|       97          |        7          |        0          |        20         |        70         |
 +-------------------+-------------------+-------------------+-------------------+-------------------+
-| PROGRESS: [████████████████████████████████████████████████████████████] 100.0% Complete                 |
+| PROGRESS: [█████████████████████████████████████████████                  ] 72.2% Complete        |
 +---------------------------------------------------------------------------------------------------+
 ```
 
 ### 1.1 Module Completion Summary
 
-| Module ID  | Module Title                        | Total  | Ready | Blocked | In Progress | Verified | % Complete |
-| :--------- | :---------------------------------- | :----: | :---: | :-----: | :---------: | :------: | :--------: |
-| **MOD-00** | Monorepo Foundation & Tooling       |   3    |   0   |    0    |      0      |    3     |    100%    |
-| **MOD-01** | Shared Types & Domain Schemas       |   5    |   0   |    0    |      0      |    5     |    100%    |
-| **MOD-02** | Standards-as-Code Rule Packs        |   5    |   0   |    0    |      0      |    5     |    100%    |
-| **MOD-03** | Deterministic Calculation Core      |   8    |   0   |    0    |      0      |    8     |    100%    |
-| **MOD-04** | Metrological Compliance Pre-Checks  |   3    |   0   |    0    |      0      |    3     |    100%    |
-| **MOD-05** | Database Layer (PostgreSQL/Prisma)  |   4    |   0   |    0    |      0      |    4     |    100%    |
-| **MOD-06** | WELMEC 7.2 Cryptographic Signer     |   4    |   0   |    0    |      0      |    4     |    100%    |
-| **MOD-07** | Report Generation Engine (PDF/Word) |   4    |   0   |    0    |      0      |    4     |    100%    |
-| **MOD-08** | Node.js REST API Gateway            |   10   |   0   |    0    |      0      |   10     |    100%    |
-| **MOD-09** | Responsive Mobile Bench PWA & Web   |   12   |   0   |    0    |      0      |   12     |    100%    |
-| **MOD-10** | Ground Truth Test Verification      |   5    |   0   |    0    |      0      |    5     |    100%    |
-| **MOD-11** | Production Integration & Officer UX |   7    |   0   |    0    |      0      |    7     |    100%    |
-| **TOTAL**  | **Entire MAANAK Platform**          | **70** |  **0**|    **0**   |    **0**    |  **70**  |  **100.0%**|
+| Module ID  | Module Title                                           | Total   | Ready | Blocked | In Progress | Verified | % Complete |
+| :--------- | :----------------------------------------------------- | :-----: | :---: | :-----: | :---------: | :------: | :--------: |
+| **MOD-00** | Monorepo Foundation & Tooling                          |    3    |   0   |    0    |      0      |    3     |    100%    |
+| **MOD-01** | Shared Types & Domain Schemas                          |    5    |   0   |    0    |      0      |    5     |    100%    |
+| **MOD-02** | Standards-as-Code Rule Packs                           |    5    |   0   |    0    |      0      |    5     |    100%    |
+| **MOD-03** | Deterministic Calculation Core                         |    8    |   0   |    0    |      0      |    8     |    100%    |
+| **MOD-04** | Metrological Compliance Pre-Checks                     |    3    |   0   |    0    |      0      |    3     |    100%    |
+| **MOD-05** | Database Layer (PostgreSQL/Prisma)                     |    4    |   0   |    0    |      0      |    4     |    100%    |
+| **MOD-06** | WELMEC 7.2 Cryptographic Signer                        |    4    |   0   |    0    |      0      |    4     |    100%    |
+| **MOD-07** | Report Generation Engine (PDF/Word)                    |    4    |   0   |    0    |      0      |    4     |    100%    |
+| **MOD-08** | Node.js REST API Gateway                               |   10    |   0   |    0    |      0      |   10     |    100%    |
+| **MOD-09** | Responsive Mobile Bench PWA & Web                      |   12    |   0   |    0    |      0      |   12     |    100%    |
+| **MOD-10** | Ground Truth Test Verification                         |    5    |   0   |    0    |      0      |    5     |    100%    |
+| **MOD-11** | Production Integration & Officer UX                    |    7    |   0   |    0    |      0      |    7     |    100%    |
+| **MOD-12** | Full Metrological Test Battery on Bench (Forms 2–6)    |    6    |   1   |    5    |      0      |    0     |      0%    |
+| **MOD-13** | Statutory Evidence, Sealing Plan & Photo Management    |    4    |   1   |    3    |      0      |    0     |      0%    |
+| **MOD-14** | Complete Lifecycle State Machine & WORM Immutability   |    4    |   1   |    3    |      0      |    0     |      0%    |
+| **MOD-15** | Enterprise Multi-Tenancy & Laboratory Data Isolation   |    3    |   1   |    2    |      0      |    0     |      0%    |
+| **MOD-16** | Full OIML R 76-2 Report Generation (Forms 1–17)        |    3    |   0   |    3    |      0      |    0     |      0%    |
+| **MOD-17** | Production Offline PWA Engine & IndexedDB Edge Sync    |    3    |   1   |    2    |      0      |    0     |      0%    |
+| **MOD-18** | Role-Based Routing, Navigation Scoping & Admin Portal  |    4    |   2   |    2    |      0      |    0     |      0%    |
+| **TOTAL**  | **Entire MAANAK Platform (Complete Handover)**         | **97**  | **7** | **20**  |    **0**    |  **70**  |  **72.2%** |
 
 ---
 
@@ -210,19 +217,44 @@ graph TD
 | **`TASK-068`** | MOD-11 | Dynamic MPE Safety & Test Battery Progress Gauges                                                  | **`VERIFIED`** | `TASK-066` (Verified)                                               | Verified: ToleranceSafetyGauge computes dynamic MPE consumption (|Ec|/MPE * 100%), safe margin %, and test battery completion fraction (120/120 tests pass) | Real-time safety gauge |
 | **`TASK-069`** | MOD-11 | Navigation Routing & Missing Pages Completion                                                      | **`VERIFIED`** | `TASK-048` (Verified), `TASK-065` (Verified)                        | Verified: Created /instruments, /reports, /verify, /rule-packs, /provenance pages, resolving all 404 routes across navbar (120/120 tests pass) | Zero 404 errors across navbar |
 | **`TASK-070`** | MOD-11 | Non-Technical Officer Guided Mode & Intuitive Field UX                                             | **`VERIFIED`** | `TASK-066` (Verified), `TASK-067` (Verified)                        | Verified: OfficerGuidanceBanner with plain-English physical instructions, one-tap load presets (Zero, Min, 1/2 Max, Max), and quick auto-fill (120/120 tests pass) | Field guided testing mode |
+| **`TASK-071`** | MOD-12 | Bench Test Battery Multi-Form Navigator & Form State Router                                        | **`READY`**    | `TASK-070` (Verified)                                               | Verified with passing test for TestBatteryNavigator switching between Forms 1-6 with active pill state and URL param update | `pnpm --filter @maanak/web test` |
+| **`TASK-072`** | MOD-12 | Form 2 Bench Card: Temperature Effect on No-Load & Thermal Drift                                   | **`BLOCKED`**  | `TASK-071`                                                          | Promotes to READY when `TASK-071` is verified                                               | `pnpm --filter @maanak/web test` |
+| **`TASK-073`** | MOD-12 | Form 3 Bench Card: Eccentricity & Corner Load 5-Position Receptor                                  | **`BLOCKED`**  | `TASK-071`                                                          | Promotes to READY when `TASK-071` is verified                                               | `pnpm --filter @maanak/web test` |
+| **`TASK-074`** | MOD-12 | Form 4 Bench Card: Discrimination Test Engine (1.4d Test)                                          | **`BLOCKED`**  | `TASK-071`                                                          | Promotes to READY when `TASK-071` is verified                                               | `pnpm --filter @maanak/web test` |
+| **`TASK-075`** | MOD-12 | Form 5 Bench Card: Repeatability 10-Cycle Data Sheet                                               | **`BLOCKED`**  | `TASK-071`                                                          | Promotes to READY when `TASK-071` is verified                                               | `pnpm --filter @maanak/web test` |
+| **`TASK-076`** | MOD-12 | Form 6 Bench Card: 30-Minute Creep & Zero Return Timed Workbench                                   | **`BLOCKED`**  | `TASK-071`                                                          | Promotes to READY when `TASK-071` is verified                                               | `pnpm --filter @maanak/web test` |
+| **`TASK-077`** | MOD-13 | Backend Multipart Evidence Upload API (`POST /api/v1/evidence/upload`)                             | **`READY`**    | `TASK-038` (Verified), `TASK-042` (Verified)                        | Verified: POST /api/v1/evidence/upload parses multipart photo/PDF, writes to Cloudinary/local disk, returns SHA-256 fingerprint | `pnpm --filter @maanak/api test` |
+| **`TASK-078`** | MOD-13 | Evidence Attachment Provenance Chaining (`PROVENANCE_EVIDENCE_ATTACHED`)                           | **`BLOCKED`**  | `TASK-077`, `TASK-029` (Verified)                                   | Promotes to READY when `TASK-077` is verified                                               | `pnpm --filter @maanak/crypto-provenance test` |
+| **`TASK-079`** | MOD-13 | Frontend Evidence Vault & Photo Intake Component (`EvidenceVaultCard.tsx`)                         | **`BLOCKED`**  | `TASK-077`                                                          | Promotes to READY when `TASK-077` is verified                                               | `pnpm --filter @maanak/web test` |
+| **`TASK-080`** | MOD-13 | PDF Report Annex Evidence Embedder (High-res photo/diagram in Annex)                               | **`BLOCKED`**  | `TASK-077`, `TASK-034` (Verified)                                   | Promotes to READY when `TASK-077` is verified                                               | `pnpm --filter @maanak/report-generator test` |
+| **`TASK-081`** | MOD-14 | Strict Session State Machine & Re-Test Correction Loop (`RETURNED_TO_OFFICER`)                      | **`READY`**    | `TASK-042` (Verified), `TASK-044` (Verified)                        | Verified: Reviewer rejection transitions session to RETURNED_TO_OFFICER and unlocks bench clause | `pnpm --filter @maanak/api test` |
+| **`TASK-082`** | MOD-14 | Database Immutability WORM Lock on `APPROVED_LOCKED`                                               | **`BLOCKED`**  | `TASK-081`, `TASK-028` (Verified)                                   | Promotes to READY when `TASK-081` is verified                                               | `pnpm --filter @maanak/api test` |
+| **`TASK-083`** | MOD-14 | Director Live Approval & X.509 Cryptographic Sign-off API                                          | **`BLOCKED`**  | `TASK-082`, `TASK-031` (Verified)                                   | Promotes to READY when `TASK-082` is verified                                               | `pnpm --filter @maanak/api test` |
+| **`TASK-084`** | MOD-14 | Director Executive Signing Console UI (Live X.509 cert metadata & seal)                            | **`BLOCKED`**  | `TASK-083`, `TASK-056` (Verified)                                   | Promotes to READY when `TASK-083` is verified                                               | `pnpm --filter @maanak/web test` |
+| **`TASK-085`** | MOD-15 | Multi-Tenant Laboratory Scoping Middleware in Express API                                          | **`READY`**    | `TASK-038` (Verified), `TASK-028` (Verified)                        | Verified: Queries scoped by req.user.laboratoryId; cross-tenant records return 404/403       | `pnpm --filter @maanak/api test` |
+| **`TASK-086`** | MOD-15 | PostgreSQL Row-Level Security (RLS) Policies on Operational Tables                                 | **`BLOCKED`**  | `TASK-085`, `TASK-026` (Verified)                                   | Promotes to READY when `TASK-085` is verified                                               | `pnpm --filter @maanak/db test` |
+| **`TASK-087`** | MOD-15 | RRSL Multi-Facility Dashboard & Facility Switcher                                                  | **`BLOCKED`**  | `TASK-085`, `TASK-051` (Verified)                                   | Promotes to READY when `TASK-085` is verified                                               | `pnpm --filter @maanak/web test` |
+| **`TASK-088`** | MOD-16 | Live Database Observations Binding for Forms 2–6 in Report Compiler                                | **`BLOCKED`**  | `TASK-072`, `TASK-073`, `TASK-074`, `TASK-075`, `TASK-076`          | Promotes to READY when Forms 2-6 bench tasks are verified                                    | `pnpm --filter @maanak/report-generator test` |
+| **`TASK-089`** | MOD-16 | Forms 7–14 Modular Test Report Schema Extension (Warm-up, Tare, Disturbance)                       | **`BLOCKED`**  | `TASK-088`                                                          | Promotes to READY when `TASK-088` is verified                                               | `pnpm --filter @maanak/report-generator test` |
+| **`TASK-090`** | MOD-16 | Forms 15–17 Administrative Checklist & Marking Verification                                        | **`BLOCKED`**  | `TASK-089`                                                          | Promotes to READY when `TASK-089` is verified                                               | `pnpm --filter @maanak/report-generator test` |
+| **`TASK-091`** | MOD-17 | IndexedDB Production Storage Driver (`maanak_offline_db` via `idb`)                                | **`READY`**    | `TASK-058` (Verified)                                               | Verified: IndexedDB driver initializes object stores, caches models, stores offline queue  | `pnpm --filter @maanak/web test` |
+| **`TASK-092`** | MOD-17 | Offline Session Creation & Instrument Intake                                                       | **`BLOCKED`**  | `TASK-091`                                                          | Promotes to READY when `TASK-091` is verified                                               | `pnpm --filter @maanak/web test` |
+| **`TASK-093`** | MOD-17 | Service Worker Background Sync Engine (`sw.js` sync event & conflict resolver)                     | **`BLOCKED`**  | `TASK-091`, `TASK-046` (Verified)                                   | Promotes to READY when `TASK-091` is verified                                               | `pnpm --filter @maanak/web test` |
+| **`TASK-094`** | MOD-18 | Next.js Client-Side Route Protection & Edge Middleware (`middleware.ts`)                           | **`READY`**    | `TASK-058` (Verified)                                               | Verified: Unauthenticated/unauthorized route visits redirect to /login or /access-denied    | `pnpm --filter @maanak/web test` |
+| **`TASK-095`** | MOD-18 | Role-Scoped Navigation & Dynamic Sidebar Filtering in `Shell.tsx` and `MobileNav.tsx`               | **`BLOCKED`**  | `TASK-094`                                                          | Promotes to READY when `TASK-094` is verified                                               | `pnpm --filter @maanak/web test` |
+| **`TASK-096`** | MOD-18 | Backend Administrative API Endpoints (`/api/v1/admin/*` for personnel & roles)                    | **`READY`**    | `TASK-046` (Verified)                                               | Verified: requireRole(ADMIN) guards user provisioning, role updates, and audit queries      | `pnpm --filter @maanak/api test` |
+| **`TASK-097`** | MOD-18 | Frontend Administrative Portal & User Management Page (`/admin/users`)                              | **`BLOCKED`**  | `TASK-094`, `TASK-096`                                              | Promotes to READY when `TASK-094` and `TASK-096` are verified                                | `pnpm --filter @maanak/web test` |
 
 ---
 
 ## 4. Operational Completion Summary
 
-1. **`TASK-001` through `TASK-070`** (All 70 Tasks across Modules 00 through 11) have been fully **`VERIFIED`**.
-2. **Key Milestones Achieved**:
-   - **Docker PostgreSQL Database Engine**: Started PostgreSQL 16 Alpine in container `maanak-postgres` (`0.0.0.0:5432->5432`), synchronized schema with Prisma (`db push`), and seeded with verified laboratory personas, OIML Accuracy Classes (I, II, III, IIII), NABL reference weight sets (E2, F1, M1), manufacturer profiles, and pattern-approved NAWI physical units.
-   - **Zero-Static Live Backend Integration**: Eliminated all static mock data. Dashboard (`/dashboard`), Registry (`/instruments`), Bench (`/bench`), and Reports (`/reports`) now dynamically query and persist real records to PostgreSQL via Express API gateway (`http://localhost:4000/api/v1`).
-   - **Smooth Decimal Precision**: Fixed decimal input buffering across all test entry fields, enabling seamless entry of fractional loads and changeover weights (`0.0025`, `15.0000`).
-   - **Live Appending Observation Ledger**: Dynamically appends verified observation rows with Turning Point $P$, Error $E_c$, MPE status, and WELMEC 7.2 cryptographic hashes on each test operation.
-   - **Dynamic Safety & Progress Monitor**: Live calculation of statutory MPE tolerance consumption and test battery completion.
-   - **Zero Navbar 404s**: Fully completed `/instruments`, `/reports`, `/verify`, `/rule-packs`, `/provenance`, and `/review` routes.
-   - **Officer Guided UX**: Plain-English physical instructions and one-tap quick load presets for field officers with minimal technical background.
-3. **Automated Verification**: **122/122 web tests passing**, **12/12 monorepo packages passing (100%)**.
+1. **Phase 1: Atomic MVP Foundation (`TASK-001` through `TASK-070`)**:
+   - Fully **`VERIFIED`** with 100% passing automated tests.
+   - Core metrology engine, Table 3/6 brackets, NABL 129 gatekeeper, WELMEC 7.2 hash graph, and Form 1 weighing performance operational.
+2. **Phase 2: Production-Ready Complete Handover Track (`TASK-071` through `TASK-097`)**:
+   - **Total Track Scope**: 27 atomic tasks across Modules 12 through 18.
+   - **Current State**: **7 Tasks `READY` for immediate execution** (`TASK-071`, `TASK-077`, `TASK-081`, `TASK-085`, `TASK-091`, `TASK-094`, `TASK-096`), **20 Tasks `BLOCKED`** pending prerequisite verification.
+   - **Target Deliverable**: Complete enterprise legal metrology platform with full Forms 1–17 report generation, multipart evidence management, WORM database locks, multi-tenant RRSL facility isolation, IndexedDB edge sync, role-based route guards, and administrative user management.
+
 
