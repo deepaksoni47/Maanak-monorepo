@@ -37,6 +37,20 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const TOKEN_KEY = "maanak_access_token";
 const USER_KEY = "maanak_user_profile";
 
+export function syncAuthCookies(token: string, role: string) {
+  if (typeof document !== "undefined") {
+    document.cookie = `maanak_access_token=${encodeURIComponent(token)}; path=/; max-age=604800; SameSite=Lax`;
+    document.cookie = `maanak_user_role=${encodeURIComponent(role)}; path=/; max-age=604800; SameSite=Lax`;
+  }
+}
+
+export function clearAuthCookies() {
+  if (typeof document !== "undefined") {
+    document.cookie = "maanak_access_token=; path=/; max-age=0; SameSite=Lax";
+    document.cookie = "maanak_user_role=; path=/; max-age=0; SameSite=Lax";
+  }
+}
+
 export const PRESET_OFFICERS = [
   {
     role: "INSPECTOR" as const,
@@ -89,8 +103,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedUser = localStorage.getItem(USER_KEY);
 
         if (storedToken && storedUser) {
+          const parsedUser = JSON.parse(storedUser);
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          setUser(parsedUser);
+          syncAuthCookies(storedToken, parsedUser.role);
 
           // Verify with backend asynchronously
           try {
@@ -112,11 +128,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 };
                 setUser(refreshedUser);
                 localStorage.setItem(USER_KEY, JSON.stringify(refreshedUser));
+                syncAuthCookies(storedToken, refreshedUser.role);
               }
             } else if (res.status === 401) {
               // Token expired, clear storage
               localStorage.removeItem(TOKEN_KEY);
               localStorage.removeItem(USER_KEY);
+              clearAuthCookies();
               setToken(null);
               setUser(null);
             }
@@ -125,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } else {
           // No active session in storage - user is unauthenticated by default
+          clearAuthCookies();
           setToken(null);
           setUser(null);
         }
@@ -165,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(loggedUser);
           localStorage.setItem(TOKEN_KEY, data.tokens.accessToken);
           localStorage.setItem(USER_KEY, JSON.stringify(loggedUser));
+          syncAuthCookies(data.tokens.accessToken, loggedUser.role);
           return true;
         }
       }
@@ -211,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(registeredUser);
             localStorage.setItem(TOKEN_KEY, data.tokens.accessToken);
             localStorage.setItem(USER_KEY, JSON.stringify(registeredUser));
+            syncAuthCookies(data.tokens.accessToken, registeredUser.role);
             return true;
           }
         }
@@ -227,6 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    clearAuthCookies();
     setToken(null);
     setUser(null);
   }, []);
