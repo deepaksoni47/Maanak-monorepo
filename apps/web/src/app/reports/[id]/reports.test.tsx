@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ReportPage, { generateMetadata } from "./page";
 import ReportLoading from "./loading";
 import { SigningPinModal } from "@/components/reports/SigningPinModal";
+import { ReportDetailView } from "@/components/reports/ReportDetailView";
 import { VectorErrorCurve } from "@/components/reports/VectorErrorCurve";
 
 describe("TASK-056: Report Preview & Director X.509 PKI Signing Page (/reports/[id])", () => {
@@ -174,7 +175,73 @@ describe("TASK-056: Report Preview & Director X.509 PKI Signing Page (/reports/[
       assert.ok(html.includes("⌫"));
 
       // Action button
-      assert.ok(html.includes("Confirm &amp; Digitally Sign Report"));
+      assert.ok(html.includes("Confirm &amp; Digitally Sign Report") || html.includes("Confirm & Digitally Sign Report"));
+    });
+  });
+
+  describe("TASK-084: Director Executive Signing Console UI (Live X.509 cert metadata & seal)", () => {
+    const sampleSignature = {
+      signedBy: "Dr. Rajesh Sharma (Director)",
+      signatoryTitle: "Director (Legal Metrology), Regional Reference Standard Laboratory",
+      issuer: "CCA India / National Root CA - Class 3 DSC",
+      algorithm: "RSA-2048 / SHA-256 with PKCS#7 Attached Signature",
+      serialNumber: "01:02:03:04:05:06:07:08:09:0B",
+      timestampUtc: "2026-09-24T18:30:00.000Z",
+      signatureHash: "9f8a2c14e6b7d3058a74e9c1f6d3a82e5b4c7d0182f6e9a3c5b8d7e14a2f09c6",
+      sha256Fingerprint: "9F:8A:2C:14:E6:B7:D3:05:8A:74:E9:C1:F6:D3:A8:2E:5B:4C:7D:01:82:F6:E9:A3:C5:B8:D7:E1:4A:2F:09:C6",
+      validityPeriod: "2025-01-01 to 2028-01-01",
+      finalClosureHash: "4a58b8f72a91283d5a84e2098d63a89047bf1b2c45e6d78a9c1e0f3b4a58b8f7",
+      downloadUrl: "/api/v1/reports/TS-2026-0142/pdf",
+    };
+
+    test("SigningPinModal displays live Director X.509 certificate credentials and metadata", () => {
+      const html = renderToStaticMarkup(
+        <SigningPinModal
+          isOpen={true}
+          reportId="TS-2026-0142"
+          onClose={() => {}}
+          onSignSuccess={() => {}}
+        />
+      );
+      assert.ok(html.includes("Live X.509 Token Credentials"));
+      assert.ok(html.includes("CN=Dr. Rajesh Sharma (Director)"));
+      assert.ok(html.includes("RRSL Ahmedabad"));
+      assert.ok(html.includes("CCA India / National Root CA - Class 3 DSC"));
+      assert.ok(html.includes("01:02:03:04:05:06:07:08:09:0B"));
+      assert.ok(html.includes("CCA India / RSA-2048 / SHA-256 PKCS#7"));
+      assert.ok(html.includes("2025-01-01 to 2028-01-01"));
+      assert.ok(html.includes("SHA-256 Public Key Fingerprint"));
+      assert.ok(html.includes("9F:8A:2C:14:E6:B7:D3:05:8A:74:E9:C1:F6:D3:A8:2E:5B:4C:7D:01:82:F6:E9:A3:C5:B8:D7:E1:4A:2F:09:C6"));
+      assert.ok(html.includes("Hardware DSC Active"));
+    });
+
+    test("ReportDetailView transitions to green APPROVED & STATUTORILY LOCKED banner and displays live X.509 certificate seal when signed", () => {
+      const html = renderToStaticMarkup(
+        <ReportDetailView
+          id="TS-2026-0142"
+          initialSignature={sampleSignature}
+          initialStatus="APPROVED_LOCKED"
+        />
+      );
+
+      // Verify status badge
+      assert.ok(html.includes("APPROVED &amp; STATUTORILY LOCKED") || html.includes("APPROVED & STATUTORILY LOCKED"));
+
+      // Verify WORM lock banner
+      assert.ok(html.includes("APPROVED &amp; STATUTORILY LOCKED (WORM)") || html.includes("APPROVED & STATUTORILY LOCKED (WORM)"));
+      assert.ok(html.includes("WELMEC 7.2 Sealed"));
+      assert.ok(html.includes("permanently locked under OIML R-76 statutory compliance rules"));
+
+      // Verify signature block details
+      assert.ok(html.includes("Digitally Signed &amp; Statutorily Locked by Dr. Rajesh Sharma (Director)") || html.includes("Digitally Signed & Statutorily Locked by Dr. Rajesh Sharma (Director)"));
+      assert.ok(html.includes("X.509 Validated"));
+      assert.ok(html.includes("01:02:03:04:05:06:07:08:09:0B"));
+      assert.ok(html.includes("CCA India / National Root CA - Class 3 DSC"));
+      assert.ok(html.includes("RSA-2048 / SHA-256 with PKCS#7 Attached Signature"));
+      assert.ok(html.includes("9F:8A:2C:14:E6:B7:D3:05:8A:74:E9:C1:F6:D3:A8:2E:5B:4C:7D:01:82:F6:E9:A3:C5:B8:D7:E1:4A:2F:09:C6"));
+
+      // Verify Download Signed PDF action button
+      assert.ok(html.includes("Download Signed PDF"));
     });
   });
 });

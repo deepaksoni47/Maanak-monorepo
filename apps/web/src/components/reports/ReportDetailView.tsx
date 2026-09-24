@@ -15,6 +15,8 @@ import {
   CalendarCheck,
   Hash,
   DownloadSimple,
+  LockKey,
+  Fingerprint,
 } from "@phosphor-icons/react";
 import { Shell } from "@/components/layout/Shell";
 import { Card } from "@/components/ui/Card";
@@ -28,6 +30,8 @@ import {
 
 export interface ReportDetailViewProps {
   id?: string;
+  initialSignature?: DigitalSignatureData | null;
+  initialStatus?: string;
 }
 
 const FORMS_SUMMARY = [
@@ -81,10 +85,19 @@ const FORMS_SUMMARY = [
   },
 ];
 
-export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps) {
-  const [signature, setSignature] = useState<DigitalSignatureData | null>(null);
+export function ReportDetailView({
+  id = "TS-2026-0142",
+  initialSignature = null,
+  initialStatus = "PENDING_DIRECTOR_APPROVAL",
+}: ReportDetailViewProps) {
+  const [signature, setSignature] = useState<DigitalSignatureData | null>(initialSignature);
+  const [sessionStatus, setSessionStatus] = useState<string>(
+    initialSignature ? "APPROVED_LOCKED" : initialStatus,
+  );
   const [isPinModalOpen, setIsPinModalOpen] = useState<boolean>(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+
+  const isApprovedLocked = sessionStatus === "APPROVED_LOCKED" || !!signature;
 
   const handleOpenPinModal = () => {
     setIsPinModalOpen(true);
@@ -92,6 +105,7 @@ export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps)
 
   const handleSignSuccess = (sigData: DigitalSignatureData) => {
     setSignature(sigData);
+    setSessionStatus("APPROVED_LOCKED");
     triggerDownload("PDF");
   };
 
@@ -139,7 +153,7 @@ export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps)
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setDownloadNotice(`Downloaded ${filename}.`);
+      setDownloadNotice(`Official ${filename} downloaded successfully.`);
     }
   };
 
@@ -159,14 +173,15 @@ export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps)
             <div className="flex items-center gap-3">
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
                 <Certificate className="h-8 w-8 text-primary" weight="duotone" />
-                OIML R 76-2 Test Certificate
+                <span>OIML R 76-2 Test Certificate</span>
               </h1>
               <Badge
-                variant={signature ? "pass" : "pending"}
+                variant={isApprovedLocked ? "pass" : "pending"}
                 className="font-mono text-xs uppercase"
+                data-testid="session-status-badge"
               >
-                {signature
-                  ? "DIGITALLY SIGNED & SEALED (X.509)"
+                {isApprovedLocked
+                  ? "APPROVED & STATUTORILY LOCKED"
                   : "PENDING DIRECTOR SIGNATURE"}
               </Badge>
             </div>
@@ -176,7 +191,7 @@ export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps)
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {!signature ? (
+            {!isApprovedLocked ? (
               <Button
                 type="button"
                 onClick={handleOpenPinModal}
@@ -193,6 +208,7 @@ export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps)
                   variant="outline"
                   onClick={() => triggerDownload("PDF")}
                   className="min-h-[48px] px-4 text-xs font-bold border-primary/40 text-primary hover:bg-primary/10 flex items-center gap-2"
+                  data-testid="download-signed-pdf-top-btn"
                 >
                   <FilePdf className="h-5 w-5" weight="duotone" />
                   <span>Download Signed PDF</span>
@@ -211,7 +227,45 @@ export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps)
           </div>
         </div>
 
-        {/* Global Download Feedback Banner */}
+        {/* Global Statutory WORM Lock & Approved Banner */}
+        {isApprovedLocked && (
+          <div
+            role="status"
+            className="p-5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in"
+            data-testid="approved-locked-banner"
+          >
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                <LockKey className="h-6 w-6" weight="duotone" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-emerald-400">
+                    APPROVED &amp; STATUTORILY LOCKED (WORM)
+                  </h3>
+                  <Badge variant="pass" className="text-[10px] py-0 px-2 uppercase font-mono">
+                    WELMEC 7.2 Sealed
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This test certificate has received executive sign-off from the Director and is permanently locked under OIML R-76 statutory compliance rules. Direct observation modifications and deletions are strictly prohibited.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => triggerDownload("PDF")}
+              className="min-h-[40px] px-3.5 text-xs font-bold border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/20 shrink-0 flex items-center gap-1.5"
+            >
+              <DownloadSimple className="h-4 w-4" weight="bold" />
+              <span>Get Certificate</span>
+            </Button>
+          </div>
+        )}
+
+        {/* Global Download Notice */}
         {downloadNotice && (
           <div
             role="status"
@@ -359,15 +413,19 @@ export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps)
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-background/60 border border-border/60">
-                <span className="text-[11px] text-muted-foreground block">Merkle Chain Root (SHA-256)</span>
+                <span className="text-[11px] text-muted-foreground block">
+                  {signature?.finalClosureHash ? "Final Closure Node Hash (SHA-256)" : "Merkle Chain Root (SHA-256)"}
+                </span>
                 <span className="text-[10px] text-primary break-all font-bold">
-                  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                  {signature?.finalClosureHash || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-background/60 border border-border/60 flex items-center justify-between">
                 <div>
                   <span className="text-[11px] text-muted-foreground block">Block Depth</span>
-                  <span className="text-sm font-bold text-foreground">18 Linked Nodes</span>
+                  <span className="text-sm font-bold text-foreground">
+                    {signature ? "19 Nodes (Sealed)" : "18 Linked Nodes"}
+                  </span>
                 </div>
                 <div className="p-2 rounded-lg bg-primary/10 text-primary">
                   <QrCode className="h-7 w-7" />
@@ -376,48 +434,73 @@ export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps)
             </div>
           </div>
 
-          {/* Director X.509 PKI Signing Stamp */}
+          {/* Director Executive Signing Console UI (Live X.509 cert metadata & seal) (TASK-084) */}
           <div className="pt-2 border-t border-border/70">
             {signature ? (
               <div
-                className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in"
+                className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 space-y-4 animate-in fade-in"
                 data-testid="sealed-signature-block"
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
-                    <Certificate className="h-7 w-7" weight="duotone" />
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
+                      <Certificate className="h-8 w-8" weight="duotone" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-base font-bold text-foreground">
+                          Digitally Signed &amp; Statutorily Locked by {signature.signedBy}
+                        </h4>
+                        <Badge variant="pass" className="text-[10px] py-0 px-2 font-mono">
+                          X.509 Validated
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {signature.signatoryTitle}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-bold text-foreground">
-                        Digitally Signed &amp; Sealed by {signature.signedBy}
-                      </h4>
-                      <Badge variant="pass" className="text-[10px]">
-                        X.509 Verified
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {signature.signatoryTitle}
-                    </p>
-                    <div className="text-[11px] font-mono text-muted-foreground mt-1">
-                      Issuer: {signature.issuer} • Algorithm: {signature.algorithm}
-                    </div>
-                    <div className="text-[10px] font-mono text-emerald-400/90 mt-0.5">
-                      Timestamp: {signature.timestampUtc} • Cert Serial: {signature.serialNumber}
-                    </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      type="button"
+                      onClick={() => triggerDownload("PDF")}
+                      className="min-h-[48px] px-5 text-xs font-bold flex items-center gap-2 shadow-sm"
+                      data-testid="download-signed-pdf-btn"
+                    >
+                      <DownloadSimple className="h-4 w-4" weight="bold" />
+                      <span>Download Signed PDF</span>
+                    </Button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    type="button"
-                    onClick={() => triggerDownload("PDF")}
-                    className="min-h-[48px] px-4 text-xs font-bold flex items-center gap-2"
-                  >
-                    <DownloadSimple className="h-4 w-4" weight="bold" />
-                    <span>Download Signed PDF</span>
-                  </Button>
+                {/* Detailed Live X.509 Certificate & Provenance Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-xl bg-background/80 border border-emerald-500/30 text-xs font-mono">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block uppercase">Certificate Serial</span>
+                    <strong className="text-primary break-all">{signature.serialNumber}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block uppercase">Authority Issuer</span>
+                    <span className="text-foreground text-[11px]">{signature.issuer}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block uppercase">PKI Algorithm</span>
+                    <span className="text-foreground text-[11px]">{signature.algorithm}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block uppercase">Signed Timestamp</span>
+                    <span className="text-emerald-400 text-[11px]">{signature.timestampUtc}</span>
+                  </div>
                 </div>
+
+                {signature.sha256Fingerprint && (
+                  <div className="p-2.5 rounded-lg bg-background/50 border border-border/60 text-[10px] font-mono text-muted-foreground flex items-center gap-2">
+                    <Fingerprint className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <span className="shrink-0 text-muted-foreground font-semibold">SHA-256 Fingerprint:</span>
+                    <span className="text-primary truncate">{signature.sha256Fingerprint}</span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -427,7 +510,7 @@ export function ReportDetailView({ id = "TS-2026-0142" }: ReportDetailViewProps)
                     <span>Director Legal Metrology Signature Required</span>
                   </h4>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    This OIML R 76-2 calibration certificate is pending final X.509 PKI cryptographic sealing.
+                    This OIML R 76-2 calibration certificate is pending final X.509 PKI cryptographic sealing and statutory WORM locking.
                   </p>
                 </div>
 

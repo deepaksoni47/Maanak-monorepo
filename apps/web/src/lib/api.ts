@@ -114,6 +114,21 @@ export const sessionsApi = {
       method: "PATCH",
       body: JSON.stringify({ status, notes }),
     }),
+
+  approveAndSign: (
+    sessionId: string,
+    data: {
+      signingPin: string;
+      privateKeyPem?: string;
+      certificatePem?: string;
+      reason?: string;
+      location?: string;
+    },
+  ) =>
+    apiRequest(`/api/v1/sessions/${sessionId}/approve-and-sign`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
 
 export const observationsApi = {
@@ -282,6 +297,21 @@ export const reportsApi = {
     apiRequest(`/api/v1/reports/${sessionId}/sign`, {
       method: "POST",
       body: JSON.stringify(signData),
+    }),
+
+  approveAndSign: (
+    sessionId: string,
+    data: {
+      signingPin: string;
+      privateKeyPem?: string;
+      certificatePem?: string;
+      reason?: string;
+      location?: string;
+    },
+  ) =>
+    apiRequest(`/api/v1/reports/${sessionId}/approve-and-sign`, {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 
   getById: (sessionId: string) => apiRequest(`/api/v1/reports/${sessionId}`),
