@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { Prisma, PrismaClient } from '@prisma/client';
 import {
   createSession,
@@ -11,6 +13,9 @@ import {
   assertSessionNotLocked,
   SessionImmutableLockedError,
   sessionWithDetailsInclude,
+  RLS_OPERATIONAL_TABLES,
+  getTenantIsolationPolicySql,
+  withTenantContext,
 } from './repository.js';
 import { prisma as singletonPrisma, DB_VERSION } from './index.js';
 
@@ -477,5 +482,125 @@ describe('TASK-028: Database Client & Repository Wrapper', () => {
       );
     });
   });
+
+  describe('TASK-086: PostgreSQL Row-Level Security (RLS) Policies on Operational Tables', () => {
+    it('defines all four mandatory operational tables under statutory RLS protection', () => {
+      assert.deepEqual(
+        [...RLS_OPERATIONAL_TABLES].sort(),
+        ['evidence_attachments', 'raw_observations', 'reference_standards', 'test_sessions'].sort()
+      );
+    });
+
+    it('generates direct laboratory_id RLS policy SQL for test_sessions and reference_standards', () => {
+      const sessionSql = getTenantIsolationPolicySql('test_sessions');
+      assert.ok(sessionSql.includes('ALTER TABLE test_sessions ENABLE ROW LEVEL SECURITY;'));
+      assert.ok(sessionSql.includes('ALTER TABLE test_sessions FORCE ROW LEVEL SECURITY;'));
+      assert.ok(sessionSql.includes('CREATE POLICY rrsl_tenant_isolation ON test_sessions'));
+      assert.ok(sessionSql.includes("NULLIF(current_setting('app.current_laboratory_id', true), '')::UUID"));
+      assert.ok(sessionSql.includes('WITH CHECK'));
+
+      const weightsSql = getTenantIsolationPolicySql('reference_standards');
+      assert.ok(weightsSql.includes('ALTER TABLE reference_standards ENABLE ROW LEVEL SECURITY;'));
+      assert.ok(weightsSql.includes('ALTER TABLE reference_standards FORCE ROW LEVEL SECURITY;'));
+      assert.ok(weightsSql.includes('CREATE POLICY rrsl_tenant_isolation ON reference_standards'));
+      assert.ok(weightsSql.includes("NULLIF(current_setting('app.current_laboratory_id', true), '')::UUID"));
+    });
+
+    it('generates parent-relational subquery RLS policy SQL for raw_observations and evidence_attachments', () => {
+      const obsSql = getTenantIsolationPolicySql('raw_observations');
+      assert.ok(obsSql.includes('ALTER TABLE raw_observations ENABLE ROW LEVEL SECURITY;'));
+      assert.ok(obsSql.includes('ALTER TABLE raw_observations FORCE ROW LEVEL SECURITY;'));
+      assert.ok(obsSql.includes('SELECT 1 FROM test_sessions ts'));
+      assert.ok(obsSql.includes('WHERE ts.id = raw_observations.test_session_id'));
+      assert.ok(obsSql.includes("ts.laboratory_id = NULLIF(current_setting('app.current_laboratory_id', true), '')::UUID"));
+
+      const evidenceSql = getTenantIsolationPolicySql('evidence_attachments');
+      assert.ok(evidenceSql.includes('ALTER TABLE evidence_attachments ENABLE ROW LEVEL SECURITY;'));
+      assert.ok(evidenceSql.includes('ALTER TABLE evidence_attachments FORCE ROW LEVEL SECURITY;'));
+      assert.ok(evidenceSql.includes('SELECT 1 FROM test_sessions ts'));
+      assert.ok(evidenceSql.includes('WHERE ts.id = evidence_attachments.test_session_id'));
+      assert.ok(evidenceSql.includes("ts.laboratory_id = NULLIF(current_setting('app.current_laboratory_id', true), '')::UUID"));
+    });
+
+    it('throws error when requesting RLS policy for an unsupported table', () => {
+      assert.throws(
+        () => getTenantIsolationPolicySql('unsupported_table' as any),
+        /Unsupported RLS operational table/
+      );
+    });
+
+    it('validates UUID format in withTenantContext and rejects invalid tenant IDs', async () => {
+      await assert.rejects(
+        async () => {
+          await withTenantContext('NOT_A_VALID_UUID; DROP TABLE test_sessions;', async () => {});
+        },
+        /Invalid laboratory UUID format/
+      );
+    });
+
+    it('executes set_config parameterized call inside transaction for valid tenant UUID', async () => {
+      const validLabId = '11111111-2222-3333-4444-555555555555';
+      let setConfigExecuted = false;
+      let callbackExecuted = false;
+
+      const mockClient = {
+        $transaction: async (fn: any) => {
+          const mockTx = {
+            $executeRaw: async (query: any, ...values: any[]) => {
+              setConfigExecuted = true;
+              return 1;
+            },
+          };
+          return await fn(mockTx);
+        },
+      } as unknown as PrismaClient;
+
+      const result = await withTenantContext(
+        validLabId,
+        async (tx) => {
+          callbackExecuted = true;
+          return { success: true };
+        },
+        mockClient
+      );
+
+      assert.ok(setConfigExecuted, 'set_config should be called in transaction');
+      assert.ok(callbackExecuted, 'tenant callback must be executed');
+      assert.deepEqual(result, { success: true });
+    });
+
+    it('sets empty tenant string when laboratoryId is null or undefined (unrestricted admin mode)', async () => {
+      let setConfigExecuted = false;
+
+      const mockClient = {
+        $transaction: async (fn: any) => {
+          const mockTx = {
+            $executeRaw: async (query: any, ...values: any[]) => {
+              setConfigExecuted = true;
+              return 1;
+            },
+          };
+          return await fn(mockTx);
+        },
+      } as unknown as PrismaClient;
+
+      const resNull = await withTenantContext(null, async () => 'admin-res', mockClient);
+      assert.equal(resNull, 'admin-res');
+      assert.ok(setConfigExecuted);
+    });
+
+    it('verifies that rls_policies.sql migration file exists and is populated with all policies', () => {
+      const migrationPath = path.resolve(process.cwd(), 'prisma/migrations/rls_policies.sql');
+      assert.ok(fs.existsSync(migrationPath), `Migration file must exist at ${migrationPath}`);
+      const sqlContent = fs.readFileSync(migrationPath, 'utf-8');
+
+      for (const table of RLS_OPERATIONAL_TABLES) {
+        assert.ok(sqlContent.includes(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY;`), `Missing ENABLE RLS on ${table}`);
+        assert.ok(sqlContent.includes(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY;`), `Missing FORCE RLS on ${table}`);
+        assert.ok(sqlContent.includes(`CREATE POLICY rrsl_tenant_isolation ON ${table}`), `Missing policy on ${table}`);
+      }
+    });
+  });
 });
+
 

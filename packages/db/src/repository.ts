@@ -424,3 +424,92 @@ export async function updateObservation(
   });
 }
 
+/**
+ * Operational tables protected under statutory multi-tenant laboratory data isolation.
+ */
+export const RLS_OPERATIONAL_TABLES = [
+  'test_sessions',
+  'reference_standards',
+  'raw_observations',
+  'evidence_attachments',
+] as const;
+
+export type RlsOperationalTable = typeof RLS_OPERATIONAL_TABLES[number];
+
+/**
+ * Returns the DDL SQL statement defining PostgreSQL Row-Level Security (RLS) for the given operational table.
+ */
+export function getTenantIsolationPolicySql(table: RlsOperationalTable | string): string {
+  if (table === 'test_sessions' || table === 'reference_standards') {
+    return [
+      `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY;`,
+      `ALTER TABLE ${table} FORCE ROW LEVEL SECURITY;`,
+      `DROP POLICY IF EXISTS rrsl_tenant_isolation ON ${table};`,
+      `CREATE POLICY rrsl_tenant_isolation ON ${table}`,
+      `  FOR ALL TO public`,
+      `  USING (`,
+      `    NULLIF(current_setting('app.current_laboratory_id', true), '') IS NULL`,
+      `    OR current_setting('app.bypass_rls', true) = 'true'`,
+      `    OR laboratory_id = NULLIF(current_setting('app.current_laboratory_id', true), '')::UUID`,
+      `  )`,
+      `  WITH CHECK (`,
+      `    NULLIF(current_setting('app.current_laboratory_id', true), '') IS NULL`,
+      `    OR current_setting('app.bypass_rls', true) = 'true'`,
+      `    OR laboratory_id = NULLIF(current_setting('app.current_laboratory_id', true), '')::UUID`,
+      `  );`,
+    ].join('\n');
+  }
+
+  if (table === 'raw_observations' || table === 'evidence_attachments') {
+    return [
+      `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY;`,
+      `ALTER TABLE ${table} FORCE ROW LEVEL SECURITY;`,
+      `DROP POLICY IF EXISTS rrsl_tenant_isolation ON ${table};`,
+      `CREATE POLICY rrsl_tenant_isolation ON ${table}`,
+      `  FOR ALL TO public`,
+      `  USING (`,
+      `    NULLIF(current_setting('app.current_laboratory_id', true), '') IS NULL`,
+      `    OR current_setting('app.bypass_rls', true) = 'true'`,
+      `    OR EXISTS (`,
+      `      SELECT 1 FROM test_sessions ts`,
+      `      WHERE ts.id = ${table}.test_session_id`,
+      `        AND ts.laboratory_id = NULLIF(current_setting('app.current_laboratory_id', true), '')::UUID`,
+      `    )`,
+      `  )`,
+      `  WITH CHECK (`,
+      `    NULLIF(current_setting('app.current_laboratory_id', true), '') IS NULL`,
+      `    OR current_setting('app.bypass_rls', true) = 'true'`,
+      `    OR EXISTS (`,
+      `      SELECT 1 FROM test_sessions ts`,
+      `      WHERE ts.id = ${table}.test_session_id`,
+      `        AND ts.laboratory_id = NULLIF(current_setting('app.current_laboratory_id', true), '')::UUID`,
+      `    )`,
+      `  );`,
+    ].join('\n');
+  }
+
+  throw new Error(`Unsupported RLS operational table: "${table}"`);
+}
+
+/**
+ * Executes a callback within a scoped PostgreSQL tenant transaction, setting
+ * `app.current_laboratory_id` for PostgreSQL Row-Level Security (RLS).
+ * When `laboratoryId` is undefined, null, or empty, sets it to '' (unrestricted admin mode).
+ */
+export async function withTenantContext<T>(
+  laboratoryId: string | null | undefined,
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  client: PrismaClient = defaultPrisma
+): Promise<T> {
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (laboratoryId && !UUID_REGEX.test(laboratoryId)) {
+    throw new Error(`Invalid laboratory UUID format for RLS tenant context: "${laboratoryId}"`);
+  }
+
+  return await client.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.current_laboratory_id', ${laboratoryId || ''}, true)`;
+    return await fn(tx);
+  });
+}
+
+
