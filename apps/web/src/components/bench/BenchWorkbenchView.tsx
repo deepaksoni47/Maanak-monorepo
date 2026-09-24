@@ -40,6 +40,7 @@ import { TestBatteryNavigator, FormId, STATUTORY_FORMS } from "./TestBatteryNavi
 import { Form2TempDriftCard } from "./Form2TempDriftCard";
 import { Form3EccentricityCard } from "./Form3EccentricityCard";
 import { Form4DiscriminationCard } from "./Form4DiscriminationCard";
+import { Form5RepeatabilityCard } from "./Form5RepeatabilityCard";
 import { observationsApi, sessionsApi, instrumentsApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -914,6 +915,24 @@ export function BenchWorkbenchView() {
               }).catch(() => {});
             }}
           />
+        ) : activeForm === "form5" ? (
+          <Form5RepeatabilityCard
+            maxCapacityKg={selectedInstrument.maxCapacityKg}
+            verificationIntervalKg={selectedInstrument.verificationIntervalKg}
+            accuracyClass={selectedInstrument.accuracyClass}
+            unit={selectedInstrument.verificationInterval?.split(" ")[1] || "kg"}
+            onSaveSeries={(series, res) => {
+              enqueueOfflineObservation({
+                sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
+                stepNumber: series.seriesId === "series_half_max" ? 1 : 2,
+                nominalLoad: `${series.nominalLoad} ${series.unit}`,
+                indication: `${res.meanP} ${series.unit}`,
+                deltaL: `0 ${series.unit}`,
+                turningPointP: `${res.pMax} ${series.unit}`,
+                errorEc: `${res.spreadDeltaE} ${series.unit}`,
+              }).catch(() => {});
+            }}
+          />
         ) : (
           <div
             id={`panel-${activeForm}`}
@@ -959,8 +978,6 @@ export function BenchWorkbenchView() {
                 <span>OIML Statutory Test Protocol & Objective</span>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                {activeForm === "form5" &&
-                  "OIML R 76-1 A.4.10: Repeatability test comprising 10 successive applications of 1/2 Max and Max loads under identical bench conditions."}
                 {activeForm === "form6" &&
                   "OIML R 76-1 A.4.11: 30-minute timed load deformation test under Max load, followed by 30-second post-discharge zero return recovery evaluation."}
               </p>

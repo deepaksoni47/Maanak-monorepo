@@ -18,6 +18,10 @@ import {
   Form4DiscriminationCard,
   generateDefaultForm4Points,
   computeDiscriminationResult,
+  Form5RepeatabilityCard,
+  computeCycleMetrics,
+  computeRepeatabilitySeriesResult,
+  generateDefault10Cycles,
 } from "./index";
 
 describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
@@ -514,6 +518,75 @@ describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
       assert.ok(html.includes("Observed Final Indication"));
       assert.ok(html.includes("1.4d"));
       assert.ok(html.includes("PASS"));
+    });
+  });
+
+  describe("TASK-075: Form 5 Bench Card: Repeatability 10-Cycle Data Sheet", () => {
+    test("generates default 10 cycles for 1/2 Max load (7.5 kg)", () => {
+      const cycles = generateDefault10Cycles(7.5, 0.005, 0.005);
+      assert.equal(cycles.length, 10);
+      assert.equal(cycles[0].cycleIndex, 1);
+      assert.equal(cycles[0].appliedLoad, 7.5);
+      assert.equal(cycles[0].P, 7.5);
+      assert.equal(cycles[0].Ec, 0.0);
+      assert.equal(cycles[0].isCompliant, true);
+      assert.equal(cycles[9].cycleIndex, 10);
+    });
+
+    test("computes cycle turning point P and error Ec accurately", () => {
+      // Indication = 7.501, deltaL = 0.0025, e = 0.005 -> P = 7.501 + 0.0025 - 0.0025 = 7.501
+      const res = computeCycleMetrics(7.5, 7.501, 0.0025, 0.005, 0.005);
+      assert.equal(res.P, 7.501);
+      assert.equal(res.Ec, 0.001);
+      assert.equal(res.isCompliant, true);
+    });
+
+    test("computes repeatability spread Pmax - Pmin and evaluates against MPE limit", () => {
+      const passingCycles = generateDefault10Cycles(7.5, 0.005, 0.005);
+      // Introduce small acceptable variance: cycle 3 = 7.502 (+0.002), cycle 5 = 7.499 (-0.001)
+      passingCycles[2] = { ...passingCycles[2], P: 7.502, Ec: 0.002, isCompliant: true };
+      passingCycles[4] = { ...passingCycles[4], P: 7.499, Ec: -0.001, isCompliant: true };
+
+      const result = computeRepeatabilitySeriesResult(passingCycles, 0.005);
+      assert.equal(result.pMax, 7.502);
+      assert.equal(result.pMin, 7.499);
+      assert.equal(result.spreadDeltaE, 0.003); // <= 0.005
+      assert.equal(result.isSpreadCompliant, true);
+      assert.equal(result.isSeriesCompliant, true);
+      assert.ok(result.stdDev > 0);
+    });
+
+    test("flags violation when repeatability spread exceeds statutory MPE threshold", () => {
+      const failingCycles = generateDefault10Cycles(7.5, 0.005, 0.005);
+      failingCycles[0] = { ...failingCycles[0], P: 7.496, Ec: -0.004, isCompliant: true };
+      failingCycles[9] = { ...failingCycles[9], P: 7.503, Ec: 0.003, isCompliant: true };
+
+      // Spread = 7.503 - 7.496 = 0.007 > MPE (0.005)
+      const result = computeRepeatabilitySeriesResult(failingCycles, 0.005);
+      assert.equal(result.spreadDeltaE, 0.007);
+      assert.equal(result.isSpreadCompliant, false);
+      assert.equal(result.isSeriesCompliant, false);
+    });
+
+    test("renders Form5RepeatabilityCard UI with tabs, 10-row ledger, and statistical metrics", () => {
+      const html = renderToStaticMarkup(
+        <Form5RepeatabilityCard
+          maxCapacityKg={15}
+          verificationIntervalKg={0.005}
+          accuracyClass="CLASS_III"
+          unit="kg"
+        />
+      );
+
+      assert.ok(html.includes("Form 5: Repeatability"));
+      assert.ok(html.includes("Clause A.4.10"));
+      assert.ok(html.includes("Series A: 1/2 Max"));
+      assert.ok(html.includes("Series B: Full Max"));
+      assert.ok(html.includes("Repeatability Spread"));
+      assert.ok(html.includes("Std Deviation"));
+      assert.ok(html.includes("PASS (SPREAD OK)"));
+      assert.ok(html.includes("Reset Nominal"));
+      assert.ok(html.includes("Save Series"));
     });
   });
 });
