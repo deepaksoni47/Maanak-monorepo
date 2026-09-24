@@ -70,13 +70,20 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// Background Sync Event Handler
+// Background Sync Event Handler (TASK-093)
 self.addEventListener("sync", (event) => {
-  if (event.tag === "maanak-sync-observations") {
+  if (
+    event.tag === "sync-maanak-observations" ||
+    event.tag === "maanak-sync-observations"
+  ) {
     event.waitUntil(
-      self.clients.matchAll().then((clients) => {
+      self.clients.matchAll({ includeUncontrolled: true, type: "window" }).then((clients) => {
         clients.forEach((client) => {
-          client.postMessage({ type: "MAANAK_TRIGGER_BACKGROUND_SYNC" });
+          client.postMessage({
+            type: "MAANAK_TRIGGER_BACKGROUND_SYNC",
+            tag: event.tag,
+            timestamp: new Date().toISOString(),
+          });
         });
       })
     );

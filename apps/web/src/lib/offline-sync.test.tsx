@@ -97,4 +97,107 @@ describe("TASK-058: Offline PWA Service Worker & IndexedDB Sync Engine", () => {
       assert.ok(html.includes("Simulate Offline"));
     });
   });
+
+  describe("TASK-093: Service Worker Background Sync Engine & Conflict Resolver", () => {
+    test("processes pending mutations in chronological order and synchronizes successfully", async () => {
+      const {
+        clearAllOfflineData,
+        enqueueOfflineMutation,
+        getPendingOfflineMutations,
+      } = await import("./offline-db");
+      const { flushPendingOfflineMutations } = await import("./offline-sync");
+
+      await clearAllOfflineData();
+
+      // Enqueue two offline mutations with distinct timestamps
+      await enqueueOfflineMutation({
+        queueId: "mut-seq-1",
+        sessionId: "sess-offline-sync-1",
+        endpoint: "/api/v1/sync/push",
+        payload: { sequenceNumber: 1, targetLoadL: "0.000", indication: "0.000" },
+      });
+
+      await enqueueOfflineMutation({
+        queueId: "mut-seq-2",
+        sessionId: "sess-offline-sync-1",
+        endpoint: "/api/v1/sync/push",
+        payload: { sequenceNumber: 2, targetLoadL: "5.000", indication: "5.000" },
+      });
+
+      const pendingBefore = await getPendingOfflineMutations();
+      assert.equal(pendingBefore.length, 2);
+
+      // Mock fetch accepting batch
+      const mockFetch: typeof fetch = async (url, init) => {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            syncedSessions: ["sess-offline-sync-1"],
+            processedObservations: 1,
+          }),
+        } as any;
+      };
+
+      const result = await flushPendingOfflineMutations({
+        fetchFn: mockFetch,
+        apiBaseUrl: "http://test-server:4000",
+      });
+
+      assert.equal(result.syncedCount, 2);
+      assert.equal(result.failedCount, 0);
+      assert.equal(result.conflictCount, 0);
+
+      // Queue must now be empty
+      const pendingAfter = await getPendingOfflineMutations();
+      assert.equal(pendingAfter.length, 0);
+    });
+
+    test("handles conflict resolution on APPROVED_LOCKED session by rejecting write and recording conflict", async () => {
+      const {
+        clearAllOfflineData,
+        enqueueOfflineMutation,
+        getPendingOfflineMutations,
+      } = await import("./offline-db");
+      const { flushPendingOfflineMutations } = await import("./offline-sync");
+
+      await clearAllOfflineData();
+
+      await enqueueOfflineMutation({
+        queueId: "mut-locked-001",
+        sessionId: "sess-locked-session-99",
+        endpoint: "/api/v1/sync/push",
+        payload: { sequenceNumber: 3, targetLoadL: "10.000", indication: "10.000" },
+      });
+
+      // Mock fetch returning 403 SESSION_IMMUTABLE_LOCKED
+      const mockFetchLocked: typeof fetch = async () => {
+        return {
+          ok: false,
+          status: 403,
+          json: async () => ({
+            code: "SESSION_IMMUTABLE_LOCKED",
+            error: "Session is in APPROVED_LOCKED state and immutable under WELMEC 7.2",
+          }),
+        } as any;
+      };
+
+      const result = await flushPendingOfflineMutations({
+        fetchFn: mockFetchLocked,
+        apiBaseUrl: "http://test-server:4000",
+      });
+
+      assert.equal(result.conflictCount, 1);
+      assert.equal(result.syncedCount, 0);
+      assert.equal(result.results[0].status, "CONFLICT_REJECTED");
+      assert.ok(result.results[0].error?.includes("SESSION_IMMUTABLE_LOCKED"));
+
+      // Mutation is marked as FAILED with conflict error
+      const pending = await getPendingOfflineMutations();
+      assert.equal(pending.length, 1);
+      assert.equal(pending[0].status, "FAILED");
+      assert.ok(pending[0].error?.includes("SESSION_IMMUTABLE_LOCKED"));
+    });
+  });
 });

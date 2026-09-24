@@ -21,7 +21,7 @@ import {
   CachedSession,
   CachedInstrument,
   CachedWeight,
-} from "./offline-db.js";
+} from "./offline-db";
 
 describe("TASK-091: IndexedDB Production Storage Driver (maanak_offline_db)", () => {
   beforeEach(async () => {
