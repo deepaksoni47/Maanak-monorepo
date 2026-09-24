@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MobileNav, MAIN_NAV_ITEMS } from "./MobileNav";
 import { Breadcrumbs, BreadcrumbItem } from "./Breadcrumbs";
-import { Navbar } from "./Navbar";
 import {
   User,
   ShieldCheck,
@@ -38,22 +37,33 @@ export function Shell({
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* Top Navigation Bar: Department of Consumer Affairs */}
-      <Navbar />
-
       {/* Main Body Layout: Sidebar + Content Area */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Mobile Navigation Drawer (< 1024px) */}
         <MobileNav />
 
         {/* Desktop Persistent Sidebar (>= 1024px) */}
-        <aside className="hidden lg:flex w-64 shrink-0 bg-sidebar border-r border-sidebar-border flex-col justify-between sticky top-[88px] h-[calc(100vh-88px)] z-20">
+        <aside className="hidden lg:flex w-64 shrink-0 bg-sidebar border-r border-sidebar-border flex-col justify-between sticky top-0 h-screen z-20">
           <div>
-            {/* Sidebar Top Title */}
+            {/* Sidebar Brand Header */}
             <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Testing Tools
-              </span>
+              <Link href="/" className="flex items-center gap-2.5 group">
+                <div className="w-8 h-8 rounded-xl overflow-hidden border border-border bg-card flex items-center justify-center shadow-xs group-hover:border-primary/50 transition-colors">
+                  <Image
+                    src="/logo.avif"
+                    alt="MAANAK Logo"
+                    width={32}
+                    height={32}
+                    className="object-contain w-full h-full"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-bold text-base tracking-tight text-sidebar-foreground">MAANAK</span>
+                  <span className="text-[10px] text-muted-foreground font-medium truncate">
+                    Testing Workbench
+                  </span>
+                </div>
+              </Link>
               <span className="text-[10px] font-mono font-bold text-primary px-1.5 py-0.5 rounded-xs bg-primary/10 border border-primary/20">
                 OIML R-76
               </span>

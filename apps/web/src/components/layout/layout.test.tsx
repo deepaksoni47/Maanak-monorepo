@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { MobileNav, MAIN_NAV_ITEMS } from "./MobileNav";
 import { Shell } from "./Shell";
+import { Navbar } from "./Navbar";
+import { BottomNav, LANDING_BOTTOM_NAV_ITEMS } from "./BottomNav";
 
 describe("TASK-048: Universal Responsive Mobile Shell & Navigation", () => {
   describe("Breadcrumbs Component", () => {
@@ -151,6 +153,57 @@ describe("TASK-048: Universal Responsive Mobile Shell & Navigation", () => {
       const html = renderToStaticMarkup(<ProvenancePage />);
       assert.ok(html.includes("WELMEC 7.2 Cryptographic Provenance Ledger"));
       assert.ok(html.includes("Chronological Cryptographic Event Blocks"));
+    });
+  });
+
+  describe("Responsive Landing Navbar & Mobile Bottom Navigation", () => {
+    test("removes duplicate Verify text link and internal Bench Testing link to prevent horizontal scroll", () => {
+      const html = renderToStaticMarkup(<Navbar showMobileBottomNav={false} />);
+      // Desktop nav links present
+      assert.ok(html.includes("Dashboard"), "Navbar should include Dashboard link");
+      assert.ok(html.includes("Instruments"), "Navbar should include Instruments link");
+      assert.ok(html.includes("Reports"), "Navbar should include Reports link");
+      // "Bench Testing" removed from primary nav
+      assert.ok(!html.includes("Bench Testing"), "Navbar should NOT include Bench Testing link");
+      // Button exists with QrCode icon
+      assert.ok(html.includes("Verify Report"), "Navbar should include Verify Report button");
+    });
+
+    test("includes animated hover indicators on desktop navigation links", () => {
+      const html = renderToStaticMarkup(<Navbar showMobileBottomNav={false} />);
+      assert.ok(
+        html.includes("group-hover:scale-x-100") || html.includes("transition-all"),
+        "Navbar links should have hover animation classes"
+      );
+      assert.ok(html.includes("group-hover:-translate-y-0.5"), "Navbar links should feature micro-lift on hover");
+    });
+
+    test("renders mobile BottomNav with all 5 key targets and min 48px touch targets", () => {
+      const html = renderToStaticMarkup(<BottomNav />);
+      assert.ok(html.includes('aria-label="Mobile Bottom Navigation"'));
+      assert.strictEqual(LANDING_BOTTOM_NAV_ITEMS.length, 5);
+      assert.ok(html.includes('href="/"'), "Bottom nav missing Home");
+      assert.ok(html.includes('href="/dashboard"'), "Bottom nav missing Dashboard");
+      assert.ok(html.includes('href="/instruments"'), "Bottom nav missing Instruments");
+      assert.ok(html.includes('href="/reports"'), "Bottom nav missing Reports");
+      assert.ok(html.includes('href="/verify"'), "Bottom nav missing Verify");
+      // Touch targets >= 48px
+      assert.ok(html.includes("min-h-[48px]"), "Bottom nav items must have min-h-[48px]");
+      assert.ok(html.includes("min-w-[56px]"), "Bottom nav items must have min-w-[56px]");
+    });
+
+    test("renders MobileBottomNav when enabled on landing view and omits when disabled", () => {
+      const withBottomNav = renderToStaticMarkup(<Navbar showMobileBottomNav={true} />);
+      assert.ok(
+        withBottomNav.includes('aria-label="Mobile Bottom Navigation"'),
+        "Navbar should render Mobile Bottom Navigation when enabled"
+      );
+
+      const withoutBottomNav = renderToStaticMarkup(<Navbar showMobileBottomNav={false} />);
+      assert.ok(
+        !withoutBottomNav.includes('aria-label="Mobile Bottom Navigation"'),
+        "Navbar should omit Mobile Bottom Navigation when disabled"
+      );
     });
   });
 });

@@ -94,7 +94,7 @@ export default function HomePage() {
   const isPass = Math.abs(sampleErrorG) <= mpeLimitG;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary">
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary pb-16 md:pb-0">
       {/* Top Navigation Bar: Department of Consumer Affairs / Government of India */}
       <Navbar />
 

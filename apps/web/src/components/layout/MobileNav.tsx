@@ -115,7 +115,7 @@ export function MobileNav({ onMenuToggle }: MobileNavProps) {
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="font-bold text-base tracking-tight text-foreground">MAANAK</span>
-              <span className="text-[10px] font-bold text-primary px-1.5 py-0.2 rounded-full bg-primary/10 border border-primary/20">
+              <span className="hidden sm:inline text-[10px] font-bold text-primary px-1.5 py-0.2 rounded-full bg-primary/10 border border-primary/20">
                 मानक
               </span>
             </div>
