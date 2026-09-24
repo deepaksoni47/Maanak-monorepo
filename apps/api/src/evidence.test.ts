@@ -2,18 +2,25 @@ import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import request from "supertest";
 import { createHash, randomUUID } from "node:crypto";
+import {
+  validateSessionProvenanceChain,
+  GENESIS_PREV_HASH,
+  verifyNodeHash,
+} from "@maanak/crypto-provenance";
 import { createApp } from "./app.js";
 
-describe("TASK-077: Backend Multipart Evidence Upload API (/api/v1/evidence/upload)", () => {
+describe("TASK-077 & TASK-078: Evidence Upload API & Provenance Chaining", () => {
   let app: any;
   let mockPrisma: any;
   let storedEvidence: any[] = [];
+  let storedProvenance: any[] = [];
 
   const mockSessionId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
   const mockUserId = "usr-insp-001";
 
   beforeEach(() => {
     storedEvidence = [];
+    storedProvenance = [];
 
     mockPrisma = {
       evidenceAttachment: {
@@ -31,6 +38,25 @@ describe("TASK-077: Backend Multipart Evidence Upload API (/api/v1/evidence/uplo
         },
         findUnique: async ({ where }: any) => {
           return storedEvidence.find((e) => e.id === where.id) || null;
+        },
+      },
+      provenanceNode: {
+        findFirst: async ({ where, orderBy }: any) => {
+          const sessionNodes = storedProvenance.filter((p) => p.testSessionId === where.testSessionId);
+          if (sessionNodes.length === 0) return null;
+          return sessionNodes[sessionNodes.length - 1];
+        },
+        create: async ({ data }: any) => {
+          const node = {
+            ...data,
+            id: data.id || randomUUID(),
+            createdAt: data.createdAt || new Date(),
+          };
+          storedProvenance.push(node);
+          return node;
+        },
+        findMany: async ({ where }: any) => {
+          return storedProvenance.filter((p) => p.testSessionId === where.testSessionId);
         },
       },
     };
@@ -160,4 +186,91 @@ describe("TASK-077: Backend Multipart Evidence Upload API (/api/v1/evidence/uplo
     const notFoundRes = await request(app).get("/api/v1/evidence/non-existent-id");
     assert.equal(notFoundRes.status, 404);
   });
+
+  it("TASK-078: generates PROVENANCE_EVIDENCE_ATTACHED node and links to session hash chain", async () => {
+    const photoBuffer = Buffer.from("certified_nameplate_photo_bytes");
+
+    const res = await request(app)
+      .post("/api/v1/evidence/upload")
+      .field("testSessionId", mockSessionId)
+      .field("category", "NAMEPLATE_PHOTO")
+      .attach("file", photoBuffer, { filename: "nameplate.jpg", contentType: "image/jpeg" });
+
+    assert.equal(res.status, 201);
+    assert.ok(res.body.data.provenanceNode);
+
+    const node = res.body.data.provenanceNode;
+    assert.equal(node.nodeType, "PROVENANCE_EVIDENCE_ATTACHED");
+    assert.equal(node.nodeSequence, 0);
+    assert.equal(node.previousNodeHashSha256, GENESIS_PREV_HASH);
+    assert.ok(node.currentNodeHashSha256);
+    assert.ok(node.payloadHashSha256);
+
+    // Verify stored in mock provenance table
+    assert.equal(storedProvenance.length, 1);
+    assert.equal(storedProvenance[0].currentNodeHashSha256, node.currentNodeHashSha256);
+  });
+
+  it("TASK-078: sequentially chains multiple evidence uploads with tamper verification", async () => {
+    const photo1 = Buffer.from("photo_1_nameplate");
+    const photo2 = Buffer.from("photo_2_sealing_wire");
+
+    const res1 = await request(app)
+      .post("/api/v1/evidence/upload")
+      .field("testSessionId", mockSessionId)
+      .field("category", "NAMEPLATE_PHOTO")
+      .attach("file", photo1, { filename: "photo1.png", contentType: "image/png" });
+
+    const node1 = res1.body.data.provenanceNode;
+
+    const res2 = await request(app)
+      .post("/api/v1/evidence/upload")
+      .field("testSessionId", mockSessionId)
+      .field("category", "SEALING_DIAGRAM")
+      .attach("file", photo2, { filename: "photo2.png", contentType: "image/png" });
+
+    const node2 = res2.body.data.provenanceNode;
+
+    assert.equal(node1.nodeSequence, 0);
+    assert.equal(node2.nodeSequence, 1);
+    assert.equal(node2.previousNodeHashSha256, node1.currentNodeHashSha256);
+
+    // Fetch via provenance endpoint
+    const provRes = await request(app).get(`/api/v1/evidence/session/${mockSessionId}/provenance`);
+    assert.equal(provRes.status, 200);
+    assert.equal(provRes.body.data.length, 2);
+
+    // Validate chain integrity using validateSessionProvenanceChain
+    const chainValidation = validateSessionProvenanceChain(storedProvenance);
+    assert.equal(chainValidation.valid, true);
+    assert.equal(chainValidation.totalNodesChecked, 2);
+  });
+
+  it("TASK-078: flags tampering if an evidence node's hash link is contaminated", async () => {
+    const photo1 = Buffer.from("unaltered_photo_1");
+    const photo2 = Buffer.from("unaltered_photo_2");
+
+    await request(app)
+      .post("/api/v1/evidence/upload")
+      .field("testSessionId", mockSessionId)
+      .field("category", "NAMEPLATE_PHOTO")
+      .attach("file", photo1, { filename: "photo1.png", contentType: "image/png" });
+
+    await request(app)
+      .post("/api/v1/evidence/upload")
+      .field("testSessionId", mockSessionId)
+      .field("category", "SEALING_DIAGRAM")
+      .attach("file", photo2, { filename: "photo2.png", contentType: "image/png" });
+
+    assert.equal(storedProvenance.length, 2);
+
+    // Simulate adversarial tampering of node 0's current node hash
+    storedProvenance[0].currentNodeHashSha256 = "f".repeat(64);
+
+    const tamperedValidation = validateSessionProvenanceChain(storedProvenance);
+    // Since derivation or node hash was modified, chain is detected as tampered
+    assert.equal(tamperedValidation.valid, false);
+    assert.equal(tamperedValidation.failureReason, "HASH_LINK_MISMATCH");
+  });
 });
+

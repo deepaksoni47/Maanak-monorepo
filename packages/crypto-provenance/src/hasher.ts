@@ -84,6 +84,7 @@ export type ProvenanceNodeType =
   | 'CALCULATION_RUN'
   | 'REVIEW_AUDIT'
   | 'PDF_SIGN'
+  | 'PROVENANCE_EVIDENCE_ATTACHED'
   | string;
 
 export interface GenerateProvenanceNodeParams {
@@ -143,3 +144,38 @@ export function verifyNodeHash(
   const expected = computeNodeHash(node.previousNodeHashSha256, payload);
   return expected.toLowerCase() === node.currentNodeHashSha256.toLowerCase();
 }
+
+export interface EvidenceProvenancePayload {
+  evidenceId: string;
+  testSessionId: string;
+  category: string;
+  fileName: string;
+  fileHashSha256: string;
+  mimeType: string;
+  fileStoragePath: string;
+  sizeBytes: number;
+  storageProvider: string;
+  uploadedByUserId?: string | null;
+  timestamp: string;
+}
+
+/**
+ * Creates an immutable PROVENANCE_EVIDENCE_ATTACHED node for WELMEC 7.2 chaining.
+ */
+export function generateEvidenceProvenanceNode(params: {
+  testSessionId: string;
+  nodeSequence: number;
+  previousNodeHashSha256?: string | null;
+  evidencePayload: EvidenceProvenancePayload;
+  createdAt?: Date;
+}): ProvenanceNodeRecord {
+  return generateProvenanceNode({
+    testSessionId: params.testSessionId,
+    nodeSequence: params.nodeSequence,
+    nodeType: "PROVENANCE_EVIDENCE_ATTACHED",
+    previousNodeHashSha256: params.previousNodeHashSha256,
+    payload: params.evidencePayload,
+    createdAt: params.createdAt,
+  });
+}
+

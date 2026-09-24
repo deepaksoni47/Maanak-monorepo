@@ -5,6 +5,11 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { v2 as cloudinary } from "cloudinary";
 import { PrismaClient } from "@maanak/db";
+import {
+  generateEvidenceProvenanceNode,
+  GENESIS_PREV_HASH,
+  ProvenanceNodeRecord,
+} from "@maanak/crypto-provenance";
 
 export interface EvidenceRouterOptions {
   db?: PrismaClient;
@@ -103,6 +108,7 @@ export function createEvidenceRouter(options: EvidenceRouterOptions = {}): Route
 
   // In-memory fallback if no db connection is active
   const inMemoryEvidence: StoredEvidenceRecord[] = [];
+  const inMemoryProvenance: ProvenanceNodeRecord[] = [];
 
   /**
    * POST /api/v1/evidence/upload
@@ -164,7 +170,70 @@ export function createEvidenceRouter(options: EvidenceRouterOptions = {}): Route
         const evidenceId = randomUUID();
         const now = new Date();
 
-        // 3. Database persistence
+        // 3. Chain PROVENANCE_EVIDENCE_ATTACHED node for WELMEC 7.2 graph
+        let nextSeq = 0;
+        let prevHash = GENESIS_PREV_HASH;
+
+        if (db) {
+          try {
+            const latest = await db.provenanceNode.findFirst({
+              where: { testSessionId },
+              orderBy: { nodeSequence: "desc" },
+            });
+            if (latest) {
+              nextSeq = latest.nodeSequence + 1;
+              prevHash = latest.currentNodeHashSha256;
+            }
+          } catch {}
+        } else {
+          const sessionNodes = inMemoryProvenance.filter((n) => n.testSessionId === testSessionId);
+          if (sessionNodes.length > 0) {
+            const latest = sessionNodes[sessionNodes.length - 1];
+            nextSeq = latest.nodeSequence + 1;
+            prevHash = latest.currentNodeHashSha256;
+          }
+        }
+
+        const provNode = generateEvidenceProvenanceNode({
+          testSessionId,
+          nodeSequence: nextSeq,
+          previousNodeHashSha256: prevHash,
+          evidencePayload: {
+            evidenceId,
+            testSessionId,
+            category,
+            fileName: file.originalname,
+            fileHashSha256,
+            mimeType: file.mimetype,
+            fileStoragePath,
+            sizeBytes: file.size,
+            storageProvider,
+            uploadedByUserId,
+            timestamp: now.toISOString(),
+          },
+          createdAt: now,
+        });
+
+        if (db) {
+          try {
+            await db.provenanceNode.create({
+              data: {
+                id: randomUUID(),
+                testSessionId: provNode.testSessionId,
+                nodeSequence: provNode.nodeSequence,
+                nodeType: provNode.nodeType,
+                previousNodeHashSha256: provNode.previousNodeHashSha256,
+                payloadHashSha256: provNode.payloadHashSha256,
+                currentNodeHashSha256: provNode.currentNodeHashSha256,
+                createdAt: provNode.createdAt,
+              },
+            });
+          } catch {}
+        } else {
+          inMemoryProvenance.push(provNode);
+        }
+
+        // 4. Database persistence
         if (db) {
           try {
             const created = await db.evidenceAttachment.create({
@@ -193,6 +262,7 @@ export function createEvidenceRouter(options: EvidenceRouterOptions = {}): Route
                 fileHashSha256: created.fileHashSha256,
                 sizeBytes: file.size,
                 storageProvider,
+                provenanceNode: provNode,
                 createdAt: created.createdAt,
               },
             });
@@ -215,7 +285,10 @@ export function createEvidenceRouter(options: EvidenceRouterOptions = {}): Route
 
             return res.status(201).json({
               status: "success",
-              data: record,
+              data: {
+                ...record,
+                provenanceNode: provNode,
+              },
             });
           }
         } else {
@@ -236,7 +309,10 @@ export function createEvidenceRouter(options: EvidenceRouterOptions = {}): Route
 
           return res.status(201).json({
             status: "success",
-            data: record,
+            data: {
+              ...record,
+              provenanceNode: provNode,
+            },
           });
         }
       } catch (err: any) {
@@ -268,7 +344,33 @@ export function createEvidenceRouter(options: EvidenceRouterOptions = {}): Route
     }
 
     const memoryMatches = inMemoryEvidence.filter((r) => r.testSessionId === sessionId);
-    return res.json({ status: "success", data: memoryMatches });
+  });
+
+  /**
+   * GET /api/v1/evidence/session/:sessionId/provenance
+   * List all PROVENANCE_EVIDENCE_ATTACHED nodes for the session.
+   */
+  router.get("/session/:sessionId/provenance", async (req: Request, res: Response) => {
+    const { sessionId } = req.params;
+    if (db) {
+      try {
+        const nodes = await db.provenanceNode.findMany({
+          where: { testSessionId: sessionId, nodeType: "PROVENANCE_EVIDENCE_ATTACHED" },
+          orderBy: { nodeSequence: "asc" },
+        });
+        return res.json({ status: "success", data: nodes });
+      } catch {
+        const memoryNodes = inMemoryProvenance.filter(
+          (n) => n.testSessionId === sessionId && n.nodeType === "PROVENANCE_EVIDENCE_ATTACHED"
+        );
+        return res.json({ status: "success", data: memoryNodes });
+      }
+    }
+
+    const memoryNodes = inMemoryProvenance.filter(
+      (n) => n.testSessionId === sessionId && n.nodeType === "PROVENANCE_EVIDENCE_ATTACHED"
+    );
+    return res.json({ status: "success", data: memoryNodes });
   });
 
   /**
