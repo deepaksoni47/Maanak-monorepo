@@ -286,3 +286,30 @@ export const reportsApi = {
 export const verifyApi = {
   verifyHash: (hash: string) => apiRequest(`/api/v1/verify/${encodeURIComponent(hash)}`),
 };
+
+export const evidenceApi = {
+  upload: async (formData: FormData) => {
+    const url = `${API_BASE_URL}/api/v1/evidence/upload`;
+    const token = getStoredToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message || `Upload failed with status ${res.status}`);
+    }
+    return res.json();
+  },
+
+  listBySession: (sessionId: string) =>
+    apiRequest(`/api/v1/evidence/session/${sessionId}`),
+
+  getProvenanceNodes: (sessionId: string) =>
+    apiRequest(`/api/v1/evidence/session/${sessionId}/provenance`),
+};

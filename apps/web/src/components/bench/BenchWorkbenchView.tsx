@@ -42,6 +42,7 @@ import { Form3EccentricityCard } from "./Form3EccentricityCard";
 import { Form4DiscriminationCard } from "./Form4DiscriminationCard";
 import { Form5RepeatabilityCard } from "./Form5RepeatabilityCard";
 import { Form6CreepCard } from "./Form6CreepCard";
+import { EvidenceVaultCard } from "@/components/evidence";
 import { observationsApi, sessionsApi, instrumentsApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -1017,6 +1018,11 @@ export function BenchWorkbenchView() {
             </div>
           </div>
         )}
+
+        {/* Statutory Evidence Vault & Photo Intake (OIML R 76-1 / WELMEC 7.2) */}
+        <EvidenceVaultCard
+          sessionId={activeSessionId || `TS-${selectedInstrument.serialNumber}`}
+        />
       </div>
 
       {/* Edit Scale Metadata Modal */}
