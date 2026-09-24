@@ -48,7 +48,9 @@ This design system resolves potential conflicts between general shadcn monochrom
 | **Primary Color**      | Monochromatic Ink (`#0a0a0a`)  | **Sky Blue** `oklch(0.6723 0.1606 244.9955)` | **Twitter Theme Takes Precedence**. Primary actions, active navigation, and focus rings use Twitter Sky Blue.                      |
 | **Border Radius**      | 18px / 24px fixed              | **`--radius: 1.3rem`** (~20.8px base)        | **Twitter Theme Takes Precedence**. Derived Tailwind utilities (`rounded-lg`, `rounded-md`, `rounded-sm`) calculate from `1.3rem`. |
 | **Typography**         | `Geist` sans-serif             | **`Open Sans, sans-serif`**                  | **Twitter Theme Takes Precedence**. Body and display headings use Open Sans; Menlo is used for monospace numeric data.             |
-| **Card Surface**       | `#ffffff` / `#fafafa`          | **`oklch(0.9784 0.0011 197.1387)`**          | **Twitter Theme Takes Precedence**. Subtle blue-gray tint on card background in light mode.                                        |
+| **Canvas Background**  | `#ffffff`                      | **`oklch(0.9784 0.0011 197.1387)`**          | **Soft Canvas Background**. Subtle neutral background canvas across all pages for maximum card separation.                          |
+| **Card Surface**       | `#ffffff` / `#fafafa`          | **`oklch(1 0 0)` (Pure White)**              | **Elevated White Cards**. All cards, tables, and analytical containers render in pure white in light mode.                          |
+| **Border Token**       | `#e5e5e5`                      | **`oklch(0.86 0.015 240)`**                  | **Darkened High-Contrast Borders**. Crisp table dividers and container edges (`border-neutral-300` / `border-neutral-700`).          |
 | **Destructive Accent** | `#e7000b`                      | **`oklch(0.6188 0.2376 25.7658)`**           | **Twitter Theme Takes Precedence**. OKLCH high-contrast red for FAIL states, error alerts, and destructive actions.                |
 
 ---
@@ -62,9 +64,9 @@ This design system resolves potential conflicts between general shadcn monochrom
 
 :root {
   /* Surface & Canvas Tokens */
-  --background: oklch(1 0 0);
+  --background: oklch(0.9784 0.0011 197.1387); /* Soft Canvas Background */
   --foreground: oklch(0.1884 0.0128 248.5103);
-  --card: oklch(0.9784 0.0011 197.1387);
+  --card: oklch(1 0 0); /* Pure White Cards */
   --card-foreground: oklch(0.1884 0.0128 248.5103);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.1884 0.0128 248.5103);
@@ -85,8 +87,8 @@ This design system resolves potential conflicts between general shadcn monochrom
   --destructive: oklch(0.6188 0.2376 25.7658);
   --destructive-foreground: oklch(1 0 0);
 
-  /* Borders, Inputs & Focus Rings */
-  --border: oklch(0.9317 0.0118 231.6594);
+  /* Borders, Inputs & Focus Rings (Darkened for Crisp Definition) */
+  --border: oklch(0.86 0.015 240);
   --input: oklch(0.9809 0.0025 228.7836);
   --ring: oklch(0.6818 0.1584 243.354);
 
@@ -104,7 +106,7 @@ This design system resolves potential conflicts between general shadcn monochrom
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.9392 0.0166 250.8453);
   --sidebar-accent-foreground: oklch(0.6723 0.1606 244.9955);
-  --sidebar-border: oklch(0.9271 0.0101 238.5177);
+  --sidebar-border: oklch(0.86 0.015 240);
   --sidebar-ring: oklch(0.6818 0.1584 243.354);
 
   /* Font Families & Radii */
@@ -151,8 +153,8 @@ This design system resolves potential conflicts between general shadcn monochrom
   --destructive: oklch(0.6188 0.2376 25.7658);
   --destructive-foreground: oklch(1 0 0);
 
-  /* Dark Mode Borders & Inputs */
-  --border: oklch(0.2674 0.0047 248.0045);
+  /* Dark Mode Borders & Inputs (Darkened for Crisp Definition) */
+  --border: oklch(0.36 0.012 245);
   --input: oklch(0.302 0.0288 244.8244);
   --ring: oklch(0.6818 0.1584 243.354);
 
@@ -163,7 +165,7 @@ This design system resolves potential conflicts between general shadcn monochrom
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.1928 0.0331 242.5459);
   --sidebar-accent-foreground: oklch(0.6692 0.1607 245.011);
-  --sidebar-border: oklch(0.3795 0.022 240.5943);
+  --sidebar-border: oklch(0.36 0.012 245);
   --sidebar-ring: oklch(0.6818 0.1584 243.354);
 }
 
@@ -304,17 +306,18 @@ The persistent left navigation bar uses shadcn `<Sidebar>` primitives styled wit
 
 ---
 
-## 6. Metrological Status Colors & Compliance Visuals
+## 6. Metrological Status Colors & Transparent Pill/Badge System
 
-To maintain high contrast and metrological legal accuracy, status states follow a strict functional color hierarchy:
+To maintain high contrast, modern minimalist elegance, and metrological legal accuracy, status badges and pills strictly enforce **transparent backgrounds (`bg-transparent`)** with semantic foreground text and distinct colored borders:
 
-| Compliance State    | Background Token    | Foreground / Text Token                  | Border Token            | Phosphor Icon     | Visual Presentation                                                           |
-| :------------------ | :------------------ | :--------------------------------------- | :---------------------- | :---------------- | :---------------------------------------------------------------------------- |
-| **PASS**            | `bg-emerald-500/10` | `text-emerald-600 dark:text-emerald-400` | `border-emerald-500/30` | `<CheckCircle>`   | Solid green pill badge, checkmark icon, bold `PASS` tag.                      |
-| **FAIL**            | `bg-destructive/10` | `text-destructive`                       | `border-destructive/30` | `<XCircle>`       | High-contrast ember red badge, `FAIL` tag, error ring.                        |
-| **WARNING / BLOCK** | `bg-amber-500/10`   | `text-amber-600 dark:text-amber-400`     | `border-amber-500/30`   | `<Warning>`       | Amber alert pill; used for $U > \frac{1}{3}\text{MPE}$ or thermal drift warnings. |
-| **IN PROGRESS**     | `bg-primary/10`     | `text-primary`                           | `border-primary/30`     | `<Clock>`         | Twitter Sky Blue badge with pulsing execution dot.                            |
-| **PENDING REVIEW**  | `bg-purple-500/10`  | `text-purple-600 dark:text-purple-400`   | `border-purple-500/30`  | `<FileSearch>`    | Muted purple pill badge indicating senior metrologist review queue.           |
+| Compliance State    | Background Token | Foreground / Text Token                  | Border Token Token       | Phosphor Icon     | Visual Presentation & Rules                                                                      |
+| :------------------ | :--------------- | :--------------------------------------- | :----------------------- | :---------------- | :----------------------------------------------------------------------------------------------- |
+| **PASS**            | `bg-transparent` | `text-emerald-600 dark:text-emerald-400` | `border-emerald-500/50`  | `<CheckCircle>`   | Transparent pill, emerald border & checkmark, bold `PASS` tag.                                   |
+| **FAIL**            | `bg-transparent` | `text-destructive`                       | `border-destructive/50`  | `<XCircle>`       | Transparent pill, ember red border, `FAIL` tag.                                                  |
+| **WARNING / BLOCK** | `bg-transparent` | `text-amber-600 dark:text-amber-400`     | `border-amber-500/50`    | `<Warning>`       | Amber alert pill; used for $U > \frac{1}{3}\text{MPE}$ or thermal drift warnings.                |
+| **IN PROGRESS**     | `bg-transparent` | `text-primary`                           | `border-primary/40`      | `<Clock>`         | Sky Blue pill with transparent fill and primary border.                                          |
+| **PENDING REVIEW**  | `bg-transparent` | `text-purple-600 dark:text-purple-400`   | `border-purple-500/50`   | `<FileSearch>`    | Transparent purple pill indicating senior metrologist review queue.                              |
+| **NEUTRAL / CLASS** | `bg-transparent` | `text-muted-foreground`                  | `border-border`          | None / Contextual | Transparent pill for Class I–IIII accuracy tags and metadata badges.                              |
 
 ---
 
@@ -322,23 +325,45 @@ To maintain high contrast and metrological legal accuracy, status states follow 
 
 ### 7.1 Buttons
 
-- **Primary Filled Button**: `bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl h-10 px-6 font-medium shadow-sm` — Used for main actions (e.g., "Submit Observation", "Sign Report").
+- **Primary Filled Button**: `bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl h-10 px-6 font-medium shadow-sm transition-all` — Used for main actions (e.g., "Submit Observation", "Sign Report", "Start Session").
 - **Secondary Ghost Button**: `bg-muted text-foreground hover:bg-muted/80 rounded-2xl h-10 px-5 font-medium` — Used for secondary actions ("Cancel", "Back").
-- **Outline Button**: `border border-border bg-background hover:bg-accent hover:text-accent-foreground rounded-2xl h-10 px-4 font-medium` — Used for inline table actions.
+- **Outline Button**: `border border-neutral-300 dark:border-neutral-700 bg-background hover:bg-accent hover:text-accent-foreground hover:border-primary rounded-2xl h-10 px-4 font-medium transition-colors` — Used for inline table actions and auxiliary links.
 - **Destructive Button**: `bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-2xl h-10 px-5 font-medium` — Used for rejecting sessions or revoking certificates.
 
 ### 7.2 Input Fields & Select Controls
 
-- **Resting Input**: `bg-input/50 border border-border text-foreground rounded-2xl h-11 px-4 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-ring focus:bg-background transition-all`
+- **Resting Input**: `bg-input/50 border border-neutral-300 dark:border-neutral-700 text-foreground rounded-2xl h-11 px-4 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-ring focus:bg-background transition-all`
 - **Metrology Observation Input (`font-mono`)**: Appends monospace numeric styling and tabular numbers (`font-mono text-base font-semibold tabular-nums`).
 
-### 7.3 Data Tables (`<Table>`)
+### 7.3 Data Tables (`<Table>`) & Darkened High-Contrast Borders
 
-- **Density**: Compact table rows (`py-2.5 px-4 text-xs`).
-- **Header**: `bg-card text-muted-foreground font-semibold uppercase tracking-wider border-b border-border`.
-- **Alternating Rows**: `odd:bg-background even:bg-card/50 hover:bg-accent/50 transition-colors`.
+- **Header (`thead`)**: `border-b-2 border-neutral-300 dark:border-neutral-700 bg-card text-muted-foreground font-semibold uppercase tracking-wider text-xs`.
+- **Row Dividers (`tbody`)**: `divide-y divide-neutral-300 dark:divide-neutral-700`.
+- **Row Hover State**: `hover:bg-accent/40 transition-colors group`.
+- **Cell Typography & Spacing**: `py-4 px-4 sm:px-5 text-xs sm:text-sm font-mono` for metrics / `font-medium text-foreground` for instrument descriptions.
 
-### 7.4 Skeleton Loading Components (`<Skeleton>`)
+### 7.4 KPI Metric Cards & Microinteractions System
+
+- **Card Geometry**: `rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card p-5 sm:p-6 shadow-xs flex flex-col justify-between min-h-[168px]`.
+- **Hover Microinteractions**:
+  - Border transitions to Primary Sky Blue: `hover:border-primary dark:hover:border-primary`.
+  - Large metric values highlight in Primary Sky Blue: `group-hover:text-primary transition-colors duration-300`.
+  - Subtle elevation lift: `hover:shadow-md transition-all duration-300`.
+- **Icon Badges**: Transparent backgrounds with delicate borders (`border-1.5 border-foreground/80 dark:border-foreground/90 group-hover:border-primary group-hover:text-primary`).
+
+### 7.5 Global Icon Presentation Policy (No Colored Tint Boxes)
+
+- **Transparent Icon Backgrounds**: Across all KPI strips, status alert banners, action shortcuts, and card headers, icon containers **must NOT use solid or tinted background boxes** (i.e. `bg-primary/10`, `bg-emerald-500/10`, `bg-amber-500/10` are strictly prohibited).
+- **Icon Styling**: Render icons directly with their functional semantic text color (`text-primary`, `text-emerald-600`, `text-foreground`) accompanied by hover micro-animations (`group-hover:scale-105 group-hover:text-primary transition-all`).
+
+### 7.6 Step Selector & Bench Progress Buttons (`/bench`)
+
+- **Card Geometry**: `rounded-2xl border transition-all min-h-[72px] sm:min-h-[76px] p-1.5 sm:p-2 flex flex-col justify-between`.
+- **Top-Left Step Indicator**: `#{step.stepNumber}` step index pinned strictly to the top-left (`font-mono text-[10px] font-bold opacity-75`).
+- **Centered Load Value (Same Line)**: Nominal weight value and unit (`kg`/`g`) placed together on the **same line** (`flex items-baseline justify-center gap-1 text-center py-0.5` with number in `text-base sm:text-lg font-mono font-black tracking-tight leading-none` and unit in `text-[11px] sm:text-xs font-mono font-semibold opacity-85`).
+- **Bottom Status Indicator**: Validation icon (`<Check>` / `<WarningCircle>`) or pending dot (`h-1.5 w-1.5 rounded-full bg-border`) centered at the bottom.
+
+### 7.7 Skeleton Loading Components (`<Skeleton>`)
 
 - **Base Class**: `animate-pulse bg-muted/60 rounded-2xl`
 - **Zero Spinners Rule**: Spinners (`<Loader2 className="animate-spin" />`) are prohibited for content loading. Use dedicated geometry-matching skeleton primitives:
@@ -591,7 +616,12 @@ Every page shell renders a breadcrumb trail (`<Breadcrumb>`) at the top of the m
 |                                 DEVELOPER DO's & DON'TS RULES                                     |
 +---------------------------------------------------------------------------------------------------+
 | DO:                                                                                               |
-|  ✓ DO use Tailwind CSS v4 `@theme` classes linked to `globals.css` OKLCH variables.               |
+|  ✓ DO render pure white cards (`bg-card`) elevated on soft canvas backgrounds (`bg-background`).  |
+|  ✓ DO enforce transparent backgrounds (`bg-transparent`) on all badges, pills, and status tags.   |
+|  ✓ DO use darkened, high-contrast borders (`border-neutral-300 dark:border-neutral-700`) on tables|
+|    (`border-b-2` thead, `divide-y` tbody) and container edges.                                    |
+|  ✓ DO use interactive microinteractions on KPI cards (`hover:border-primary`, `group-hover:text-primary`).|
+|  ✓ DO align weight numbers and unit labels (`kg`/`g`) on the same line in step buttons (`/bench`).|
 |  ✓ DO enforce `font-mono tabular-nums` for all metrological numbers and formula outputs.          |
 |  ✓ DO use `--radius: 1.3rem` pill rounding (`rounded-2xl`, `rounded-3xl`) across interactive elements.|
 |  ✓ DO append explicit metric units (`kg`, `g`, `°C`, `hPa`) to every measurement display.         |
@@ -600,6 +630,9 @@ Every page shell renders a breadcrumb trail (`<Breadcrumb>`) at the top of the m
 |  ✓ DO export dynamic document titles and breadcrumbs for every route and active session instance. |
 |                                                                                                   |
 | DON'T:                                                                                            |
+|  ❌ DON'T add solid or tinted background boxes (`bg-primary/10`, `bg-emerald-500/10`) to icons or  |
+|    status pill badges.                                                                            |
+|  ❌ DON'T use faint or washed-out borders on tables, cards, or divider lines.                     |
 |  ❌ DON'T introduce hardcoded hex color codes (e.g. `#1DA1F2` or `#000000`) in component code.    |
 |  ❌ DON'T use arbitrary border-radius values (e.g. `rounded-none` or `rounded-xs`).               |
 |  ❌ DON'T execute floating-point math in JS string outputs without rounding to scale interval $e$.  |
