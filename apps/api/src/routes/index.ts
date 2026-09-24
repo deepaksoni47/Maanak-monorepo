@@ -7,3 +7,4 @@ export * from "./review.js";
 export * from "./reports.js";
 export * from "./verify.js";
 export * from "./sync.js";
+export * from "./evidence.js";

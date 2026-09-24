@@ -47,3 +47,5 @@ Thumbs.db
 !/storage/uploads/.gitkeep
 /storage/signed_reports/*
 !/storage/signed_reports/.gitkeep
+uploads/
+**/uploads/

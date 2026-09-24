@@ -23,6 +23,8 @@ import {
   verifyRouter,
   createSyncRouter,
   syncRouter,
+  createEvidenceRouter,
+  evidenceRouter,
 } from "./routes/index.js";
 import { RulePackRegistry } from "@maanak/rules-engine";
 import { PrismaClient } from "@maanak/db";
@@ -191,10 +193,16 @@ export function createApp(options: AppOptions = {}): Express {
       : syncRouter;
   app.use("/api/v1/sync", configuredSyncRouter);
 
-  // 17. 404 Fallback Handler
+  // 17. Statutory Evidence & Sealing Photo Routes (Dual Cloudinary/Local)
+  const configuredEvidenceRouter = options.db
+    ? createEvidenceRouter({ db: options.db })
+    : evidenceRouter;
+  app.use("/api/v1/evidence", configuredEvidenceRouter);
+
+  // 18. 404 Fallback Handler
   app.use(notFoundHandler);
 
-  // 18. Centralized Global Error Handler
+  // 19. Centralized Global Error Handler
   app.use(errorHandler);
 
   return app;
