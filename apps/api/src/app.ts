@@ -26,6 +26,8 @@ import {
   syncRouter,
   createEvidenceRouter,
   evidenceRouter,
+  createAdminRouter,
+  adminRouter,
 } from "./routes/index.js";
 import { RulePackRegistry } from "@maanak/rules-engine";
 import { PrismaClient } from "@maanak/db";
@@ -202,7 +204,13 @@ export function createApp(options: AppOptions = {}): Express {
     : evidenceRouter;
   app.use("/api/v1/evidence", configuredEvidenceRouter);
 
-  // 18. 404 Fallback Handler
+  // 18. Backend Administrative Routes (Personnel, Roles & Audit Trail)
+  const configuredAdminRouter = options.db
+    ? createAdminRouter({ db: options.db })
+    : adminRouter;
+  app.use("/api/v1/admin", configuredAdminRouter);
+
+  // 19. 404 Fallback Handler
   app.use(notFoundHandler);
 
   // 19. Centralized Global Error Handler

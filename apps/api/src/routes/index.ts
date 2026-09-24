@@ -8,3 +8,4 @@ export * from "./reports.js";
 export * from "./verify.js";
 export * from "./sync.js";
 export * from "./evidence.js";
+export * from "./admin.js";
