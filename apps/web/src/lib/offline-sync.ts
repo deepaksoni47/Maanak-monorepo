@@ -209,10 +209,14 @@ export async function clearSyncedObservations(): Promise<number> {
   }
 }
 
-const API_BASE =
+const rawSyncApiUrl =
   typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL
     ? process.env.NEXT_PUBLIC_API_URL
     : "http://localhost:4000";
+const API_BASE =
+  rawSyncApiUrl.startsWith("http://") || rawSyncApiUrl.startsWith("https://")
+    ? rawSyncApiUrl.replace(/\/+$/, "")
+    : `https://${rawSyncApiUrl.replace(/\/+$/, "")}`;
 
 /**
  * Flush all pending observations to the remote synchronization API.

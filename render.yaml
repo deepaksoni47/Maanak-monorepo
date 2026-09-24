@@ -1,0 +1,50 @@
+# ==============================================================================
+# MAANAK (मानक) — Render Blueprint Infrastructure as Code
+# Deploys Backend API and Next.js Frontend concurrently in parallel
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Express Backend Gateway (maanak-api)
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: maanak-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @maanak/db run generate && pnpm --filter @maanak/db run build && pnpm --filter @maanak/api run build
+    startCommand: node apps/api/dist/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # Set your Neon connection string in Render Dashboard (with sslmode=require)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: VERIFY_BASE_URL
+        value: "https://maanak-web.onrender.com/verify"
+
+  # ----------------------------------------------------------------------------
+  # 2. Next.js PWA Frontend (maanak-web)
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: maanak-web
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @maanak/web run build
+    startCommand: pnpm --filter @maanak/web run start
+    healthCheckPath: /manifest.webmanifest
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: maanak-api
+          property: host

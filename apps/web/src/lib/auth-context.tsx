@@ -33,7 +33,11 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_URL =
+  rawApiUrl.startsWith("http://") || rawApiUrl.startsWith("https://")
+    ? rawApiUrl.replace(/\/+$/, "")
+    : `https://${rawApiUrl.replace(/\/+$/, "")}`;
 const TOKEN_KEY = "maanak_access_token";
 const USER_KEY = "maanak_user_profile";
 

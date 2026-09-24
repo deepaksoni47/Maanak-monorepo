@@ -3,8 +3,11 @@
  * Centralized, type-safe client connecting Next.js frontend to Express API (/api/v1).
  */
 
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  rawApiUrl.startsWith("http://") || rawApiUrl.startsWith("https://")
+    ? rawApiUrl.replace(/\/+$/, "")
+    : `https://${rawApiUrl.replace(/\/+$/, "")}`;
 
 export interface ApiResponse<T = any> {
   success?: boolean;
