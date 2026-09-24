@@ -1004,3 +1004,420 @@ Module 11 transforms MAANAK from an atomic verified test engine into an integrat
     - Clear, plain-English tooltips for all metrological terms ($L$, $I$, $\Delta L$, $P$, $E$, $E_c$, MPE).
     - High-contrast touch buttons ($\ge 48\text{px}$) designed for gloved or outdoor bay usage.
 - **Acceptance Criteria**: Guided prompts adapt to each step of the test battery and simplify testing for non-technical officers.
+
+---
+
+## 15. Module 12: Full Metrological Test Battery on Bench UI (Forms 2–6 Orchestration)
+
+Module 12 expands the physical benchtop interface beyond Form 1 (Weighing Performance) to provide dedicated, touch-optimized observation cards and live calculators for Forms 2 through 6 under OIML R-76 Annex A.
+
+---
+
+### TASK-071: Bench Test Battery Multi-Form Navigator & Form State Router
+
+- **Target File(s)**: `apps/web/src/components/bench/TestBatteryNavigator.tsx`, `apps/web/src/components/bench/BenchWorkbenchView.tsx`
+- **Blocked By**: `TASK-070`
+- **Technical Blueprint**:
+  - Implement a mobile-first `TestBatteryNavigator` tab/stepper bar across Form 1 (Weighing), Form 2 (Thermal Drift), Form 3 (Eccentricity), Form 4 (Discrimination), Form 5 (Repeatability), and Form 6 (Creep & Zero Return).
+  - Track individual form completion percentage, compliance status (PASS / FAIL / PENDING), and active form tab in URL query parameters (`?form=form3`).
+  - Integrate with `ObservationLedgerTable` to filter displayed observation rows according to active test clause.
+- **Acceptance Criteria**: Officer can seamlessly navigate between all 6 statutory forms with active state highlights, completion badges, and zero layout shift.
+
+---
+
+### TASK-072: Form 2 Bench Card: Temperature Effect on No-Load & Thermal Drift
+
+- **Target File(s)**: `apps/web/src/components/bench/Form2TempDriftCard.tsx`, `apps/web/src/components/bench/BenchWorkbenchView.tsx`
+- **Blocked By**: `TASK-071`
+- **Technical Blueprint**:
+  - Create touch-optimized observation input card for OIML R 76-1 Clause A.5.3.2 (Form 2).
+  - Allow logging of climate chamber temperature steps ($-10^\circ\text{C}, +20^\circ\text{C}, +40^\circ\text{C}$), ambient humidity, and start/end timestamps.
+  - Automatically evaluate zero drift rate $\frac{\Delta T}{\Delta t} \le 5.0^\circ\text{C/h}$ and zero-load error shift $|E_0| \le 0.5e$ using `@maanak/rules-engine`.
+  - Persist observations to PostgreSQL via `POST /api/v1/observations` with `testClause="A.5.3.2"`.
+- **Acceptance Criteria**: Officer can log temperature series with instant visual feedback on thermal drift rate and zero-load compliance.
+
+---
+
+### TASK-073: Form 3 Bench Card: Eccentricity & Corner Load 5-Position Receptor
+
+- **Target File(s)**: `apps/web/src/components/bench/Form3EccentricityCard.tsx`, `apps/web/src/components/bench/BenchWorkbenchView.tsx`
+- **Blocked By**: `TASK-071`
+- **Technical Blueprint**:
+  - Create interactive visual pan diagram representing the 5 receptor positions (1: Center, 2: Front-Left, 3: Front-Right, 4: Rear-Left, 5: Rear-Right) per Clause A.4.7.
+  - Automatically calculate mandatory eccentricity test load $L_{\text{ecc}} = \frac{1}{3}Max$ (or per Table 3 for multi-column receptors).
+  - Capture $I$ and $\Delta L$ for each position, calculate $P, E, E_c$, and evaluate corner load spread against Table 6 MPE.
+  - Persist records with `testClause="A.4.7"` and `eccentricityPosition=1..5`.
+- **Acceptance Criteria**: Tapping any receptor quadrant prompts load placement and displays real-time compliance badge for that corner.
+
+---
+
+### TASK-074: Form 4 Bench Card: Discrimination Test Engine (1.4d Test)
+
+- **Target File(s)**: `apps/web/src/components/bench/Form4DiscriminationCard.tsx`, `apps/web/src/components/bench/BenchWorkbenchView.tsx`
+- **Blocked By**: `TASK-071`
+- **Technical Blueprint**:
+  - Build workflow card for OIML R 76-1 Clause A.4.8 (Discrimination).
+  - Prompt officer at 3 mandatory loads: $Min$, $\frac{1}{2}Max$, and $Max$.
+  - Provide one-tap prompts to place extra load equal to $1.4d$ gently on receptor and record whether displayed indication cleanly advances by $+1d$.
+  - Evaluate boolean discrimination response per clause requirements and persist to database.
+- **Acceptance Criteria**: Clear step-by-step prompts for $1.4d$ addition and instant pass/fail validation.
+
+---
+
+### TASK-075: Form 5 Bench Card: Repeatability 10-Cycle Data Sheet
+
+- **Target File(s)**: `apps/web/src/components/bench/Form5RepeatabilityCard.tsx`, `apps/web/src/components/bench/BenchWorkbenchView.tsx`
+- **Blocked By**: `TASK-071`
+- **Technical Blueprint**:
+  - Build rapid-entry table for OIML R 76-1 Clause A.4.10 (Repeatability).
+  - Support 2 series of weighings: Series A at $\frac{1}{2}Max$ (10 cycles) and Series B at $Max$ (10 cycles).
+  - Rapid numeric input with auto-advance to next row on Enter/Submit.
+  - Compute maximum spread $E_{\max} - E_{\min}$ and evaluate against MPE for that load point ($E_{\max} - E_{\min} \le |\text{MPE}|$).
+- **Acceptance Criteria**: 10-run spread calculated instantly with visual compliance pill and standard deviation summary.
+
+---
+
+### TASK-076: Form 6 Bench Card: 30-Minute Creep & Zero Return Timed Workbench
+
+- **Target File(s)**: `apps/web/src/components/bench/Form6CreepCard.tsx`, `apps/web/src/components/bench/BenchWorkbenchView.tsx`
+- **Blocked By**: `TASK-071`
+- **Technical Blueprint**:
+  - Build timed execution card for OIML R 76-1 Clause A.4.11 (Creep & Zero Return).
+  - Integrated digital countdown timer with audible/visual alerts at:
+    - $t = 0\text{ min}$ (initial load application at $Max$)
+    - $t = 15\text{ min}$ (intermediate creep indication)
+    - $t = 30\text{ min}$ (final creep indication, load removal prompt)
+    - $t = 30.5\text{ min}$ (30 seconds post-discharge zero-return check)
+  - Compute creep error $\Delta I_{30 - 0}$ and zero recovery error $E_{0,\text{ret}}$ against statutory limits.
+- **Acceptance Criteria**: Timers run accurately in background, chime on notification intervals, and record timestamped creep observations.
+
+---
+
+## 16. Module 13: Statutory Evidence, Sealing Plan & Photo Management System
+
+Module 13 satisfies Rule 5(2) of the Legal Metrology (Approval of Models) Rules, 2011 and OIML R 76-2 Form 16/17 by providing robust file upload, EXIF extraction, SHA-256 fingerprinting, and report embedding for physical scale evidence.
+
+---
+
+### TASK-077: Backend Multipart Evidence Upload API
+
+- **Target File(s)**: `apps/api/src/routes/evidence.ts`, `apps/api/src/app.ts`
+- **Blocked By**: `TASK-038`, `TASK-042`
+- **Technical Blueprint**:
+  - Integrate `multer` middleware with strict MIME type filtering (`image/jpeg`, `image/png`, `application/pdf`) and 20MB file limit.
+  - Expose `POST /api/v1/evidence/upload` supporting fields: `testSessionId`, `instrumentModelId`, `evidenceType` (`NAMEPLATE_PHOTO`, `SEALING_DIAGRAM`, `CIRCUIT_SCHEMATIC`, `USER_MANUAL`).
+  - Calculate SHA-256 hash of the binary stream on upload for WELMEC 7.2 provenance chaining.
+  - Pluggable storage driver:
+    - If `CLOUDINARY_URL` is set in the environment: upload directly to Cloudinary (folder `maanak/evidence`) and persist the secure CDN HTTPS URL and public ID.
+    - If `CLOUDINARY_URL` is omitted: fallback to local volume storage (`uploads/evidence/`).
+  - Write record to `EvidenceAttachment` table with original file name, storage path / CDN URL, SHA-256 hash, and size.
+- **Acceptance Criteria**: Uploading a photo or PDF stores file securely (on Cloudinary or local disk), persists record in PostgreSQL, and returns 201 Created with SHA-256 fingerprint.
+
+---
+
+### TASK-078: Evidence Attachment Provenance Chaining
+
+- **Target File(s)**: `apps/api/src/routes/evidence.ts`, `packages/crypto-provenance/src/hasher.ts`
+- **Blocked By**: `TASK-077`, `TASK-029`
+- **Technical Blueprint**:
+  - On evidence attachment upload, append a `PROVENANCE_EVIDENCE_ATTACHED` node to the test session's WELMEC 7.2 hash graph.
+  - Canonical payload snapshot contains `evidenceType`, `fileName`, `fileSha256Hash`, `uploaderId`, and `timestamp`.
+  - Invalidate session tamper check if the physical file on disk is modified or replaced.
+- **Acceptance Criteria**: Provenance graph validator verifies evidence node continuity and detects any modification to uploaded evidence files.
+
+---
+
+### TASK-079: Frontend Evidence Vault & Photo Intake Component
+
+- **Target File(s)**: `apps/web/src/components/evidence/EvidenceVaultCard.tsx`, `apps/web/src/app/instruments/new/page.tsx`, `apps/web/src/components/bench/BenchWorkbenchView.tsx`
+- **Blocked By**: `TASK-077`
+- **Technical Blueprint**:
+  - Build `EvidenceVaultCard` supporting drag-and-drop file upload and mobile camera capture (`capture="environment"`).
+  - Display thumbnails for uploaded nameplates and sealing plans with verified SHA-256 fingerprint pills.
+  - Provide preview modal for PDFs (circuit schematics, user manual) and zoomable lightbox for metal nameplates.
+- **Acceptance Criteria**: Mobile inspector can take a photo of the scale nameplate directly from phone browser, upload, and view immediate SHA-256 hash confirmation.
+
+---
+
+### TASK-080: PDF Report Annex Evidence Embedder
+
+- **Target File(s)**: `packages/report-generator/src/pdf.ts`
+- **Blocked By**: `TASK-077`, `TASK-034`
+- **Technical Blueprint**:
+  - Update `compileOimlPdfReport` to accept optional `evidenceAttachments: { type: string, imageBuffer?: Buffer, description: string }[]`.
+  - Embed high-resolution JPEG/PNG nameplate photo on Page 5 / Annex of the official OIML R 76-2 PDF report using `pdfDoc.embedJpg` / `embedPng`.
+  - Embed sealing location plan diagram with reference callout annotations.
+- **Acceptance Criteria**: Generated PDF report includes embedded nameplate photograph and sealing diagram with SHA-256 watermark captions.
+
+---
+
+## 17. Module 14: Complete Lifecycle State Machine, Immutability WORM Lock & Multi-Role Handover
+
+Module 14 enforces strict separation of duties, reviewer re-test correction routing, and irreversible database locks upon Director X.509 PKI approval under Section 22 of the Legal Metrology Act.
+
+---
+
+### TASK-081: Strict Session State Machine & Re-Test Correction Loop
+
+- **Target File(s)**: `apps/api/src/routes/sessions.ts`, `apps/api/src/routes/review.ts`, `apps/web/src/components/review/ReviewAuditView.tsx`
+- **Blocked By**: `TASK-042`, `TASK-044`
+- **Technical Blueprint**:
+  - Enforce atomic state transitions: `DRAFT` $\to$ `OBSERVATION_COMPLETE` $\to$ `UNDER_REVIEW` $\to$ `RETURNED_TO_OFFICER` $\to$ `PENDING_DIRECTOR_APPROVAL` $\to$ `APPROVED_LOCKED`.
+  - When Reviewer rejects with `FLAGGED_FOR_CORRECTION`, transition session to `RETURNED_TO_OFFICER` and store structured rejection notes.
+  - In `BenchWorkbenchView.tsx`, display amber "Session Returned for Correction" alert showing specific reviewer instructions, allowing the officer to re-execute only the flagged test clause.
+- **Acceptance Criteria**: Rejected session returns to officer bench with specific clause unlocked for correction while preserving other valid test data.
+
+---
+
+### TASK-082: Database Immutability WORM Lock on APPROVED_LOCKED
+
+- **Target File(s)**: `packages/db/src/repository.ts`, `apps/api/src/routes/observations.ts`, `apps/api/src/routes/sessions.ts`
+- **Blocked By**: `TASK-081`, `TASK-028`
+- **Technical Blueprint**:
+  - Enforce WORM (Write-Once-Read-Many) immutability at the API and repository level:
+    - Any `POST`, `PUT`, `PATCH`, or `DELETE` targeting observations or session metadata where `current_state === 'APPROVED_LOCKED'` throws HTTP 403 `SESSION_IMMUTABLE_LOCKED`.
+  - Add PostgreSQL function / trigger or Prisma validation checking `session.status !== 'APPROVED_LOCKED'` before any mutating write.
+- **Acceptance Criteria**: Direct attempts to modify or delete observations on an approved session fail with structured `SESSION_IMMUTABLE_LOCKED` error.
+
+---
+
+### TASK-083: Director Live Approval & X.509 Cryptographic Sign-off API
+
+- **Target File(s)**: `apps/api/src/routes/reports.ts`, `packages/crypto-provenance/src/signer.ts`
+- **Blocked By**: `TASK-045`, `TASK-031`
+- **Technical Blueprint**:
+  - Create endpoint `POST /api/v1/sessions/:id/approve-and-sign` restricted strictly to `ROLE_DIRECTOR`.
+  - Validate Director PIN / password credentials.
+  - Generate X.509 digital signature block using `@peculiar/x509` with Director's RSA key pair.
+  - Calculate `Hash_Final = SHA256(Hash_Session + PDF_Bytes + Signature)` and record final provenance closure node.
+  - Update session state to `APPROVED_LOCKED` and archive signed PDF in report storage.
+- **Acceptance Criteria**: Calling endpoint validates Director authorization, signs document, sets `APPROVED_LOCKED`, and returns downloadable signed certificate URL.
+
+---
+
+### TASK-084: Director Executive Signing Console UI
+
+- **Target File(s)**: `apps/web/src/components/reports/ReportDetailView.tsx`, `apps/web/src/components/reports/SigningPinModal.tsx`
+- **Blocked By**: `TASK-083`, `TASK-056`
+- **Technical Blueprint**:
+  - Connect `SigningPinModal` in `ReportDetailView` to `POST /api/v1/sessions/:id/approve-and-sign`.
+  - Display live Director X.509 certificate metadata (Issuer, Subject, Serial Number, Validity Period, SHA-256 Fingerprint).
+  - Upon successful signing, transition view to show green "APPROVED & STATUTORILY LOCKED" banner and trigger automated signed PDF download.
+- **Acceptance Criteria**: Director can enter PIN, observe signing progress spinner, and receive confirmed digitally signed OIML R 76-2 certificate.
+
+---
+
+## 18. Module 15: Enterprise Multi-Tenancy & Laboratory Data Isolation (RRSL Scoping)
+
+Module 15 enforces strict multi-tenant facility boundaries across Regional Reference Standard Laboratories (RRSL Faridabad, Bengaluru, Bhubaneswar, Ahmedabad, Varanasi, Guwahati) and State Central Laboratories.
+
+---
+
+### TASK-085: Multi-Tenant Laboratory Scoping Middleware in Express API
+
+- **Target File(s)**: `apps/api/src/middleware/tenant.ts`, `apps/api/src/routes/sessions.ts`, `apps/api/src/routes/instruments.ts`, `apps/api/src/routes/weights.ts`
+- **Blocked By**: `TASK-038`, `TASK-028`
+- **Technical Blueprint**:
+  - Implement `tenantMiddleware` extracting `laboratoryId` from authenticated JWT claims (`req.user.laboratoryId`).
+  - Automatically inject `where: { laboratoryId: req.user.laboratoryId }` into all Prisma queries for sessions, standard weights, and physical instrument units.
+  - Allow `ROLE_ADMIN` users with null `laboratoryId` to query across all facilities.
+- **Acceptance Criteria**: Testing officers in RRSL Faridabad cannot view, edit, or list test sessions belonging to RRSL Bengaluru.
+
+---
+
+### TASK-086: PostgreSQL Row-Level Security (RLS) Policies on Operational Tables
+
+- **Target File(s)**: `packages/db/prisma/schema.prisma`, `packages/db/prisma/migrations/rls_policies.sql`
+- **Blocked By**: `TASK-085`, `TASK-026`
+- **Technical Blueprint**:
+  - Author SQL migration enabling PostgreSQL Row-Level Security on operational tables: `test_sessions`, `raw_observations`, `reference_standards`, `evidence_attachments`.
+  - Define policies:
+    ```sql
+    ALTER TABLE test_sessions ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY rrsl_tenant_isolation ON test_sessions
+      FOR ALL TO public
+      USING (laboratory_id = NULLIF(current_setting('app.current_laboratory_id', true), '')::UUID);
+    ```
+- **Acceptance Criteria**: Direct SQL queries using tenant context are strictly restricted to the tenant's own records.
+
+---
+
+### TASK-087: RRSL Multi-Facility Dashboard & Facility Switcher
+
+- **Target File(s)**: `apps/web/src/components/layout/Shell.tsx`, `apps/web/src/app/dashboard/page.tsx`
+- **Blocked By**: `TASK-085`, `TASK-051`
+- **Technical Blueprint**:
+  - In `Shell.tsx`, add facility indicator badge showing current user's laboratory node (e.g. `RRSL Faridabad (NABL TC-5421)`).
+  - For `ROLE_ADMIN` users, provide a multi-facility dropdown switcher allowing inspection of individual RRSL performance KPIs and calibration queues.
+  - Dashboard analytics cards adapt dynamically to show facility-specific vs national aggregated statistics.
+- **Acceptance Criteria**: Admin can filter dashboard by RRSL branch; officers see their local laboratory branding and jurisdiction details.
+
+---
+
+## 19. Module 16: Full OIML R 76-2 Report Generation (Forms 1–17 Expansion)
+
+Module 16 completes the document compilation pipeline by dynamically binding database observations for Forms 2 through 6 and providing standardized schemas for Forms 7 through 17.
+
+---
+
+### TASK-088: Live Database Observations Binding for Forms 2–6 in Report Compiler
+
+- **Target File(s)**: `apps/api/src/routes/reports.ts`, `packages/report-generator/src/pdf.ts`, `packages/report-generator/src/docx.ts`
+- **Blocked By**: `TASK-072`, `TASK-073`, `TASK-074`, `TASK-075`, `TASK-076`
+- **Technical Blueprint**:
+  - Refactor `buildReportDataFromSession` in `apps/api/src/routes/reports.ts` to query raw observations by clause.
+  - Dynamically map:
+    - `testClause === 'A.5.3.2'` $\to$ `form2TemperatureDrift`
+    - `testClause === 'A.4.7'` $\to$ `form3Eccentricity`
+    - `testClause === 'A.4.8'` $\to$ `form4Discrimination`
+    - `testClause === 'A.4.10'` $\to$ `form5Repeatability`
+    - `testClause === 'A.4.11'` $\to$ `form6Creep`
+  - Render actual values in PDF and DOCX tables, replacing all fallback/mock defaults.
+- **Acceptance Criteria**: Generated PDF and Word reports display live bench observation data across Forms 1, 2, 3, 4, 5, and 6.
+
+---
+
+### TASK-089: Forms 7–14 Modular Test Report Schema Extension
+
+- **Target File(s)**: `packages/report-generator/src/pdf.ts`, `packages/report-generator/src/docx.ts`, `packages/types/src/reports.ts`
+- **Blocked By**: `TASK-088`
+- **Technical Blueprint**:
+  - Extend `OimlReportData` interface to include optional fields for:
+    - Form 7: Warm-up time test (Clause A.5.2)
+    - Form 8: Long-term span stability (Clause A.4.4.4)
+    - Form 9: Tare weighing accuracy (Clause A.4.6)
+    - Forms 10–14: Voltage variations & electrical disturbance tests (AC/DC limits, bursts, electrostatic discharges)
+  - Implement PDF table drawing routines in `pdf.ts` and table elements in `docx.ts` for these modular clauses.
+- **Acceptance Criteria**: Test reports for modular indicators or electronic balances cleanly render Forms 7 through 14 when present.
+
+---
+
+### TASK-090: Forms 15–17 Administrative Checklist & Marking Verification
+
+- **Target File(s)**: `packages/report-generator/src/pdf.ts`, `packages/report-generator/src/docx.ts`
+- **Blocked By**: `TASK-089`
+- **Technical Blueprint**:
+  - Implement Form 15 (Software examination & legal integrity check per WELMEC 7.2).
+  - Implement Form 16 (Descriptive markings checklist: Max, Min, e, d, Class mark, manufacturer plate, serial number).
+  - Implement Form 17 (Sealing and verification mark places checklist).
+  - Generate structured two-column checklist tables with PASS / FAIL / NA radio mark indicators.
+- **Acceptance Criteria**: Multi-page PDF report includes complete Forms 15, 16, and 17 compliance audit checklists.
+
+---
+
+## 20. Module 17: Production Offline PWA Engine & IndexedDB / SQLite WASM Sync
+
+Module 17 replaces in-memory and `localStorage` mock stores with an industrial-grade IndexedDB / SQLite WASM edge database, enabling full offline bench operations in shielded testing bays.
+
+---
+
+### TASK-091: IndexedDB Production Storage Driver
+
+- **Target File(s)**: `apps/web/src/lib/offline-db.ts`, `apps/web/package.json`
+- **Blocked By**: `TASK-058`
+- **Technical Blueprint**:
+  - Install `idb` (lightweight Promise-based IndexedDB wrapper).
+  - Create database `maanak_offline_db` (version 1) with object stores:
+    - `sessions`: cached active test sessions.
+    - `instruments`: cached instrument models and specifications.
+    - `standard_weights`: cached standard weight sets with calibration uncertainties.
+    - `offline_queue`: observation mutations awaiting network synchronization with fields `queueId`, `sessionId`, `endpoint`, `payload`, `timestamp`, `retryCount`.
+- **Acceptance Criteria**: Browser stores full offline dataset reliably across reloads and tab closures without storage size quota errors.
+
+---
+
+### TASK-092: Offline Session Creation & Instrument Intake
+
+- **Target File(s)**: `apps/web/src/app/bench/page.tsx`, `apps/web/src/lib/offline-db.ts`, `apps/web/src/components/bench/BenchWorkbenchView.tsx`
+- **Blocked By**: `TASK-091`
+- **Technical Blueprint**:
+  - Enable starting an observation session while offline using pre-cached instruments from `idb`.
+  - Generate client-side RFC 4122 UUID primary keys (`local_id`) for offline observations.
+  - Automatically evaluate Turning Point $P, E, E_c$, and Table 6 MPE brackets using local TypeScript calculation engine without active network.
+- **Acceptance Criteria**: With Wi-Fi completely disabled, inspector can open bench, select instrument, log 10 observations, and observe live PASS/FAIL math.
+
+---
+
+### TASK-093: Service Worker Background Sync Engine
+
+- **Target File(s)**: `apps/web/public/sw.js`, `apps/web/src/lib/offline-sync.ts`
+- **Blocked By**: `TASK-091`, `TASK-046`
+- **Technical Blueprint**:
+  - Register Service Worker `sync` event handler (`sync-maanak-observations`).
+  - When browser triggers `sync` upon reconnect, read all items from `offline_queue` in ascending chronological sequence.
+  - Submit batch to `POST /api/v1/sync/push` with JWT credentials.
+  - Handle conflict resolution:
+    - If server state is `APPROVED_LOCKED`, reject client writes and notify user.
+    - If server state is `DRAFT` or `UNDER_REVIEW`, append observations and update client ledger.
+- **Acceptance Criteria**: Reconnecting network automatically flushes pending offline queue to PostgreSQL with zero data loss or duplicate records.
+
+---
+
+## 21. Module 18: Role-Based Access Control, Route Guards & Administration Portal
+
+Module 18 introduces explicit client-side route guards, role-scoped navigation filtering, and a dedicated administrative portal for managing users, roles, and laboratory affiliations across the MAANAK platform.
+
+---
+
+### TASK-094: Next.js Client-Side Route Protection & Edge Middleware (`middleware.ts`)
+
+- **Target File(s)**: `apps/web/src/middleware.ts`, `apps/web/src/lib/routes-config.ts`
+- **Blocked By**: `TASK-058`
+- **Technical Blueprint**:
+  - Define an authoritative Route Access Matrix in `routes-config.ts`:
+    - `/bench/**`: `[Role.INSPECTOR, Role.ADMIN]`
+    - `/review/**`: `[Role.REVIEWER, Role.DIRECTOR, Role.ADMIN]`
+    - `/reports/**`: `[Role.INSPECTOR, Role.REVIEWER, Role.DIRECTOR, Role.ADMIN]` (read-only for non-directors)
+    - `/rule-packs/**`: `[Role.ADMIN]`
+    - `/admin/**`: `[Role.ADMIN]`
+  - Implement Next.js `middleware.ts` to intercept route transitions, check the active session/token, and redirect unauthenticated users to `/login`.
+  - Provide client-side route guard `<ProtectedRoute allowedRoles={[...]} />` and a 403 Forbidden Access Denied fallback UI (`apps/web/src/app/access-denied/page.tsx`).
+- **Acceptance Criteria**: Unauthorized role access to protected routes cleanly redirects to `/access-denied` or dashboard with a clear alert; direct URL visits by unauthorized roles are prevented.
+
+---
+
+### TASK-095: Role-Scoped Navigation & Dynamic Sidebar Filtering
+
+- **Target File(s)**: `apps/web/src/components/layout/Shell.tsx`, `apps/web/src/components/layout/MobileNav.tsx`, `apps/web/src/lib/routes-config.ts`
+- **Blocked By**: `TASK-094`
+- **Technical Blueprint**:
+  - Update `MAIN_NAV_ITEMS` in `MobileNav.tsx` and `Shell.tsx` to associate each navigation item with allowed roles:
+    - Bench / Instruments: `INSPECTOR`, `ADMIN`.
+    - Review Queue: `REVIEWER`, `DIRECTOR`, `ADMIN`.
+    - Rule Packs: `ADMIN`.
+    - Admin Console: `ADMIN`.
+    - History / Standards: accessible across all authenticated roles.
+  - Dynamically filter sidebar items based on `user.role` from `useAuth()`.
+  - Add visual role badge in the sidebar header with distinct semantic colors (`INSPECTOR`: blue, `REVIEWER`: amber, `DIRECTOR`: purple, `ADMIN`: rose).
+- **Acceptance Criteria**: Switching persona in `AuthContext` instantly updates visible navigation links; inspectors cannot see the Review Queue or Rule Packs; admins see the full navigation suite including Admin Console.
+
+---
+
+### TASK-096: Backend Administrative API Endpoints (`/api/v1/admin/*`)
+
+- **Target File(s)**: `apps/api/src/routes/admin.ts`, `apps/api/src/routes/index.ts`, `apps/api/src/auth/service.ts`
+- **Blocked By**: `TASK-046`
+- **Technical Blueprint**:
+  - Create a dedicated `/api/v1/admin` route module protected with `requireRole(Role.ADMIN)`.
+  - Implement core user & role management endpoints:
+    - `GET /api/v1/admin/users`: List registered personnel with filtering by role, laboratory ID, and active status.
+    - `POST /api/v1/admin/users`: Create a new user with assigned role (`INSPECTOR`, `REVIEWER`, `DIRECTOR`), laboratory ID, and designation.
+    - `PATCH /api/v1/admin/users/:id/role`: Update user role or toggle account active/suspended state.
+    - `GET /api/v1/admin/audit-logs`: Query paginated immutable system audit log entries.
+- **Acceptance Criteria**: Non-admin JWT tokens hitting `/api/v1/admin/*` receive HTTP 403 Forbidden; admin tokens can list, provision, and update personnel accounts.
+
+---
+
+### TASK-097: Frontend Administrative Portal & User Management Page
+
+- **Target File(s)**: `apps/web/src/app/admin/page.tsx`, `apps/web/src/app/admin/users/page.tsx`, `apps/web/src/components/admin/UserManagementTable.tsx`
+- **Blocked By**: `TASK-094`, `TASK-096`
+- **Technical Blueprint**:
+  - Build `/admin` dashboard overviewing system health, active users by role, and laboratory affiliations.
+  - Build `/admin/users` page displaying a paginated `UserManagementTable`:
+    - Columns: Name, Username/Email, Designation, Assigned Laboratory, Role Badge, Status (Active/Suspended), Actions.
+    - Modal for "Add Personnel" with role and laboratory dropdowns.
+    - Dropdown menu to reassign roles or toggle user suspension.
+- **Acceptance Criteria**: Admin user can navigate to `/admin/users`, view the user roster, provision a new user, and reassign roles with live UI feedback.
+
+
