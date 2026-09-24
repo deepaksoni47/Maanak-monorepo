@@ -376,3 +376,122 @@ export async function clearAllOfflineData(): Promise<void> {
     inMemoryOfflineStore.clear();
   }
 }
+
+/**
+ * Standard RFC 4122 v4 UUID generator that operates in browser, Web Worker, and Node.js.
+ */
+export function generateUuid(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/**
+ * Creates an offline session directly on the edge client using pre-cached instrument specs.
+ * Assigns an RFC 4122 UUID and persists to maanak_offline_db.
+ */
+export async function createOfflineSession(params: {
+  instrument: CachedInstrument;
+  officerName?: string;
+  laboratoryId?: string;
+}): Promise<CachedSession> {
+  const sessionId = generateUuid();
+  const sessionNumber = `OFFLINE-${params.instrument.model.replace(/\s+/g, "").toUpperCase()}-${Date.now().toString().slice(-4)}`;
+  const now = new Date().toISOString();
+
+  const newSession: CachedSession = {
+    id: sessionId,
+    sessionNumber,
+    status: "IN_PROGRESS",
+    instrumentId: params.instrument.id,
+    instrument: params.instrument,
+    laboratoryId: params.laboratoryId ?? "RRSL-HQ",
+    officerName: params.officerName ?? "Local Metrologist",
+    observations: [],
+    createdAt: now,
+    updatedAt: now,
+    isOfflineCreated: true,
+  };
+
+  await cacheSession(newSession);
+  return newSession;
+}
+
+/**
+ * Evaluates Turning Point and MPE math locally in pure TypeScript and
+ * persists the observation with an RFC 4122 UUID primary key (local_id)
+ * into maanak_offline_db.
+ */
+export async function logOfflineObservation(params: {
+  sessionId: string;
+  stepNumber: number;
+  targetLoadL: number;
+  displayedIndicationI: number;
+  changeoverWeightDl: number;
+  eVal: number;
+  e0?: number;
+  mpeLimit: number;
+  unit?: string;
+  direction?: string;
+}): Promise<{
+  localId: string;
+  turningPointP: number;
+  errorE: number;
+  intrinsicErrorEc: number;
+  isPass: boolean;
+  mutation: OfflineMutation;
+}> {
+  const localId = generateUuid();
+  const P = params.displayedIndicationI + 0.5 * params.eVal - params.changeoverWeightDl;
+  const E = P - params.targetLoadL;
+  const zeroCorrection = params.e0 ?? 0;
+  const Ec = E - zeroCorrection;
+  const isPass = Math.abs(Ec) <= params.mpeLimit + 1e-9;
+  const cleanNum = (n: number) => (Object.is(n, -0) || Math.abs(n) < 1e-12 ? 0 : +n.toFixed(6));
+
+  const payload = {
+    localId,
+    sessionId: params.sessionId,
+    formType: "FORM_1_WEIGHING",
+    sequenceNumber: params.stepNumber,
+    targetLoadL: params.targetLoadL,
+    displayedIndicationI: params.displayedIndicationI,
+    changeoverWeightDl: params.changeoverWeightDl,
+    turningPointP: cleanNum(P),
+    errorE: cleanNum(E),
+    intrinsicErrorEc: cleanNum(Ec),
+    mpeLimit: params.mpeLimit,
+    unit: params.unit ?? "kg",
+    direction: params.direction ?? "ASCENDING",
+    isPass,
+    timestamp: new Date().toISOString(),
+  };
+
+  const mutation = await enqueueOfflineMutation({
+    sessionId: params.sessionId,
+    endpoint: "/api/v1/sync/push",
+    payload,
+  });
+
+  const session = await getCachedSession(params.sessionId);
+  if (session) {
+    if (!session.observations) session.observations = [];
+    session.observations.push(payload);
+    session.updatedAt = new Date().toISOString();
+    await cacheSession(session);
+  }
+
+  return {
+    localId,
+    turningPointP: cleanNum(P),
+    errorE: cleanNum(E),
+    intrinsicErrorEc: cleanNum(Ec),
+    isPass,
+    mutation,
+  };
+}

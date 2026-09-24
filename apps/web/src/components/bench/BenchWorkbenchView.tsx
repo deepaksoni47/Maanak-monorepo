@@ -33,6 +33,12 @@ import { Input } from "@/components/ui/Input";
 import { ObservationCard, ObservationData } from "./ObservationCard";
 import { OfflineSyncBanner } from "@/components/common/OfflineSyncBanner";
 import { enqueueOfflineObservation } from "@/lib/offline-sync";
+import {
+  createOfflineSession,
+  logOfflineObservation,
+  getCachedInstruments,
+  cacheInstruments,
+} from "@/lib/offline-db";
 import { ObservationLedgerTable, LedgerEntry } from "./ObservationLedgerTable";
 import { ToleranceSafetyGauge } from "./ToleranceSafetyGauge";
 import { OfficerGuidanceBanner } from "./OfficerGuidanceBanner";
@@ -311,7 +317,7 @@ export function BenchWorkbenchView({
     let isMounted = true;
 
     async function initBenchData() {
-      // 1. Fetch live instruments list from API
+      // 1. Fetch live instruments list from API (with fallback to IndexedDB maanak_offline_db)
       try {
         const instRes = await instrumentsApi.list();
         if (isMounted && instRes?.instruments?.length > 0) {
@@ -331,6 +337,21 @@ export function BenchWorkbenchView({
           }));
           setInstrumentsList(mapped);
 
+          // Keep maanak_offline_db fresh with pre-cached models
+          cacheInstruments(
+            mapped.map((m) => ({
+              id: m.id,
+              serialNumber: m.serialNumber,
+              model: m.model,
+              manufacturer: m.manufacturer,
+              accuracyClass: m.accuracyClass,
+              maxCapacity: m.maxCapacityKg,
+              minCapacity: 0.1,
+              verificationScaleIntervalE: m.verificationIntervalKg,
+              unit: "kg",
+            }))
+          ).catch(() => {});
+
           if (urlInstId) {
             const found = mapped.find((m) => m.id === urlInstId);
             if (found) {
@@ -340,7 +361,29 @@ export function BenchWorkbenchView({
           }
         }
       } catch (err) {
-        console.error("Failed to fetch instruments for bench:", err);
+        console.error("Network unavailable; loading instruments from maanak_offline_db:", err);
+        try {
+          const cached = await getCachedInstruments();
+          if (isMounted && cached.length > 0) {
+            const mapped: InstrumentItem[] = cached.map((c) => ({
+              id: c.id,
+              model: c.model,
+              manufacturer: c.manufacturer,
+              serialNumber: c.serialNumber,
+              tacNumber: "IND-OIML-OFFLINE",
+              accuracyClass: (c.accuracyClass.startsWith("CLASS_") ? c.accuracyClass : `CLASS_${c.accuracyClass}`) as any,
+              maxCapacity: `${c.maxCapacity} ${c.unit}`,
+              verificationInterval: `${c.verificationScaleIntervalE} ${c.unit}`,
+              maxCapacityKg: Number(c.maxCapacity) || 15,
+              verificationIntervalKg: Number(c.verificationScaleIntervalE) || 0.005,
+              status: "VERIFIED",
+              createdAt: new Date().toISOString(),
+            }));
+            setInstrumentsList(mapped);
+          }
+        } catch {
+          // Keep DEFAULT_INSTRUMENTS
+        }
       }
 
       // 2. If session is specified in URL, load live session details & raw observations from PostgreSQL
@@ -515,10 +558,39 @@ export function BenchWorkbenchView({
       });
   };
 
+  const handleStartOfflineSession = async () => {
+    try {
+      const newSession = await createOfflineSession({
+        instrument: {
+          id: selectedInstrument.id,
+          serialNumber: selectedInstrument.serialNumber,
+          model: selectedInstrument.model,
+          manufacturer: selectedInstrument.manufacturer,
+          accuracyClass: selectedInstrument.accuracyClass,
+          maxCapacity: selectedInstrument.maxCapacityKg,
+          minCapacity: 0.1,
+          verificationScaleIntervalE: selectedInstrument.verificationIntervalKg,
+          unit: "kg",
+        },
+        officerName: user?.fullName || "Local Metrologist",
+      });
+      setActiveSessionId(newSession.id);
+      setCurrentStepIndex(0);
+      setSavedSteps({});
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("sessionId", newSession.id);
+        window.history.replaceState({}, "", url.toString());
+      }
+    } catch (err) {
+      console.error("Failed to create offline session:", err);
+    }
+  };
+
   const handleSaveAndAdvance = () => {
     setSavedSteps((prev) => ({ ...prev, [activeObservation.stepNumber]: true }));
 
-    // Automatically buffer observation into IndexedDB
+    // Buffer raw observation into legacy sync queue
     enqueueOfflineObservation({
       sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
       stepNumber: activeObservation.stepNumber,
@@ -528,6 +600,22 @@ export function BenchWorkbenchView({
       turningPointP: `${activeResult.P.toFixed(4)} ${activeObservation.unit}`,
       errorEc: `${activeResult.Ec.toFixed(4)} ${activeObservation.unit}`,
     }).catch(() => {});
+
+    // Log offline observation with client-side RFC 4122 UUID localId into maanak_offline_db (TASK-092)
+    logOfflineObservation({
+      sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
+      stepNumber: activeObservation.stepNumber,
+      targetLoadL: activeObservation.appliedLoad,
+      displayedIndicationI: activeObservation.indication,
+      changeoverWeightDl: activeObservation.deltaL,
+      eVal: activeObservation.eVal,
+      e0: activeObservation.e0,
+      mpeLimit: activeObservation.mpeLimit,
+      unit: activeObservation.unit || "kg",
+      direction: activeObservation.direction,
+    }).catch((err) => {
+      console.error("Offline observation cache note:", err);
+    });
 
     // Save live to PostgreSQL database if active session exists
     if (activeSessionId) {
@@ -633,6 +721,16 @@ export function BenchWorkbenchView({
                   Max {displayMax} | e = {displayE} | TAC: {selectedInstrument.tacNumber}
                 </span>
                 <div className="flex items-center gap-1.5 ml-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStartOfflineSession}
+                    className="h-7 text-xs font-semibold px-2.5 rounded-lg border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                    leftIcon={<Plus size={13} weight="bold" />}
+                  >
+                    New Offline Session
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
