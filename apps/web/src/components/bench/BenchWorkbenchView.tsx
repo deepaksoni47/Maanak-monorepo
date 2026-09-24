@@ -38,6 +38,7 @@ import { ToleranceSafetyGauge } from "./ToleranceSafetyGauge";
 import { OfficerGuidanceBanner } from "./OfficerGuidanceBanner";
 import { TestBatteryNavigator, FormId, STATUTORY_FORMS } from "./TestBatteryNavigator";
 import { Form2TempDriftCard } from "./Form2TempDriftCard";
+import { Form3EccentricityCard } from "./Form3EccentricityCard";
 import { observationsApi, sessionsApi, instrumentsApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -875,6 +876,24 @@ export function BenchWorkbenchView() {
               }).catch(() => {});
             }}
           />
+        ) : activeForm === "form3" ? (
+          <Form3EccentricityCard
+            maxCapacityKg={selectedInstrument.maxCapacityKg}
+            verificationIntervalKg={selectedInstrument.verificationIntervalKg}
+            accuracyClass={selectedInstrument.accuracyClass}
+            unit={selectedInstrument.verificationInterval?.split(" ")[1] || "kg"}
+            onSavePosition={(pos, res) => {
+              enqueueOfflineObservation({
+                sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
+                stepNumber: pos.positionNumber,
+                nominalLoad: `${pos.appliedLoad} ${pos.unit}`,
+                indication: `${pos.indication} ${pos.unit}`,
+                deltaL: `${pos.deltaL} ${pos.unit}`,
+                turningPointP: `${res.P.toFixed(4)} ${pos.unit}`,
+                errorEc: `${res.Ec.toFixed(4)} ${pos.unit}`,
+              }).catch(() => {});
+            }}
+          />
         ) : (
           <div
             id={`panel-${activeForm}`}
@@ -920,8 +939,6 @@ export function BenchWorkbenchView() {
                 <span>OIML Statutory Test Protocol & Objective</span>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                {activeForm === "form3" &&
-                  "OIML R 76-1 A.4.7: Apply 1/3 Max load sequentially across 4 quadrants and center receptor position. Difference between any corner and center indication must not exceed 1 MPE."}
                 {activeForm === "form4" &&
                   "OIML R 76-1 A.4.8: Discrimination testing at Zero, 1/2 Max, and Max. Extra load of 1.4d must cause an unambiguous change of indication."}
                 {activeForm === "form5" &&

@@ -11,6 +11,10 @@ import {
   Form2TempDriftCard,
   computeForm2StepResult,
   DEFAULT_FORM2_STEPS,
+  Form3EccentricityCard,
+  computeEccentricityPositionResult,
+  getTable6MpeForLoad,
+  POSITION_DEFINITIONS,
 } from "./index";
 
 describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
@@ -337,6 +341,93 @@ describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
       assert.ok(html.includes("Observed Zero Indication"));
       assert.ok(html.includes("Vernier Added Load"));
 
+      assert.ok(html.includes("PASS"));
+      assert.ok(html.includes("Save &amp; Advance") || html.includes("Save & Advance"));
+    });
+  });
+
+  describe("TASK-073: Form 3 Eccentricity & Corner Load 5-Position Receptor", () => {
+    test("computes Table 6 MPE brackets for 1/3 Max eccentricity loads", () => {
+      assert.equal(getTable6MpeForLoad(2.0, 0.005, "CLASS_III"), 0.0025);
+      assert.equal(getTable6MpeForLoad(5.0, 0.005, "CLASS_III"), 0.005);
+      assert.equal(getTable6MpeForLoad(12.0, 0.005, "CLASS_III"), 0.0075);
+    });
+
+    test("computes turning point P, Ec, and evaluates corner-to-center spread", () => {
+      const centerData = {
+        positionNumber: 1,
+        label: "Position 1: Center",
+        quadrantName: "Center Receptor",
+        appliedLoad: 5.0,
+        indication: 5.0,
+        deltaL: 0.0025,
+        eVal: 0.005,
+        e0: 0.0,
+        unit: "kg",
+      };
+      const centerRes = computeEccentricityPositionResult(centerData);
+      assert.equal(centerRes.P, 5.0);
+      assert.equal(centerRes.Ec, 0.0);
+      assert.equal(centerRes.isCompliant, true);
+
+      const cornerData = {
+        positionNumber: 2,
+        label: "Position 2: Front-Left",
+        quadrantName: "Quadrant 1 (FL)",
+        appliedLoad: 5.0,
+        indication: 5.003,
+        deltaL: 0.0025,
+        eVal: 0.005,
+        e0: 0.0,
+        unit: "kg",
+      };
+      const cornerRes = computeEccentricityPositionResult(cornerData, centerRes.Ec, "CLASS_III");
+      assert.equal(cornerRes.P, 5.003);
+      assert.equal(cornerRes.Ec, 0.003);
+      assert.equal(cornerRes.isCompliant, true);
+      assert.equal(cornerRes.spreadToCenter, 0.003);
+      assert.equal(cornerRes.isSpreadCompliant, true);
+    });
+
+    test("flags violation when corner load error exceeds Table 6 MPE limit", () => {
+      const failingCorner = {
+        positionNumber: 3,
+        label: "Position 3: Front-Right",
+        quadrantName: "Quadrant 2 (FR)",
+        appliedLoad: 5.0,
+        indication: 5.008,
+        deltaL: 0.0025,
+        eVal: 0.005,
+        e0: 0.0,
+        unit: "kg",
+      };
+      const cornerRes = computeEccentricityPositionResult(failingCorner, 0.0, "CLASS_III");
+      assert.equal(cornerRes.isCompliant, false);
+      assert.equal(cornerRes.isSpreadCompliant, false);
+    });
+
+    test("renders Form3EccentricityCard UI with all 5 pan positions and 1/3 Max load", () => {
+      const html = renderToStaticMarkup(
+        <Form3EccentricityCard
+          maxCapacityKg={15}
+          verificationIntervalKg={0.005}
+          accuracyClass="CLASS_III"
+          unit="kg"
+        />
+      );
+
+      assert.ok(html.includes("Form 3: Eccentricity"));
+      assert.ok(html.includes("Clause A.4.7"));
+      assert.ok(html.includes("1/3 Max = 5 kg") || html.includes("5.000") || html.includes("5 kg"));
+
+      assert.ok(html.includes("#1") && html.includes("Center"));
+      assert.ok(html.includes("#2") && html.includes("Q1"));
+      assert.ok(html.includes("#3") && html.includes("Q2"));
+      assert.ok(html.includes("#4") && html.includes("Q3"));
+      assert.ok(html.includes("#5") && html.includes("Q4"));
+
+      assert.ok(html.includes("Scale Indication"));
+      assert.ok(html.includes("Vernier Added Load"));
       assert.ok(html.includes("PASS"));
       assert.ok(html.includes("Save &amp; Advance") || html.includes("Save & Advance"));
     });
