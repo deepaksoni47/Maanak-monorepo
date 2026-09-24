@@ -490,6 +490,15 @@ export function createSessionsRouter(
           return;
         }
 
+        // Statutory WORM immutability lock: APPROVED_LOCKED sessions cannot be altered by any role
+        if (session.status === "APPROVED_LOCKED") {
+          res.status(403).json({
+            error: "SESSION_IMMUTABLE_LOCKED",
+            message: `Test session "${id}" is statutorily APPROVED_LOCKED (WORM). Session status and metadata cannot be modified under legal metrology compliance rules.`,
+          });
+          return;
+        }
+
         // Validate state transitions
         // Valid transitions:
         // DRAFT -> IN_PROGRESS, CANCELLED
@@ -604,6 +613,105 @@ export function createSessionsRouter(
         res.status(200).json({
           message: `Session status updated to "${nextStatus}".`,
           session: updated,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // 6. PATCH /api/v1/sessions/:id - Update session metadata (WORM enforced)
+  // ---------------------------------------------------------------------------
+  router.patch(
+    "/:id",
+    requireAuth,
+    requireRole([Role.INSPECTOR, Role.ADMIN]),
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params;
+
+        const session = await db.testSession.findUnique({
+          where: { id },
+        });
+
+        if (!session) {
+          res.status(404).json({
+            error: "NOT_FOUND",
+            message: `Test session with ID "${id}" not found.`,
+          });
+          return;
+        }
+
+        if (session.status === "APPROVED_LOCKED") {
+          res.status(403).json({
+            error: "SESSION_IMMUTABLE_LOCKED",
+            message: `Test session "${id}" is statutorily APPROVED_LOCKED (WORM). Modifying session metadata is strictly prohibited under legal metrology compliance rules.`,
+          });
+          return;
+        }
+
+        const allowedUpdates = ["deviceId", "localId"];
+        const updateData: any = {};
+        for (const key of allowedUpdates) {
+          if (req.body[key] !== undefined) {
+            updateData[key] = req.body[key];
+          }
+        }
+
+        const updated = await db.testSession.update({
+          where: { id },
+          data: updateData,
+        });
+
+        res.status(200).json({
+          message: "Session metadata updated successfully.",
+          session: updated,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // 7. DELETE /api/v1/sessions/:id - Delete session (WORM enforced)
+  // ---------------------------------------------------------------------------
+  router.delete(
+    "/:id",
+    requireAuth,
+    requireRole([Role.ADMIN]),
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params;
+
+        const session = await db.testSession.findUnique({
+          where: { id },
+        });
+
+        if (!session) {
+          res.status(404).json({
+            error: "NOT_FOUND",
+            message: `Test session with ID "${id}" not found.`,
+          });
+          return;
+        }
+
+        if (session.status === "APPROVED_LOCKED") {
+          res.status(403).json({
+            error: "SESSION_IMMUTABLE_LOCKED",
+            message: `Test session "${id}" is statutorily APPROVED_LOCKED (WORM). Direct deletion of an approved session is strictly prohibited under legal metrology compliance rules.`,
+          });
+          return;
+        }
+
+        await db.testSession.delete({
+          where: { id },
+        });
+
+        res.status(200).json({
+          message: `Test session "${id}" deleted successfully.`,
+          deletedId: id,
         });
       } catch (err) {
         next(err);

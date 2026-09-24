@@ -1,6 +1,28 @@
 import { PrismaClient, Prisma, TestSession, RawObservation, CalculationTraceItem, ReviewAudit } from '@prisma/client';
 import { prisma as defaultPrisma } from './client.js';
 
+export class SessionImmutableLockedError extends Error {
+  readonly code = 'SESSION_IMMUTABLE_LOCKED';
+  readonly statusCode = 403;
+
+  constructor(sessionId: string) {
+    super(
+      `TestSession "${sessionId}" is statutorily APPROVED_LOCKED (WORM). Direct observation additions, modifications, or deletions are strictly prohibited by legal metrology compliance rules.`
+    );
+    this.name = 'SessionImmutableLockedError';
+  }
+}
+
+/**
+ * Asserts that a session is not in statutory APPROVED_LOCKED WORM state.
+ * Throws SessionImmutableLockedError (HTTP 403) if locked.
+ */
+export function assertSessionNotLocked(sessionId: string, status: string): void {
+  if (status === 'APPROVED_LOCKED') {
+    throw new SessionImmutableLockedError(sessionId);
+  }
+}
+
 export interface CreateSessionInput {
   sessionNumber: string;
   laboratoryId: string;
@@ -180,6 +202,8 @@ export async function addObservationWithTrace(
       throw new Error(`TestSession with ID "${data.testSessionId}" does not exist.`);
     }
 
+    assertSessionNotLocked(session.id, session.status);
+
     if (session.status === 'UNDER_REVIEW' || session.status === 'COMPLETED' || session.status === 'LOCKED') {
       throw new Error(
         `Cannot add observation to session in status "${session.status}". Session is locked for modification.`
@@ -299,6 +323,8 @@ export async function lockSessionForReview(
       throw new Error(`TestSession with ID "${sessionId}" does not exist.`);
     }
 
+    assertSessionNotLocked(session.id, session.status);
+
     if (session.status === 'UNDER_REVIEW' || session.status === 'LOCKED') {
       throw new Error(`TestSession is already in "${session.status}" status.`);
     }
@@ -326,3 +352,75 @@ export async function lockSessionForReview(
     return { session: updatedSession, reviewAudit };
   });
 }
+
+/**
+ * Deletes a raw observation and its associated records.
+ * Throws SessionImmutableLockedError (HTTP 403) if the session is APPROVED_LOCKED.
+ */
+export async function deleteObservation(
+  observationId: string,
+  client: PrismaClient = defaultPrisma
+): Promise<RawObservation> {
+  return await client.$transaction(async (tx) => {
+    const obs = await tx.rawObservation.findUnique({
+      where: { id: observationId },
+      include: { testSession: true },
+    });
+
+    if (!obs) {
+      throw new Error(`RawObservation with ID "${observationId}" not found.`);
+    }
+
+    assertSessionNotLocked(obs.testSessionId, obs.testSession.status);
+
+    if (
+      obs.testSession.status === 'UNDER_REVIEW' ||
+      obs.testSession.status === 'COMPLETED' ||
+      obs.testSession.status === 'LOCKED'
+    ) {
+      throw new Error(
+        `Cannot delete observation in session status "${obs.testSession.status}". Session is locked for modification.`
+      );
+    }
+
+    await tx.observationWeightUsed.deleteMany({
+      where: { rawObservationId: observationId },
+    });
+    await tx.calculationTraceItem.deleteMany({
+      where: { rawObservationId: observationId },
+    });
+
+    return await tx.rawObservation.delete({
+      where: { id: observationId },
+    });
+  });
+}
+
+/**
+ * Updates a raw observation record.
+ * Throws SessionImmutableLockedError (HTTP 403) if the session is APPROVED_LOCKED.
+ */
+export async function updateObservation(
+  observationId: string,
+  data: Partial<Prisma.RawObservationUpdateInput>,
+  client: PrismaClient = defaultPrisma
+): Promise<RawObservation> {
+  return await client.$transaction(async (tx) => {
+    const obs = await tx.rawObservation.findUnique({
+      where: { id: observationId },
+      include: { testSession: true },
+    });
+
+    if (!obs) {
+      throw new Error(`RawObservation with ID "${observationId}" not found.`);
+    }
+
+    assertSessionNotLocked(obs.testSessionId, obs.testSession.status);
+
+    return await tx.rawObservation.update({
+      where: { id: observationId },
+      data: data as Prisma.RawObservationUpdateInput,
+    });
+  });
+}
+

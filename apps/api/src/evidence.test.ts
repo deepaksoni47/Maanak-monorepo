@@ -14,15 +14,26 @@ describe("TASK-077 & TASK-078: Evidence Upload API & Provenance Chaining", () =>
   let mockPrisma: any;
   let storedEvidence: any[] = [];
   let storedProvenance: any[] = [];
+  let storedSessions: any[] = [];
 
   const mockSessionId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+  const mockApprovedSessionId = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
   const mockUserId = "usr-insp-001";
 
   beforeEach(() => {
     storedEvidence = [];
     storedProvenance = [];
+    storedSessions = [
+      { id: mockSessionId, status: "IN_PROGRESS" },
+      { id: mockApprovedSessionId, status: "APPROVED_LOCKED" },
+    ];
 
     mockPrisma = {
+      testSession: {
+        findUnique: async ({ where }: any) => {
+          return storedSessions.find((s) => s.id === where.id) || null;
+        },
+      },
       evidenceAttachment: {
         create: async ({ data }: any) => {
           const record = {
@@ -271,6 +282,20 @@ describe("TASK-077 & TASK-078: Evidence Upload API & Provenance Chaining", () =>
     // Since derivation or node hash was modified, chain is detected as tampered
     assert.equal(tamperedValidation.valid, false);
     assert.equal(tamperedValidation.failureReason, "HASH_LINK_MISMATCH");
+  });
+
+  it("TASK-082: rejects evidence upload on APPROVED_LOCKED session with 403 SESSION_IMMUTABLE_LOCKED", async () => {
+    const photo = Buffer.from("attempt_evidence_on_locked_session");
+
+    const res = await request(app)
+      .post("/api/v1/evidence/upload")
+      .field("testSessionId", mockApprovedSessionId)
+      .field("category", "NAMEPLATE_PHOTO")
+      .attach("file", photo, { filename: "photo.png", contentType: "image/png" });
+
+    assert.equal(res.status, 403);
+    assert.equal(res.body.error, "SESSION_IMMUTABLE_LOCKED");
+    assert.ok(res.body.message.includes("statutorily APPROVED_LOCKED (WORM)"));
   });
 });
 

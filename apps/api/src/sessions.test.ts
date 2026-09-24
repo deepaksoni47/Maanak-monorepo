@@ -230,6 +230,12 @@ describe("TASK-042: Test Session & Dynamic Plan Routes (/api/v1/sessions)", () =
           };
           return storedSessions[idx];
         },
+        delete: async (args: any) => {
+          const idx = storedSessions.findIndex((s) => s.id === args.where.id);
+          if (idx === -1) throw new Error("Session not found");
+          const [deleted] = storedSessions.splice(idx, 1);
+          return deleted;
+        },
       },
       reviewAudit: {
         create: async (args: any) => {
@@ -634,6 +640,77 @@ describe("TASK-042: Test Session & Dynamic Plan Routes (/api/v1/sessions)", () =
       assert.equal(resApproved.status, 200);
       assert.equal(resApproved.body.session.status, "APPROVED_LOCKED");
       assert.ok(resApproved.body.session.completedAt);
+    });
+  });
+
+  describe("TASK-082: WORM Immutability Lock on APPROVED_LOCKED Sessions", () => {
+    let approvedSessionId: string;
+
+    beforeEach(async () => {
+      const res = await request(app)
+        .post("/api/v1/sessions")
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({
+          instrumentUnitId: "44444444-4444-4444-4444-444444444444",
+          sessionNumber: "SES-WORM-TEST",
+        });
+      approvedSessionId = res.body.session.id;
+
+      // Fast-track transition to APPROVED_LOCKED
+      await request(app)
+        .patch(`/api/v1/sessions/${approvedSessionId}/status`)
+        .set("Authorization", `Bearer ${adminTokens.accessToken}`)
+        .send({ status: "APPROVED_LOCKED" });
+    });
+
+    it("rejects PATCH /status from APPROVED_LOCKED to another status with 403 SESSION_IMMUTABLE_LOCKED (even for ADMIN)", async () => {
+      const res = await request(app)
+        .patch(`/api/v1/sessions/${approvedSessionId}/status`)
+        .set("Authorization", `Bearer ${adminTokens.accessToken}`)
+        .send({ status: "IN_PROGRESS" });
+
+      assert.equal(res.status, 403);
+      assert.equal(res.body.error, "SESSION_IMMUTABLE_LOCKED");
+      assert.ok(res.body.message.includes("APPROVED_LOCKED (WORM)"));
+    });
+
+    it("rejects PATCH metadata on APPROVED_LOCKED session with 403 SESSION_IMMUTABLE_LOCKED", async () => {
+      const res = await request(app)
+        .patch(`/api/v1/sessions/${approvedSessionId}`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({ deviceId: "HACKED_DEVICE_ID" });
+
+      assert.equal(res.status, 403);
+      assert.equal(res.body.error, "SESSION_IMMUTABLE_LOCKED");
+      assert.ok(res.body.message.includes("APPROVED_LOCKED (WORM)"));
+    });
+
+    it("rejects DELETE on APPROVED_LOCKED session with 403 SESSION_IMMUTABLE_LOCKED (even for ADMIN)", async () => {
+      const res = await request(app)
+        .delete(`/api/v1/sessions/${approvedSessionId}`)
+        .set("Authorization", `Bearer ${adminTokens.accessToken}`);
+
+      assert.equal(res.status, 403);
+      assert.equal(res.body.error, "SESSION_IMMUTABLE_LOCKED");
+      assert.ok(res.body.message.includes("APPROVED_LOCKED (WORM)"));
+    });
+
+    it("allows DELETE on DRAFT session for ADMIN", async () => {
+      const draftRes = await request(app)
+        .post("/api/v1/sessions")
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({
+          instrumentUnitId: "44444444-4444-4444-4444-444444444444",
+          sessionNumber: "SES-DELETE-TEST",
+        });
+      const draftId = draftRes.body.session.id;
+
+      const delRes = await request(app)
+        .delete(`/api/v1/sessions/${draftId}`)
+        .set("Authorization", `Bearer ${adminTokens.accessToken}`);
+
+      assert.equal(delRes.status, 200);
+      assert.equal(delRes.body.deletedId, draftId);
     });
   });
 });

@@ -23,6 +23,7 @@ describe("TASK-043: Raw Observation Entry & Real-Time Math API (/api/v1/observat
   const mockOfficerId = "usr-insp-001";
   const mockSessionId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
   const mockLockedSessionId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+  const mockApprovedSessionId = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
   const mockMultiSessionId = "dddddddd-dddd-dddd-dddd-dddddddddddd";
   const mockUnitId = "44444444-4444-4444-4444-444444444444";
   const mockCertId = "cccccccc-cccc-cccc-cccc-cccccccccccc";
@@ -162,6 +163,18 @@ describe("TASK-043: Raw Observation Entry & Real-Time Math API (/api/v1/observat
         instrumentUnit: storedUnits[1],
         testPlan: storedPlans[0],
       },
+      {
+        id: mockApprovedSessionId,
+        sessionNumber: "SES-2026-APPROVED-LOCKED",
+        laboratoryId: mockLabId,
+        instrumentUnitId: mockUnitId,
+        testPlanId: storedPlans[0].id,
+        rulePackVersionId: "rp-ver-001",
+        testingOfficerId: mockOfficerId,
+        status: "APPROVED_LOCKED",
+        instrumentUnit: storedUnits[0],
+        testPlan: storedPlans[0],
+      },
     ];
 
     storedObservations = [];
@@ -225,6 +238,27 @@ describe("TASK-043: Raw Observation Entry & Real-Time Math API (/api/v1/observat
           storedObservations.push(record);
           return record;
         },
+        findUnique: async (args: any) => {
+          const obs = storedObservations.find((o) => o.id === args.where.id);
+          if (!obs) return null;
+          const session = storedSessions.find((s) => s.id === obs.testSessionId);
+          return {
+            ...obs,
+            testSession: session,
+          };
+        },
+        update: async (args: any) => {
+          const obs = storedObservations.find((o) => o.id === args.where.id);
+          if (!obs) throw new Error("Observation not found");
+          Object.assign(obs, args.data);
+          return obs;
+        },
+        delete: async (args: any) => {
+          const idx = storedObservations.findIndex((o) => o.id === args.where.id);
+          if (idx === -1) throw new Error("Observation not found");
+          const [deleted] = storedObservations.splice(idx, 1);
+          return deleted;
+        },
       },
       observationWeightUsed: {
         createMany: async (args: any) => {
@@ -232,6 +266,10 @@ describe("TASK-043: Raw Observation Entry & Real-Time Math API (/api/v1/observat
             storedWeightsUsed.push({ id: `wused-${Date.now()}`, ...item });
           }
           return { count: args.data.length };
+        },
+        deleteMany: async (args: any) => {
+          storedWeightsUsed = storedWeightsUsed.filter((w) => w.rawObservationId !== args.where.rawObservationId);
+          return { count: 1 };
         },
       },
       calculationRun: {
@@ -267,6 +305,10 @@ describe("TASK-043: Raw Observation Entry & Real-Time Math API (/api/v1/observat
           };
           storedTraceItems.push(record);
           return record;
+        },
+        deleteMany: async (args: any) => {
+          storedTraceItems = storedTraceItems.filter((t) => t.rawObservationId !== args.where.rawObservationId);
+          return { count: 1 };
         },
       },
       provenanceNode: {
@@ -571,6 +613,100 @@ describe("TASK-043: Raw Observation Entry & Real-Time Math API (/api/v1/observat
 
       assert.equal(noMatch.status, 200);
       assert.equal(noMatch.body.count, 0);
+    });
+  });
+
+  describe("TASK-082: WORM Immutability Lock on APPROVED_LOCKED Observations", () => {
+    it("POST /api/v1/observations rejects observation creation on APPROVED_LOCKED session with 403 SESSION_IMMUTABLE_LOCKED", async () => {
+      const res = await request(app)
+        .post("/api/v1/observations")
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({
+          testSessionId: mockApprovedSessionId,
+          targetLoadL: "2.5",
+          displayedIndicationI: "2.5",
+          changeoverWeightDl: "0.002",
+        });
+
+      assert.equal(res.status, 403);
+      assert.equal(res.body.error, "SESSION_IMMUTABLE_LOCKED");
+      assert.ok(res.body.message.includes("statutorily APPROVED_LOCKED (WORM)"));
+    });
+
+    it("DELETE /api/v1/observations/:id rejects deletion of observation on APPROVED_LOCKED session with 403 SESSION_IMMUTABLE_LOCKED", async () => {
+      // First create observation in storedObservations belonging to approved session
+      const obsId = "obs-locked-1";
+      storedObservations.push({
+        id: obsId,
+        testSessionId: mockApprovedSessionId,
+        testPlanItemId: storedPlans[0].items[0].id,
+        sequenceNumber: 1,
+        testClause: "A.4.4",
+        loadRunDirection: "ASCENDING",
+        targetLoadL: new Prisma.Decimal("2.5"),
+        displayedIndicationI: new Prisma.Decimal("2.5"),
+        changeoverWeightDl: new Prisma.Decimal("0.0"),
+        zeroIndicationI0: new Prisma.Decimal("0.0"),
+        recordedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .delete(`/api/v1/observations/${obsId}`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`);
+
+      assert.equal(res.status, 403);
+      assert.equal(res.body.error, "SESSION_IMMUTABLE_LOCKED");
+      assert.ok(res.body.message.includes("statutorily APPROVED_LOCKED (WORM)"));
+    });
+
+    it("PATCH /api/v1/observations/:id rejects modification of observation on APPROVED_LOCKED session with 403 SESSION_IMMUTABLE_LOCKED", async () => {
+      const obsId = "obs-locked-2";
+      storedObservations.push({
+        id: obsId,
+        testSessionId: mockApprovedSessionId,
+        testPlanItemId: storedPlans[0].items[0].id,
+        sequenceNumber: 2,
+        testClause: "A.4.4",
+        loadRunDirection: "ASCENDING",
+        targetLoadL: new Prisma.Decimal("5.0"),
+        displayedIndicationI: new Prisma.Decimal("5.0"),
+        changeoverWeightDl: new Prisma.Decimal("0.0"),
+        zeroIndicationI0: new Prisma.Decimal("0.0"),
+        recordedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .patch(`/api/v1/observations/${obsId}`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({ displayedIndicationI: "5.005" });
+
+      assert.equal(res.status, 403);
+      assert.equal(res.body.error, "SESSION_IMMUTABLE_LOCKED");
+      assert.ok(res.body.message.includes("statutorily APPROVED_LOCKED (WORM)"));
+    });
+
+    it("DELETE /api/v1/observations/:id succeeds on active DRAFT session", async () => {
+      const obsId = "obs-active-draft";
+      storedObservations.push({
+        id: obsId,
+        testSessionId: mockSessionId,
+        testPlanItemId: storedPlans[0].items[0].id,
+        sequenceNumber: 99,
+        testClause: "A.4.4",
+        loadRunDirection: "ASCENDING",
+        targetLoadL: new Prisma.Decimal("1.0"),
+        displayedIndicationI: new Prisma.Decimal("1.0"),
+        changeoverWeightDl: new Prisma.Decimal("0.0"),
+        zeroIndicationI0: new Prisma.Decimal("0.0"),
+        recordedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .delete(`/api/v1/observations/${obsId}`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`);
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.deletedId, obsId);
     });
   });
 });

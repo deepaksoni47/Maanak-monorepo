@@ -6,6 +6,10 @@ import {
   addObservationWithTrace,
   getSessionWithDetails,
   lockSessionForReview,
+  deleteObservation,
+  updateObservation,
+  assertSessionNotLocked,
+  SessionImmutableLockedError,
   sessionWithDetailsInclude,
 } from './repository.js';
 import { prisma as singletonPrisma, DB_VERSION } from './index.js';
@@ -321,4 +325,157 @@ describe('TASK-028: Database Client & Repository Wrapper', () => {
       assert.deepEqual(reviewAuditData.automatedAnomalyFlagsJson, [{ code: 'NONE_DETECTED' }]);
     });
   });
+
+  describe('TASK-082: Database Immutability WORM Lock on APPROVED_LOCKED', () => {
+    it('assertSessionNotLocked throws SessionImmutableLockedError when status is APPROVED_LOCKED', () => {
+      assert.throws(
+        () => assertSessionNotLocked('session-locked-1', 'APPROVED_LOCKED'),
+        (err: any) => {
+          assert.equal(err.name, 'SessionImmutableLockedError');
+          assert.equal(err.code, 'SESSION_IMMUTABLE_LOCKED');
+          assert.equal(err.statusCode, 403);
+          return true;
+        }
+      );
+    });
+
+    it('assertSessionNotLocked passes without error for mutable statuses', () => {
+      assert.doesNotThrow(() => assertSessionNotLocked('s1', 'DRAFT'));
+      assert.doesNotThrow(() => assertSessionNotLocked('s2', 'IN_PROGRESS'));
+      assert.doesNotThrow(() => assertSessionNotLocked('s3', 'OBSERVATION_COMPLETE'));
+      assert.doesNotThrow(() => assertSessionNotLocked('s4', 'RETURNED_TO_OFFICER'));
+    });
+
+    it('throws SessionImmutableLockedError when adding observation to APPROVED_LOCKED session', async () => {
+      const mockClient = {
+        $transaction: async (fn: any) =>
+          fn({
+            testSession: {
+              findUnique: async () => ({
+                id: 'session-approved-locked',
+                status: 'APPROVED_LOCKED',
+                rulePackVersionId: 'rule-pack-1',
+                testingOfficerId: 'officer-1',
+              }),
+            },
+          }),
+      } as unknown as PrismaClient;
+
+      await assert.rejects(
+        async () => {
+          await addObservationWithTrace(
+            {
+              testSessionId: 'session-approved-locked',
+              testPlanItemId: 'plan-item-1',
+              sequenceNumber: 1,
+              testClause: 'A.4.4',
+              loadRunDirection: 'ASCENDING',
+              targetLoadL: '2.50000000',
+              displayedIndicationI: '2.50000000',
+            },
+            mockClient
+          );
+        },
+        (err: any) => {
+          assert.equal(err.name, 'SessionImmutableLockedError');
+          assert.equal(err.code, 'SESSION_IMMUTABLE_LOCKED');
+          assert.equal(err.statusCode, 403);
+          return true;
+        }
+      );
+    });
+
+    it('throws SessionImmutableLockedError when locking an APPROVED_LOCKED session', async () => {
+      const mockClient = {
+        $transaction: async (fn: any) =>
+          fn({
+            testSession: {
+              findUnique: async () => ({
+                id: 'session-already-approved',
+                status: 'APPROVED_LOCKED',
+              }),
+            },
+          }),
+      } as unknown as PrismaClient;
+
+      await assert.rejects(
+        async () => {
+          await lockSessionForReview(
+            'session-already-approved',
+            'reviewer-1',
+            'Attempt re-lock',
+            [],
+            mockClient
+          );
+        },
+        (err: any) => {
+          assert.equal(err.name, 'SessionImmutableLockedError');
+          assert.equal(err.code, 'SESSION_IMMUTABLE_LOCKED');
+          assert.equal(err.statusCode, 403);
+          return true;
+        }
+      );
+    });
+
+    it('throws SessionImmutableLockedError when deleting observation from APPROVED_LOCKED session', async () => {
+      const mockClient = {
+        $transaction: async (fn: any) =>
+          fn({
+            rawObservation: {
+              findUnique: async () => ({
+                id: 'obs-to-delete',
+                testSessionId: 'session-approved-worm',
+                testSession: {
+                  id: 'session-approved-worm',
+                  status: 'APPROVED_LOCKED',
+                },
+              }),
+            },
+          }),
+      } as unknown as PrismaClient;
+
+      await assert.rejects(
+        async () => {
+          await deleteObservation('obs-to-delete', mockClient);
+        },
+        (err: any) => {
+          assert.equal(err.name, 'SessionImmutableLockedError');
+          assert.equal(err.code, 'SESSION_IMMUTABLE_LOCKED');
+          assert.equal(err.statusCode, 403);
+          return true;
+        }
+      );
+    });
+
+    it('throws SessionImmutableLockedError when updating observation on APPROVED_LOCKED session', async () => {
+      const mockClient = {
+        $transaction: async (fn: any) =>
+          fn({
+            rawObservation: {
+              findUnique: async () => ({
+                id: 'obs-to-update',
+                testSessionId: 'session-approved-worm',
+                testSession: {
+                  id: 'session-approved-worm',
+                  status: 'APPROVED_LOCKED',
+                },
+              }),
+            },
+          }),
+      } as unknown as PrismaClient;
+
+      await assert.rejects(
+        async () => {
+          await updateObservation('obs-to-update', { displayedIndicationI: new Prisma.Decimal('5.0') }, mockClient);
+        },
+        (err: any) => {
+          assert.equal(err.name, 'SessionImmutableLockedError');
+          assert.equal(err.code, 'SESSION_IMMUTABLE_LOCKED');
+          assert.equal(err.statusCode, 403);
+          return true;
+        }
+      );
+    });
+  });
 });
+

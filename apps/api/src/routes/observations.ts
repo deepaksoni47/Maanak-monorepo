@@ -111,7 +111,15 @@ export function createObservationsRouter(
           return;
         }
 
-        // Check lock status
+        // Check WORM immutability lock status
+        if (session.status === "APPROVED_LOCKED") {
+          res.status(403).json({
+            error: "SESSION_IMMUTABLE_LOCKED",
+            message: `Test session "${session.id}" is statutorily APPROVED_LOCKED (WORM). Direct observation additions, modifications, or deletions are strictly prohibited by legal metrology compliance rules.`,
+          });
+          return;
+        }
+
         if (
           session.status === "UNDER_REVIEW" ||
           session.status === "COMPLETED" ||
@@ -545,6 +553,131 @@ export function createObservationsRouter(
           pass: compliance.pass,
           ratioToMpe: compliance.ratioToMpe,
           percentageOfMpe: compliance.percentageOfMpe,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // 4. DELETE /api/v1/observations/:id - Delete observation (WORM enforced)
+  // ---------------------------------------------------------------------------
+  router.delete(
+    "/:id",
+    requireAuth,
+    requireRole([Role.INSPECTOR, Role.ADMIN]),
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params;
+
+        const obs = await db.rawObservation.findUnique({
+          where: { id },
+          include: { testSession: true },
+        });
+
+        if (!obs) {
+          res.status(404).json({
+            error: "NOT_FOUND",
+            message: `Observation with ID "${id}" not found.`,
+          });
+          return;
+        }
+
+        if (obs.testSession.status === "APPROVED_LOCKED") {
+          res.status(403).json({
+            error: "SESSION_IMMUTABLE_LOCKED",
+            message: `Test session "${obs.testSessionId}" is statutorily APPROVED_LOCKED (WORM). Direct observation additions, modifications, or deletions are strictly prohibited by legal metrology compliance rules.`,
+          });
+          return;
+        }
+
+        if (
+          obs.testSession.status === "UNDER_REVIEW" ||
+          obs.testSession.status === "COMPLETED" ||
+          obs.testSession.status === "LOCKED"
+        ) {
+          res.status(400).json({
+            error: "SESSION_LOCKED",
+            message: `Cannot delete observation in session status "${obs.testSession.status}". Session is locked for modification.`,
+          });
+          return;
+        }
+
+        await db.$transaction(async (tx) => {
+          await tx.observationWeightUsed.deleteMany({
+            where: { rawObservationId: id },
+          });
+          await tx.calculationTraceItem.deleteMany({
+            where: { rawObservationId: id },
+          });
+          await tx.rawObservation.delete({
+            where: { id },
+          });
+        });
+
+        res.status(200).json({
+          message: "Observation deleted successfully.",
+          deletedId: id,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // 5. PATCH /api/v1/observations/:id - Modify observation (WORM enforced)
+  // ---------------------------------------------------------------------------
+  router.patch(
+    "/:id",
+    requireAuth,
+    requireRole([Role.INSPECTOR, Role.ADMIN]),
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params;
+
+        const obs = await db.rawObservation.findUnique({
+          where: { id },
+          include: { testSession: true },
+        });
+
+        if (!obs) {
+          res.status(404).json({
+            error: "NOT_FOUND",
+            message: `Observation with ID "${id}" not found.`,
+          });
+          return;
+        }
+
+        if (obs.testSession.status === "APPROVED_LOCKED") {
+          res.status(403).json({
+            error: "SESSION_IMMUTABLE_LOCKED",
+            message: `Test session "${obs.testSessionId}" is statutorily APPROVED_LOCKED (WORM). Direct observation additions, modifications, or deletions are strictly prohibited by legal metrology compliance rules.`,
+          });
+          return;
+        }
+
+        if (
+          obs.testSession.status === "UNDER_REVIEW" ||
+          obs.testSession.status === "COMPLETED" ||
+          obs.testSession.status === "LOCKED"
+        ) {
+          res.status(400).json({
+            error: "SESSION_LOCKED",
+            message: `Cannot modify observation in session status "${obs.testSession.status}". Session is locked for modification.`,
+          });
+          return;
+        }
+
+        const updated = await db.rawObservation.update({
+          where: { id },
+          data: req.body,
+        });
+
+        res.status(200).json({
+          message: "Observation updated successfully.",
+          observation: updated,
         });
       } catch (err) {
         next(err);
