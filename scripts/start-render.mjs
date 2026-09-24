@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
@@ -27,16 +28,24 @@ apiProcess.on('error', (err) => {
   console.error('[MAANAK] Backend API process error:', err);
 });
 
-console.log(`[MAANAK] Booting Next.js Frontend on public port ${webPort}...`);
-const nextCliPath = path.join(rootDir, 'node_modules/next/dist/bin/next');
+// Resolve Next.js binary via apps/web require context for pnpm monorepo compatibility
+const webRequire = createRequire(path.join(rootDir, 'apps/web/package.json'));
+let nextCliPath;
+try {
+  nextCliPath = webRequire.resolve('next/dist/bin/next');
+} catch {
+  nextCliPath = 'next';
+}
+
+console.log(`[MAANAK] Booting Next.js Frontend on public port ${webPort} using ${nextCliPath}...`);
 const webProcess = spawn(
   process.execPath,
-  [nextCliPath, 'start', path.join(rootDir, 'apps/web'), '-p', webPort],
+  [nextCliPath, 'start', path.join(rootDir, 'apps/web'), '-p', String(webPort)],
   {
     cwd: path.join(rootDir, 'apps/web'),
     env: {
       ...process.env,
-      PORT: webPort,
+      PORT: String(webPort),
       INTERNAL_API_URL: `http://127.0.0.1:${internalApiPort}`,
     },
     stdio: 'inherit',
