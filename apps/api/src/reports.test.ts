@@ -703,4 +703,270 @@ describe("TASK-045: Report Generation & PKI Signing Routes (/api/v1/reports)", (
       assert.equal(res.body.error, "SESSION_IMMUTABLE_LOCKED");
     });
   });
+
+  // -------------------------------------------------------------------------
+  // 6. TASK-088: Live Database Observations Binding for Forms 2–6
+  // -------------------------------------------------------------------------
+  describe("TASK-088: Live Database Observations Binding for Forms 2-6 in Report Compiler", () => {
+    const multiFormSessionId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+
+    beforeEach(() => {
+      // Add multi-form test session with live observations across Clauses A.5.3.2, A.4.7, A.4.8, A.4.10, A.4.11
+      const multiFormSession = {
+        id: multiFormSessionId,
+        sessionNumber: "DEL-2026-0088",
+        status: "COMPLETED",
+        laboratoryId: mockLabId,
+        laboratory: storedSessions[0].laboratory,
+        testingOfficer: storedSessions[0].testingOfficer,
+        instrumentUnit: storedSessions[0].instrumentUnit,
+        environmentalLogs: [
+          {
+            temperatureC: new Prisma.Decimal("20.00"),
+            relativeHumidityPercent: new Prisma.Decimal("50.00"),
+            barometricPressureHpa: new Prisma.Decimal("1013.25"),
+            loggedAt: new Date("2026-09-24T08:00:00Z"),
+          },
+          {
+            temperatureC: new Prisma.Decimal("23.00"),
+            relativeHumidityPercent: new Prisma.Decimal("52.00"),
+            barometricPressureHpa: new Prisma.Decimal("1013.00"),
+            loggedAt: new Date("2026-09-24T10:00:00Z"), // 3.0°C over 2h = 1.5°C/h (< 5.0°C/h)
+          },
+        ],
+        rawObservations: [
+          // Form 1: Clause A.4.4
+          {
+            id: "obs-f1-1",
+            sequenceNumber: 1,
+            testClause: "A.4.4",
+            targetLoadL: new Prisma.Decimal("0.0000"),
+            displayedIndicationI: new Prisma.Decimal("0.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0025"),
+          },
+          {
+            id: "obs-f1-2",
+            sequenceNumber: 2,
+            testClause: "A.4.4",
+            targetLoadL: new Prisma.Decimal("15.0000"),
+            displayedIndicationI: new Prisma.Decimal("15.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0025"),
+          },
+
+          // Form 2: Clause A.5.3.2 (Temperature drift on zero load)
+          {
+            id: "obs-f2-1",
+            sequenceNumber: 3,
+            testClause: "A.5.3.2",
+            targetLoadL: new Prisma.Decimal("0.0000"),
+            displayedIndicationI: new Prisma.Decimal("0.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0025"),
+          },
+          {
+            id: "obs-f2-2",
+            sequenceNumber: 4,
+            testClause: "A.5.3.2",
+            targetLoadL: new Prisma.Decimal("0.0000"),
+            displayedIndicationI: new Prisma.Decimal("0.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0020"),
+          },
+
+          // Form 3: Clause A.4.7 (Eccentricity 5 positions)
+          {
+            id: "obs-f3-1",
+            sequenceNumber: 5,
+            testClause: "A.4.7",
+            eccentricityPosition: 1, // Center
+            targetLoadL: new Prisma.Decimal("5.0000"),
+            displayedIndicationI: new Prisma.Decimal("5.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0025"),
+          },
+          {
+            id: "obs-f3-2",
+            sequenceNumber: 6,
+            testClause: "A.4.7",
+            eccentricityPosition: 2, // Front-Left
+            targetLoadL: new Prisma.Decimal("5.0000"),
+            displayedIndicationI: new Prisma.Decimal("5.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0020"),
+          },
+          {
+            id: "obs-f3-3",
+            sequenceNumber: 7,
+            testClause: "A.4.7",
+            eccentricityPosition: 3, // Back-Left
+            targetLoadL: new Prisma.Decimal("5.0000"),
+            displayedIndicationI: new Prisma.Decimal("5.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0030"),
+          },
+          {
+            id: "obs-f3-4",
+            sequenceNumber: 8,
+            testClause: "A.4.7",
+            eccentricityPosition: 4, // Back-Right
+            targetLoadL: new Prisma.Decimal("5.0000"),
+            displayedIndicationI: new Prisma.Decimal("5.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0025"),
+          },
+          {
+            id: "obs-f3-5",
+            sequenceNumber: 9,
+            testClause: "A.4.7",
+            eccentricityPosition: 5, // Front-Right
+            targetLoadL: new Prisma.Decimal("5.0000"),
+            displayedIndicationI: new Prisma.Decimal("5.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0025"),
+          },
+
+          // Form 4: Clause A.4.8 (Discrimination test at 3 points)
+          {
+            id: "obs-f4-1",
+            sequenceNumber: 10,
+            testClause: "A.4.8",
+            targetLoadL: new Prisma.Decimal("0.1000"),
+            displayedIndicationI: new Prisma.Decimal("0.1000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0014"), // 1.4d
+          },
+          {
+            id: "obs-f4-2",
+            sequenceNumber: 11,
+            testClause: "A.4.8",
+            targetLoadL: new Prisma.Decimal("7.5000"),
+            displayedIndicationI: new Prisma.Decimal("7.5000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0014"),
+          },
+          {
+            id: "obs-f4-3",
+            sequenceNumber: 12,
+            testClause: "A.4.8",
+            targetLoadL: new Prisma.Decimal("15.0000"),
+            displayedIndicationI: new Prisma.Decimal("15.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0014"),
+          },
+
+          // Form 5: Clause A.4.10 (Repeatability runs)
+          {
+            id: "obs-f5-1",
+            sequenceNumber: 13,
+            testClause: "A.4.10",
+            targetLoadL: new Prisma.Decimal("7.5000"),
+            displayedIndicationI: new Prisma.Decimal("7.5000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0025"),
+          },
+          {
+            id: "obs-f5-2",
+            sequenceNumber: 14,
+            testClause: "A.4.10",
+            targetLoadL: new Prisma.Decimal("7.5000"),
+            displayedIndicationI: new Prisma.Decimal("7.5000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0020"),
+          },
+          {
+            id: "obs-f5-3",
+            sequenceNumber: 15,
+            testClause: "A.4.10",
+            targetLoadL: new Prisma.Decimal("15.0000"),
+            displayedIndicationI: new Prisma.Decimal("15.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0025"),
+          },
+          {
+            id: "obs-f5-4",
+            sequenceNumber: 16,
+            testClause: "A.4.10",
+            targetLoadL: new Prisma.Decimal("15.0000"),
+            displayedIndicationI: new Prisma.Decimal("15.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0020"),
+          },
+
+          // Form 6: Clause A.4.11 (Creep & Zero return timed readings)
+          {
+            id: "obs-f6-1",
+            sequenceNumber: 17,
+            testClause: "A.4.11",
+            targetLoadL: new Prisma.Decimal("15.0000"),
+            displayedIndicationI: new Prisma.Decimal("15.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0025"),
+            elapsedTimeMinutes: new Prisma.Decimal("0.0"),
+          },
+          {
+            id: "obs-f6-2",
+            sequenceNumber: 18,
+            testClause: "A.4.11",
+            targetLoadL: new Prisma.Decimal("15.0000"),
+            displayedIndicationI: new Prisma.Decimal("15.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0023"),
+            elapsedTimeMinutes: new Prisma.Decimal("15.0"),
+          },
+          {
+            id: "obs-f6-3",
+            sequenceNumber: 19,
+            testClause: "A.4.11",
+            targetLoadL: new Prisma.Decimal("15.0000"),
+            displayedIndicationI: new Prisma.Decimal("15.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0022"),
+            elapsedTimeMinutes: new Prisma.Decimal("30.0"),
+          },
+          {
+            id: "obs-f6-4",
+            sequenceNumber: 20,
+            testClause: "A.4.11",
+            targetLoadL: new Prisma.Decimal("0.0000"),
+            displayedIndicationI: new Prisma.Decimal("0.0000"),
+            changeoverWeightDl: new Prisma.Decimal("0.0025"),
+            elapsedTimeMinutes: new Prisma.Decimal("30.5"),
+          },
+        ],
+        calculationRuns: [],
+        reports: [],
+      };
+
+      storedSessions.push(multiFormSession);
+    });
+
+    it("binds live database observations into report compiler results for Forms 2 through 6", async () => {
+      const res = await request(app)
+        .post(`/api/v1/reports/${multiFormSessionId}/generate`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`);
+
+      assert.equal(res.status, 201);
+      assert.equal(res.body.success, true);
+      assert.ok(res.body.files.pdf);
+      assert.ok(res.body.files.docx);
+
+      // Verify that storage stored valid PDF and DOCX documents
+      const pdf = await storage.getReport(multiFormSessionId, "pdf");
+      const docx = await storage.getReport(multiFormSessionId, "docx");
+      assert.ok(pdf);
+      assert.ok(docx);
+      assert.equal(pdf.buffer.subarray(0, 4).toString(), "%PDF");
+      assert.equal(docx.buffer.subarray(0, 2).toString(), "PK");
+    });
+
+    it("flags overallStatus as FAIL when Form 2 exceeds permissible temperature drift rate", async () => {
+      // Find the session and set environmental logs with high drift: 20°C -> 32°C over 1 hour = 12.0°C/h (> 5.0°C/h)
+      const session = storedSessions.find((s) => s.id === multiFormSessionId);
+      session.environmentalLogs = [
+        {
+          temperatureC: new Prisma.Decimal("20.00"),
+          relativeHumidityPercent: new Prisma.Decimal("50.00"),
+          barometricPressureHpa: new Prisma.Decimal("1013.25"),
+          loggedAt: new Date("2026-09-24T08:00:00Z"),
+        },
+        {
+          temperatureC: new Prisma.Decimal("32.00"),
+          relativeHumidityPercent: new Prisma.Decimal("50.00"),
+          barometricPressureHpa: new Prisma.Decimal("1013.25"),
+          loggedAt: new Date("2026-09-24T09:00:00Z"), // 12.0°C/h
+        },
+      ];
+
+      const res = await request(app)
+        .post(`/api/v1/reports/${multiFormSessionId}/generate`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`);
+
+      assert.equal(res.status, 201);
+      assert.equal(res.body.success, true);
+      assert.ok(res.body.files.pdf);
+    });
+  });
 });

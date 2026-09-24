@@ -391,8 +391,9 @@ export async function compileOimlDocxReport(
           createKeyValueTable([
             {
               label: "Thermal Cycle",
-              value:
-                "20°C -> 40°C -> -10°C -> 5°C -> 20°C (Standard Thermal Chamber)",
+              value: reportData.results.form2TemperatureDrift?.temperatureSteps?.length
+                ? reportData.results.form2TemperatureDrift.temperatureSteps.map((s) => `${s.tempC}°C`).join(" -> ")
+                : "20°C -> 40°C -> -10°C -> 5°C -> 20°C (Standard Thermal Chamber)",
             },
             {
               label: "Maximum Observed Drift Rate",
@@ -419,11 +420,15 @@ export async function compileOimlDocxReport(
             },
             {
               label: "Tested Quadrants",
-              value: "Center, Front-Left, Back-Left, Back-Right, Front-Right",
+              value: reportData.results.form3Eccentricity?.positions?.length
+                ? reportData.results.form3Eccentricity.positions.map((p) => p.name).join(", ")
+                : "Center, Front-Left, Back-Left, Back-Right, Front-Right",
             },
             {
               label: "Maximum Deviation",
-              value: "+0.0005 kg (Allowed: ±0.0050 kg)",
+              value: reportData.results.form3Eccentricity?.positions?.length
+                ? `+${Math.max(...reportData.results.form3Eccentricity.positions.map((p) => Math.abs(p.error))).toFixed(4)} ${unit}`
+                : `+0.0005 ${unit} (Allowed: ±0.0050 ${unit})`,
             },
             {
               label: "Form 3 Verdict",
@@ -435,10 +440,19 @@ export async function compileOimlDocxReport(
           createSectionHeader("7. FORM 4: DISCRIMINATION TEST (CLAUSE A.4.8)"),
           createKeyValueTable([
             { label: "Extra Discrimination Load", value: `1.4d (${unit})` },
-            { label: "Tested Load Points", value: "Min, 50% Max, 100% Max" },
+            {
+              label: "Tested Load Points",
+              value: reportData.results.form4Discrimination?.loads?.length
+                ? reportData.results.form4Discrimination.loads.map((l) => `${l.load} ${unit}`).join(", ")
+                : "Min, 50% Max, 100% Max",
+            },
             {
               label: "Perceptible Indication Change",
-              value: "CONFIRMED across all 3 load points",
+              value: reportData.results.form4Discrimination?.loads?.length
+                ? (reportData.results.form4Discrimination.loads.every((l) => l.pass)
+                    ? "CONFIRMED across all test points"
+                    : "FAILED on some load points")
+                : "CONFIRMED across all 3 load points",
             },
             {
               label: "Form 4 Verdict",
@@ -451,15 +465,21 @@ export async function compileOimlDocxReport(
           createKeyValueTable([
             {
               label: "Test Load Runs",
-              value: "10 repetitions at 50% Max, 10 repetitions at 100% Max",
+              value: reportData.results.form5Repeatability?.runs?.length
+                ? reportData.results.form5Repeatability.runs.map((r) => `${r.count} repetitions at ${r.load} ${unit}`).join(", ")
+                : "10 repetitions at 50% Max, 10 repetitions at 100% Max",
             },
             {
-              label: "Max Spread at 50% Max",
-              value: `0.0010 ${unit} (Allowed: 0.0050 ${unit})`,
+              label: "Max Spread (Series 1)",
+              value: reportData.results.form5Repeatability?.runs?.[0]
+                ? `${reportData.results.form5Repeatability.runs[0].spread.toFixed(4)} ${unit} (Allowed: ${reportData.results.form5Repeatability.runs[0].maxAllowedSpread.toFixed(4)} ${unit})`
+                : `0.0010 ${unit} (Allowed: 0.0050 ${unit})`,
             },
             {
-              label: "Max Spread at 100% Max",
-              value: `0.0015 ${unit} (Allowed: 0.0075 ${unit})`,
+              label: "Max Spread (Series 2)",
+              value: reportData.results.form5Repeatability?.runs?.[1]
+                ? `${reportData.results.form5Repeatability.runs[1].spread.toFixed(4)} ${unit} (Allowed: ${reportData.results.form5Repeatability.runs[1].maxAllowedSpread.toFixed(4)} ${unit})`
+                : `0.0015 ${unit} (Allowed: 0.0075 ${unit})`,
             },
             {
               label: "Form 5 Verdict",
@@ -474,15 +494,17 @@ export async function compileOimlDocxReport(
           createKeyValueTable([
             {
               label: "Creep Test Load & Duration",
-              value: `Max (${reportData.instrument.maxCapacity} ${unit}) for 30 minutes continuous`,
+              value: reportData.results.form6Creep?.testLoad
+                ? `${reportData.results.form6Creep.testLoad} ${unit} for ${reportData.results.form6Creep.durationMinutes ?? 30} minutes continuous`
+                : `Max (${reportData.instrument.maxCapacity} ${unit}) for 30 minutes continuous`,
             },
             {
               label: "Creep Difference (30m - 15m)",
-              value: `0.0005 ${unit} (Allowed: 0.00375 ${unit})`,
+              value: `${reportData.results.form6Creep?.maxCreepError !== undefined ? reportData.results.form6Creep.maxCreepError.toFixed(4) : "0.0005"} ${unit} (Allowed: ${(reportData.results.form6Creep?.maxAllowedCreep ?? 0.00375).toFixed(4)} ${unit})`,
             },
             {
               label: "Zero Return Error (at 30.5m)",
-              value: `0.0002 ${unit} (Allowed: 0.0025 ${unit})`,
+              value: `${reportData.results.form6Creep?.zeroReturnError !== undefined ? reportData.results.form6Creep.zeroReturnError.toFixed(4) : "0.0002"} ${unit} (Allowed: 0.0025 ${unit})`,
             },
             {
               label: "Form 6 Verdict",

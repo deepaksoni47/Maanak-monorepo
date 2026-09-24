@@ -1074,11 +1074,15 @@ function renderForm2Section(
   fontRegular: PDFFont,
   fontBold: PDFFont,
 ): void {
+  const thermalCycleText =
+    form2Data?.temperatureSteps && form2Data.temperatureSteps.length > 0
+      ? form2Data.temperatureSteps.map((s) => `${s.tempC} deg C`).join(" -> ")
+      : "20 deg C -> 40 deg C -> -10 deg C -> 5 deg C -> 20 deg C (Standard)";
+
   const items = [
     {
       label: "Thermal Cycle",
-      value:
-        "20 deg C -> 40 deg C -> -10 deg C -> 5 deg C -> 20 deg C (Standard)",
+      value: thermalCycleText,
     },
     {
       label: "Maximum Observed Drift Rate",
@@ -1110,6 +1114,15 @@ function renderForm3Section(
   fontRegular: PDFFont,
   fontBold: PDFFont,
 ): void {
+  const posNames =
+    form3Data?.positions && form3Data.positions.length > 0
+      ? form3Data.positions.map((p) => p.name).join(", ")
+      : "Center, Front-Left, Back-Left, Back-Right, Front-Right";
+  const maxErrVal =
+    form3Data?.positions && form3Data.positions.length > 0
+      ? Math.max(...form3Data.positions.map((p) => Math.abs(p.error))).toFixed(4)
+      : "0.0005";
+
   const items = [
     {
       label: "Test Corner Load (Max / 3)",
@@ -1117,9 +1130,9 @@ function renderForm3Section(
     },
     {
       label: "Tested Quadrants",
-      value: "Center, Front-Left, Back-Left, Back-Right, Front-Right",
+      value: posNames,
     },
-    { label: "Maximum Quadrant Error", value: "+0.0005 kg" },
+    { label: "Maximum Quadrant Error", value: `+${maxErrVal} ${unit}` },
     { label: "Form 3 Conformity", value: form3Data?.status ?? "PASS" },
   ];
   renderInfoGrid(
@@ -1142,12 +1155,23 @@ function renderForm4Section(
   fontRegular: PDFFont,
   fontBold: PDFFont,
 ): void {
+  const loadPoints =
+    form4Data?.loads && form4Data.loads.length > 0
+      ? form4Data.loads.map((l) => `${l.load} ${unit}`).join(", ")
+      : "Min, 50% Max, 100% Max";
+  const changeVerdict =
+    form4Data?.loads && form4Data.loads.length > 0
+      ? form4Data.loads.every((l) => l.pass)
+        ? "CONFIRMED across all test points"
+        : "NON-COMPLIANT on some load points"
+      : "CONFIRMED across all 3 test points";
+
   const items = [
     { label: "Extra Discrimination Load", value: `1.4d (${unit})` },
-    { label: "Tested Load Points", value: "Min, 50% Max, 100% Max" },
+    { label: "Tested Load Points", value: loadPoints },
     {
       label: "Perceptible Indication Change",
-      value: "CONFIRMED across all 3 test points",
+      value: changeVerdict,
     },
     { label: "Form 4 Conformity", value: form4Data?.status ?? "PASS" },
   ];
@@ -1171,18 +1195,29 @@ function renderForm5Section(
   fontRegular: PDFFont,
   fontBold: PDFFont,
 ): void {
+  const runsText =
+    form5Data?.runs && form5Data.runs.length > 0
+      ? form5Data.runs.map((r) => `${r.count} reps at ${r.load} ${unit}`).join(", ")
+      : `10 reps at 50% Max, 10 reps at 100% Max`;
+  const run1 = form5Data?.runs?.[0];
+  const run2 = form5Data?.runs?.[1];
+
   const items = [
     {
       label: "Test Load Runs",
-      value: `10 reps at 50% Max, 10 reps at 100% Max`,
+      value: runsText,
     },
     {
-      label: "Max Spread at 50% Max",
-      value: `0.0010 ${unit} (Allowed: 0.0050 ${unit})`,
+      label: "Max Spread (Series 1)",
+      value: run1
+        ? `${run1.spread.toFixed(4)} ${unit} (Allowed: ${run1.maxAllowedSpread.toFixed(4)} ${unit})`
+        : `0.0010 ${unit} (Allowed: 0.0050 ${unit})`,
     },
     {
-      label: "Max Spread at 100% Max",
-      value: `0.0015 ${unit} (Allowed: 0.0075 ${unit})`,
+      label: "Max Spread (Series 2)",
+      value: run2
+        ? `${run2.spread.toFixed(4)} ${unit} (Allowed: ${run2.maxAllowedSpread.toFixed(4)} ${unit})`
+        : `0.0015 ${unit} (Allowed: 0.0075 ${unit})`,
     },
     { label: "Form 5 Conformity", value: form5Data?.status ?? "PASS" },
   ];
@@ -1209,15 +1244,17 @@ function renderForm6Section(
   const items = [
     {
       label: "Creep Test Load & Duration",
-      value: `Max (15 ${unit}) for 30 minutes continuous`,
+      value: form6Data?.testLoad
+        ? `${form6Data.testLoad} ${unit} for ${form6Data.durationMinutes ?? 30} minutes continuous`
+        : `Max (15 ${unit}) for 30 minutes continuous`,
     },
     {
       label: "Creep Difference (30m - 15m)",
-      value: `0.0005 ${unit} (Allowed: 0.00375 ${unit})`,
+      value: `${form6Data?.maxCreepError !== undefined ? form6Data.maxCreepError.toFixed(4) : "0.0005"} ${unit} (Allowed: ${(form6Data?.maxAllowedCreep ?? 0.00375).toFixed(4)} ${unit})`,
     },
     {
       label: "Zero Return Error (at 30.5m)",
-      value: `0.0002 ${unit} (Allowed: 0.0025 ${unit})`,
+      value: `${form6Data?.zeroReturnError !== undefined ? form6Data.zeroReturnError.toFixed(4) : "0.0002"} ${unit} (Allowed: ${(form6Data?.maxAllowedCreep !== undefined ? (form6Data.maxAllowedCreep * 0.67).toFixed(4) : "0.0025")} ${unit})`,
     },
     { label: "Form 6 Conformity", value: form6Data?.status ?? "PASS" },
   ];

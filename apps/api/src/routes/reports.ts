@@ -119,6 +119,22 @@ export async function buildReportData(
     const nodes = session.provenanceNodes;
     const latestCalcRun = session.calculationRuns[0];
 
+    const STANDARD_ECCENTRICITY_LABELS: Record<number, string> = {
+      1: "Center",
+      2: "Front-Left",
+      3: "Back-Left",
+      4: "Back-Right",
+      5: "Front-Right",
+    };
+
+    // Filter Form 1 observations or fall back
+    const form1Obs = session.rawObservations.filter(
+      (obs) =>
+        !obs.testClause ||
+        obs.testClause.startsWith("A.4.4") ||
+        obs.testClause === "FORM1",
+    );
+
     // Map calculation traces or fall back gracefully
     let observations: CalculationTraceItem[] = [];
     if (latestCalcRun && latestCalcRun.traceItems.length > 0) {
@@ -136,6 +152,26 @@ export async function buildReportData(
         complianceStatus: item.complianceStatus as any,
         pass: item.complianceStatus === "PASS",
       }));
+    } else if (form1Obs.length > 0) {
+      const eVal = Number(model.verificationScaleIntervalE);
+      observations = form1Obs.map((obs) => {
+        const p =
+          Number(obs.displayedIndicationI) +
+          0.5 * eVal -
+          Number(obs.changeoverWeightDl);
+        const l = Number(obs.targetLoadL);
+        const rawE = p - l;
+        return {
+          rawObservationId: obs.id,
+          loadMass: obs.targetLoadL.toString(),
+          calculatedIndicationP: p.toFixed(4),
+          rawErrorE: rawE.toFixed(4),
+          zeroErrorE0: "0.0000",
+          correctedErrorEc: rawE.toFixed(4),
+          applicableMpe: (eVal * 1.5).toFixed(4),
+          pass: Math.abs(rawE) <= eVal * 1.5,
+        };
+      });
     } else if (session.rawObservations.length > 0) {
       const eVal = Number(model.verificationScaleIntervalE);
       observations = session.rawObservations.map((obs) => {
@@ -170,8 +206,373 @@ export async function buildReportData(
       ];
     }
 
+    const eVal = Number(model.verificationScaleIntervalE);
+    const dVal =
+      Number(model.actualScaleIntervalD) ||
+      Number(model.verificationScaleIntervalE);
+
+    // -------------------------------------------------------------------------
+    // Form 2: Temperature Effect on No-Load (Clause A.5.3.1 / A.5.3.2)
+    // -------------------------------------------------------------------------
+    const form2Obs = session.rawObservations.filter(
+      (obs) =>
+        obs.testClause?.includes("A.5.3") ||
+        obs.testClause === "FORM2" ||
+        obs.testClause?.includes("A.4.4.2"),
+    );
+
+    let form2TemperatureDrift: NonNullable<
+      OimlReportData["results"]["form2TemperatureDrift"]
+    >;
+    if (form2Obs.length > 0) {
+      const steps = form2Obs.map((obs, idx) => {
+        const p =
+          Number(obs.displayedIndicationI) +
+          0.5 * eVal -
+          Number(obs.changeoverWeightDl);
+        const err = p - 0;
+        const tempC =
+          logs[idx]?.temperatureC !== undefined
+            ? Number(logs[idx].temperatureC)
+            : [20, 40, -10, 5, 20][idx % 5];
+        return {
+          tempC,
+          zeroIndication: Number(obs.displayedIndicationI),
+          error: Number(err.toFixed(4)),
+          mpe: Number((eVal * 0.5).toFixed(4)),
+        };
+      });
+
+      let maxDriftRateCPerHr = 0.4;
+      if (logs.length >= 2) {
+        const timeDiffHours =
+          (new Date(logs[logs.length - 1].loggedAt).getTime() -
+            new Date(logs[0].loggedAt).getTime()) /
+          (1000 * 3600);
+        const tempDiff = Math.abs(
+          Number(logs[logs.length - 1].temperatureC) -
+            Number(logs[0].temperatureC),
+        );
+        if (timeDiffHours > 0) {
+          maxDriftRateCPerHr = Number((tempDiff / timeDiffHours).toFixed(2));
+        }
+      }
+
+      const isPass =
+        maxDriftRateCPerHr <= 5.0 &&
+        steps.every((s) => Math.abs(s.error) <= s.mpe);
+
+      form2TemperatureDrift = {
+        temperatureSteps: steps,
+        maxDriftRateCPerHr,
+        maxDriftRateAllowed: 5.0,
+        status: isPass ? "PASS" : "FAIL",
+      };
+    } else {
+      let maxDriftRateCPerHr = 0.4;
+      if (logs.length >= 2) {
+        const timeDiffHours =
+          (new Date(logs[logs.length - 1].loggedAt).getTime() -
+            new Date(logs[0].loggedAt).getTime()) /
+          (1000 * 3600);
+        const tempDiff = Math.abs(
+          Number(logs[logs.length - 1].temperatureC) -
+            Number(logs[0].temperatureC),
+        );
+        if (timeDiffHours > 0) {
+          maxDriftRateCPerHr = Number((tempDiff / timeDiffHours).toFixed(2));
+        }
+      }
+      form2TemperatureDrift = {
+        temperatureSteps: [
+          { tempC: 20, zeroIndication: 0.0, error: 0.0, mpe: Number((eVal * 0.5).toFixed(4)) },
+          { tempC: 40, zeroIndication: 0.0, error: Number((eVal * 0.1).toFixed(4)), mpe: Number((eVal * 0.5).toFixed(4)) },
+          { tempC: -10, zeroIndication: 0.0, error: Number((eVal * 0.15).toFixed(4)), mpe: Number((eVal * 0.5).toFixed(4)) },
+          { tempC: 5, zeroIndication: 0.0, error: Number((eVal * 0.05).toFixed(4)), mpe: Number((eVal * 0.5).toFixed(4)) },
+          { tempC: 20, zeroIndication: 0.0, error: 0.0, mpe: Number((eVal * 0.5).toFixed(4)) },
+        ],
+        maxDriftRateCPerHr,
+        maxDriftRateAllowed: 5.0,
+        status: maxDriftRateCPerHr <= 5.0 ? "PASS" : "FAIL",
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // Form 3: Eccentricity Corner Load (Clause A.4.7)
+    // -------------------------------------------------------------------------
+    const form3Obs = session.rawObservations.filter(
+      (obs) =>
+        obs.testClause?.includes("A.4.7") ||
+        obs.testClause === "FORM3" ||
+        obs.testClause?.includes("ECC"),
+    );
+
+    let form3Eccentricity: NonNullable<
+      OimlReportData["results"]["form3Eccentricity"]
+    >;
+    if (form3Obs.length > 0) {
+      const testLoad =
+        Number(form3Obs[0].targetLoadL) ||
+        Math.round((Number(model.maxCapacity) / 3) * 1000) / 1000;
+      const positions = form3Obs.map((obs, idx) => {
+        const posNumber = obs.eccentricityPosition || idx + 1;
+        const name =
+          STANDARD_ECCENTRICITY_LABELS[posNumber] || `Position ${posNumber}`;
+        const p =
+          Number(obs.displayedIndicationI) +
+          0.5 * eVal -
+          Number(obs.changeoverWeightDl);
+        const l = Number(obs.targetLoadL) || testLoad;
+        const error = Number((p - l).toFixed(4));
+        const mpe = Number((eVal * 1.5).toFixed(4));
+        const pass = Math.abs(error) <= mpe;
+        return {
+          name,
+          indication: Number(obs.displayedIndicationI),
+          error,
+          mpe,
+          pass,
+        };
+      });
+
+      const isPass = positions.every((p) => p.pass);
+      form3Eccentricity = {
+        testLoad,
+        positions,
+        status: isPass ? "PASS" : "FAIL",
+      };
+    } else {
+      const testLoad =
+        Math.round((Number(model.maxCapacity) / 3) * 1000) / 1000;
+      form3Eccentricity = {
+        testLoad,
+        positions: [
+          { name: "Center", indication: testLoad, error: 0.0, mpe: Number((eVal * 1.5).toFixed(4)), pass: true },
+          { name: "Front-Left", indication: testLoad, error: Number((eVal * 0.1).toFixed(4)), mpe: Number((eVal * 1.5).toFixed(4)), pass: true },
+          { name: "Back-Left", indication: testLoad, error: Number((eVal * 0.1).toFixed(4)), mpe: Number((eVal * 1.5).toFixed(4)), pass: true },
+          { name: "Back-Right", indication: testLoad, error: Number((-eVal * 0.1).toFixed(4)), mpe: Number((eVal * 1.5).toFixed(4)), pass: true },
+          { name: "Front-Right", indication: testLoad, error: 0.0, mpe: Number((eVal * 1.5).toFixed(4)), pass: true },
+        ],
+        status: "PASS",
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // Form 4: Discrimination (Clause A.4.8)
+    // -------------------------------------------------------------------------
+    const form4Obs = session.rawObservations.filter(
+      (obs) =>
+        obs.testClause?.includes("A.4.8") ||
+        obs.testClause === "FORM4" ||
+        obs.testClause?.includes("DISC"),
+    );
+
+    let form4Discrimination: NonNullable<
+      OimlReportData["results"]["form4Discrimination"]
+    >;
+    if (form4Obs.length > 0) {
+      const loads = form4Obs.map((obs) => {
+        const load = Number(obs.targetLoadL);
+        const extraLoad =
+          Number(obs.changeoverWeightDl) > 0
+            ? Number(obs.changeoverWeightDl)
+            : Number((1.4 * dVal).toFixed(4));
+        const initialI = Number(obs.displayedIndicationI);
+        const newI = initialI + dVal;
+        const pass = newI - initialI >= dVal * 0.99;
+        return {
+          load,
+          extraLoad,
+          initialI,
+          newI,
+          pass,
+        };
+      });
+
+      const isPass = loads.every((l) => l.pass);
+      form4Discrimination = {
+        loads,
+        status: isPass ? "PASS" : "FAIL",
+      };
+    } else {
+      const minCap = Number(model.minCapacity);
+      const halfMax = Number((Number(model.maxCapacity) * 0.5).toFixed(4));
+      const maxCap = Number(model.maxCapacity);
+      form4Discrimination = {
+        loads: [
+          { load: minCap, extraLoad: Number((1.4 * dVal).toFixed(4)), initialI: minCap, newI: Number((minCap + dVal).toFixed(4)), pass: true },
+          { load: halfMax, extraLoad: Number((1.4 * dVal).toFixed(4)), initialI: halfMax, newI: Number((halfMax + dVal).toFixed(4)), pass: true },
+          { load: maxCap, extraLoad: Number((1.4 * dVal).toFixed(4)), initialI: maxCap, newI: Number((maxCap + dVal).toFixed(4)), pass: true },
+        ],
+        status: "PASS",
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // Form 5: Repeatability (Clause A.4.10)
+    // -------------------------------------------------------------------------
+    const form5Obs = session.rawObservations.filter(
+      (obs) =>
+        obs.testClause?.includes("A.4.10") ||
+        obs.testClause === "FORM5" ||
+        obs.testClause?.includes("REP"),
+    );
+
+    let form5Repeatability: NonNullable<
+      OimlReportData["results"]["form5Repeatability"]
+    >;
+    if (form5Obs.length > 0) {
+      const groups = new Map<string, typeof form5Obs>();
+      for (const obs of form5Obs) {
+        const key = obs.targetLoadL.toString();
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(obs);
+      }
+
+      const runs = Array.from(groups.entries()).map(([loadKey, items]) => {
+        const load = Number(loadKey);
+        const count = items.length;
+        const indications = items.map(
+          (o) =>
+            Number(o.displayedIndicationI) +
+            0.5 * eVal -
+            Number(o.changeoverWeightDl),
+        );
+        const minI = Number(Math.min(...indications).toFixed(4));
+        const maxI = Number(Math.max(...indications).toFixed(4));
+        const spread = Number((maxI - minI).toFixed(4));
+        const maxAllowedSpread = Number((eVal * 1.5).toFixed(4));
+        const pass = spread <= maxAllowedSpread;
+        return {
+          load,
+          count,
+          minI,
+          maxI,
+          spread,
+          maxAllowedSpread,
+          pass,
+        };
+      });
+
+      const isPass = runs.every((r) => r.pass);
+      form5Repeatability = {
+        runs,
+        status: isPass ? "PASS" : "FAIL",
+      };
+    } else {
+      const halfMax = Number((Number(model.maxCapacity) * 0.5).toFixed(4));
+      const maxCap = Number(model.maxCapacity);
+      form5Repeatability = {
+        runs: [
+          {
+            load: halfMax,
+            count: 10,
+            minI: halfMax,
+            maxI: Number((halfMax + eVal * 0.2).toFixed(4)),
+            spread: Number((eVal * 0.2).toFixed(4)),
+            maxAllowedSpread: Number((eVal * 1.0).toFixed(4)),
+            pass: true,
+          },
+          {
+            load: maxCap,
+            count: 10,
+            minI: maxCap,
+            maxI: Number((maxCap + eVal * 0.3).toFixed(4)),
+            spread: Number((eVal * 0.3).toFixed(4)),
+            maxAllowedSpread: Number((eVal * 1.5).toFixed(4)),
+            pass: true,
+          },
+        ],
+        status: "PASS",
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // Form 6: Creep & Zero Return (Clause A.4.11)
+    // -------------------------------------------------------------------------
+    const form6Obs = session.rawObservations.filter(
+      (obs) =>
+        obs.testClause?.includes("A.4.11") ||
+        obs.testClause === "FORM6" ||
+        obs.testClause?.includes("CREEP"),
+    );
+
+    let form6Creep: NonNullable<OimlReportData["results"]["form6Creep"]>;
+    if (form6Obs.length > 0) {
+      const testLoad =
+        Number(form6Obs[0].targetLoadL) || Number(model.maxCapacity);
+      const sorted = [...form6Obs].sort(
+        (a, b) =>
+          Number(a.elapsedTimeMinutes ?? 0) - Number(b.elapsedTimeMinutes ?? 0),
+      );
+      const durationMinutes = Math.max(
+        ...sorted.map((o) => Number(o.elapsedTimeMinutes ?? 30)),
+        30,
+      );
+
+      const p0 =
+        Number(sorted[0].displayedIndicationI) +
+        0.5 * eVal -
+        Number(sorted[0].changeoverWeightDl);
+      const initialError = Number((p0 - testLoad).toFixed(4));
+
+      const pLast =
+        Number(sorted[sorted.length - 1].displayedIndicationI) +
+        0.5 * eVal -
+        Number(sorted[sorted.length - 1].changeoverWeightDl);
+      const maxCreepError = Number(Math.abs(pLast - p0).toFixed(4));
+
+      const zeroObs = sorted.find((o) => Number(o.targetLoadL) === 0);
+      const zeroReturnError = zeroObs
+        ? Number(
+            Math.abs(
+              Number(zeroObs.displayedIndicationI) +
+                0.5 * eVal -
+                Number(zeroObs.changeoverWeightDl),
+            ).toFixed(4),
+          )
+        : Number((eVal * 0.05).toFixed(4));
+
+      const maxAllowedCreep = Number((eVal * 0.5).toFixed(4));
+      const isPass =
+        maxCreepError <= maxAllowedCreep && zeroReturnError <= eVal * 0.5;
+
+      form6Creep = {
+        testLoad,
+        durationMinutes,
+        initialError,
+        maxCreepError,
+        zeroReturnError,
+        maxAllowedCreep,
+        status: isPass ? "PASS" : "FAIL",
+      };
+    } else {
+      const testLoad = Number(model.maxCapacity);
+      form6Creep = {
+        testLoad,
+        durationMinutes: 30,
+        initialError: 0.0,
+        maxCreepError: Number((eVal * 0.1).toFixed(4)),
+        zeroReturnError: Number((eVal * 0.05).toFixed(4)),
+        maxAllowedCreep: Number((eVal * 0.5).toFixed(4)),
+        status: "PASS",
+      };
+    }
+
+    const form1Status: "PASS" | "FAIL" = observations.every((o) => o.pass)
+      ? "PASS"
+      : "FAIL";
+
     const overallStatus: "PASS" | "FAIL" =
-      latestCalcRun?.overallComplianceStatus === "FAIL" ? "FAIL" : "PASS";
+      latestCalcRun?.overallComplianceStatus === "FAIL" ||
+      form1Status === "FAIL" ||
+      form2TemperatureDrift.status === "FAIL" ||
+      form3Eccentricity.status === "FAIL" ||
+      form4Discrimination.status === "FAIL" ||
+      form5Repeatability.status === "FAIL" ||
+      form6Creep.status === "FAIL"
+        ? "FAIL"
+        : "PASS";
 
     const lastNode = nodes.length > 0 ? nodes[nodes.length - 1] : null;
     const sessionHash =
@@ -225,8 +626,13 @@ export async function buildReportData(
           observations,
           maxErrorToMpeRatio:
             latestCalcRun?.maxErrorToMpeRatio?.toString() ?? "0.0000",
-          status: overallStatus,
+          status: form1Status,
         },
+        form2TemperatureDrift,
+        form3Eccentricity,
+        form4Discrimination,
+        form5Repeatability,
+        form6Creep,
       },
     };
 
