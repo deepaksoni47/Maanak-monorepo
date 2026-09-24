@@ -146,7 +146,7 @@ export function createEvidenceRouter(options: EvidenceRouterOptions = {}): Route
         const testSessionId = req.body.testSessionId || randomUUID();
 
         // Statutory WORM check: Cannot attach evidence to APPROVED_LOCKED session
-        if (req.body.testSessionId) {
+        if (req.body.testSessionId && db) {
           const session = await db.testSession.findUnique({
             where: { id: req.body.testSessionId },
           });

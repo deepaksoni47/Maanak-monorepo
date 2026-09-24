@@ -139,10 +139,11 @@ export function createApp(options: AppOptions = {}): Express {
 
   // 11. Test Sessions & Dynamic Plan Routes
   const configuredSessionsRouter =
-    options.db || options.rulesRegistry
+    options.db || options.rulesRegistry || options.storage
       ? createSessionsRouter({
           db: options.db,
           rulesRegistry: options.rulesRegistry,
+          storage: options.storage,
         })
       : sessionsRouter;
   app.use("/api/v1/sessions", configuredSessionsRouter);

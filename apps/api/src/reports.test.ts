@@ -249,6 +249,13 @@ describe("TASK-045: Report Generation & PKI Signing Routes (/api/v1/reports)", (
             ),
           };
         },
+        update: async (args: any) => {
+          const sess = storedSessions.find((s) => s.id === args.where.id);
+          if (sess) {
+            Object.assign(sess, args.data);
+          }
+          return sess;
+        },
       },
       user: {
         findUnique: async (args: any) => {
@@ -344,6 +351,11 @@ describe("TASK-045: Report Generation & PKI Signing Routes (/api/v1/reports)", (
           };
           storedProvNodes.push(created);
           return created;
+        },
+      },
+      reviewAudit: {
+        create: async (args: any) => {
+          return { id: `audit-${Date.now()}`, ...args.data };
         },
       },
       $transaction: async (fn: any) => fn(mockPrisma),
@@ -581,5 +593,114 @@ describe("TASK-045: Report Generation & PKI Signing Routes (/api/v1/reports)", (
     assert.equal(getRes.body.report.id, reportId);
     assert.equal(getRes.body.report.versions.length, 2); // pdf and docx
     assert.equal(typeof getRes.body.report.versions[0].fileSizeBytes, "number");
+  });
+
+  // -------------------------------------------------------------------------
+  // 4. TASK-083: Director Live Approval & X.509 Cryptographic Sign-off API
+  // -------------------------------------------------------------------------
+  describe("TASK-083: Director Live Approval & X.509 Cryptographic Sign-off (/approve-and-sign)", () => {
+    it("rejects unauthenticated requests with 401 UNAUTHORIZED", async () => {
+      const res = await request(app)
+        .post(`/api/v1/sessions/${mockSessionId}/approve-and-sign`)
+        .send({ signingPin: "1234" });
+
+      assert.equal(res.status, 401);
+    });
+
+    it("rejects non-director roles (INSPECTOR / REVIEWER) with 403 FORBIDDEN", async () => {
+      const res = await request(app)
+        .post(`/api/v1/sessions/${mockSessionId}/approve-and-sign`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({ signingPin: "1234" });
+
+      assert.equal(res.status, 403);
+    });
+
+    it("rejects invalid director signing PIN with 401 INVALID_SIGNING_PIN", async () => {
+      const res = await request(app)
+        .post(`/api/v1/sessions/${mockSessionId}/approve-and-sign`)
+        .set("Authorization", `Bearer ${directorTokens.accessToken}`)
+        .send({ signingPin: "0000" }); // wrong pin
+
+      assert.equal(res.status, 401);
+      assert.equal(res.body.error, "INVALID_SIGNING_PIN");
+    });
+
+    it("returns 404 for unknown session ID", async () => {
+      const res = await request(app)
+        .post("/api/v1/sessions/00000000-0000-0000-0000-000000000000/approve-and-sign")
+        .set("Authorization", `Bearer ${directorTokens.accessToken}`)
+        .send({ signingPin: "1234" });
+
+      assert.equal(res.status, 404);
+      assert.equal(res.body.error, "NOT_FOUND");
+    });
+
+    it("Director live approve-and-sign: signs document with X.509, computes Hash_Final closure, sets APPROVED_LOCKED, and returns downloadable certificate URL (Acceptance Target)", async () => {
+      // 1. Generate test RSA key pair & X.509 certificate for Director
+      const directorKeys = await generateTestKeyPairAndCertificate({
+        commonName: "Dr. A. K. Sharma (Director)",
+        organization: "Regional Reference Standard Laboratory (Faridabad)",
+        country: "IN",
+        serialNumber: "0102030405060708090b",
+      });
+
+      // 2. Call POST /api/v1/sessions/:id/approve-and-sign
+      const res = await request(app)
+        .post(`/api/v1/sessions/${mockSessionId}/approve-and-sign`)
+        .set("Authorization", `Bearer ${directorTokens.accessToken}`)
+        .send({
+          signingPin: "1234",
+          privateKeyPem: directorKeys.privateKeyPem,
+          certificatePem: directorKeys.certificatePem,
+          reason: "Statutory Approval and Legal Metrology Certification Under OIML R-76",
+          location: "RRSL Faridabad Metrology Facility",
+        });
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.success, true);
+      assert.ok(res.body.message.includes("Certificate approved"));
+
+      // Verify Session state updated to APPROVED_LOCKED
+      assert.equal(res.body.session.status, "APPROVED_LOCKED");
+      assert.ok(res.body.session.completedAt);
+
+      // Verify Signature block
+      assert.ok(res.body.signature);
+      assert.equal(typeof res.body.signature.certificateSerial, "string");
+      assert.ok(res.body.signature.signedAt);
+
+      // Verify Provenance Final Closure node
+      assert.ok(res.body.provenance);
+      assert.equal(typeof res.body.provenance.finalClosureHash, "string");
+      assert.equal(res.body.provenance.finalClosureHash.length, 64);
+      assert.ok(res.body.provenance.nodeSequence > 0);
+
+      // Verify Download URL returned
+      assert.ok(res.body.downloadUrl);
+      assert.ok(res.body.downloadUrl.includes("/pdf"));
+
+      // Verify session in storedSessions is updated to APPROVED_LOCKED
+      const stored = storedSessions.find((s) => s.id === mockSessionId);
+      assert.equal(stored.status, "APPROVED_LOCKED");
+
+      // Verify signed PDF stored in storage
+      const signedPdf = await storage.getReport(mockSessionId, "pdf");
+      assert.ok(signedPdf);
+      assert.equal(signedPdf.buffer.subarray(0, 4).toString(), "%PDF");
+    });
+
+    it("rejects approve-and-sign if session is already in APPROVED_LOCKED state with 403 SESSION_IMMUTABLE_LOCKED", async () => {
+      // Set session to APPROVED_LOCKED
+      storedSessions[0].status = "APPROVED_LOCKED";
+
+      const res = await request(app)
+        .post(`/api/v1/sessions/${mockSessionId}/approve-and-sign`)
+        .set("Authorization", `Bearer ${directorTokens.accessToken}`)
+        .send({ signingPin: "1234" });
+
+      assert.equal(res.status, 403);
+      assert.equal(res.body.error, "SESSION_IMMUTABLE_LOCKED");
+    });
   });
 });

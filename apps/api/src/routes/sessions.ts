@@ -11,11 +11,14 @@ import {
   RulePackRegistry,
   rulePackRegistry,
 } from "@maanak/rules-engine";
+import { IReportStorage } from "@maanak/report-generator";
 import { requireAuth, optionalAuth, requireRole, Role } from "../auth/index.js";
+import { createApproveAndSignHandler } from "./reports.js";
 
 export interface SessionsRouterOptions {
   db?: PrismaClient;
   rulesRegistry?: RulePackRegistry;
+  storage?: IReportStorage;
 }
 
 const CreateSessionRequestSchema = z.object({
@@ -717,6 +720,17 @@ export function createSessionsRouter(
         next(err);
       }
     },
+  );
+
+  // ---------------------------------------------------------------------------
+  // 8. POST /api/v1/sessions/:id/approve-and-sign
+  // Director Live Approval & X.509 Cryptographic Sign-off (TASK-083)
+  // ---------------------------------------------------------------------------
+  router.post(
+    "/:id/approve-and-sign",
+    requireAuth,
+    requireRole([Role.DIRECTOR]),
+    createApproveAndSignHandler({ db, storage: options.storage }),
   );
 
   return router;
