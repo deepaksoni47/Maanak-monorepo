@@ -114,7 +114,7 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
       <div className="max-w-3xl mx-auto space-y-6 pb-16">
         {/* National Verification Portal Header */}
         <div className="text-center space-y-2 pt-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-transparent border border-primary/40 text-primary text-xs font-semibold">
             <QrCode className="h-4 w-4" />
             <span>National Legal Metrology Verification Portal</span>
           </div>

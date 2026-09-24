@@ -219,7 +219,7 @@ export function WeightsInventoryView() {
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Working Standard Sets
               </CardTitle>
-              <div className="w-9 h-9 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl text-primary flex items-center justify-center">
                 <ShieldCheck size={20} weight="duotone" />
               </div>
             </CardHeader>
@@ -241,7 +241,7 @@ export function WeightsInventoryView() {
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 NABL 129 Calibration Health
               </CardTitle>
-              <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                 <CheckCircle size={20} weight="fill" />
               </div>
             </CardHeader>
@@ -263,7 +263,7 @@ export function WeightsInventoryView() {
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Recalibration Schedule
               </CardTitle>
-              <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-2xl text-amber-600 dark:text-amber-400 flex items-center justify-center">
                 <CalendarCheck size={20} weight="duotone" />
               </div>
             </CardHeader>
@@ -332,7 +332,7 @@ export function WeightsInventoryView() {
                   setUncertaintyU("0.0025"); // 2.5g > 1.667g (50% > 33.3%)
                   setUUnit("kg");
                 }}
-                className="px-3 py-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition-all min-h-[48px] inline-flex items-center cursor-pointer font-medium"
+                className="px-3 py-1.5 rounded-full border border-amber-500/40 bg-transparent text-amber-700 dark:text-amber-400 hover:border-amber-500/60 transition-all min-h-[48px] inline-flex items-center cursor-pointer font-medium"
               >
                 Load Out-of-Spec Weight (U = 2.5 g, Ratio: 50%)
               </button>
@@ -481,7 +481,7 @@ export function WeightsInventoryView() {
           {/* Desktop Table View (>= 640px) */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-muted/40 text-muted-foreground border-b border-border/60">
+              <thead className="bg-muted/50 text-foreground border-b-2 border-neutral-300 dark:border-neutral-700">
                 <tr>
                   <th scope="col" className="py-3.5 px-5 font-semibold">Set Code</th>
                   <th scope="col" className="py-3.5 px-4 font-semibold">OIML Class</th>
@@ -492,14 +492,14 @@ export function WeightsInventoryView() {
                   <th scope="col" className="py-3.5 px-5 text-right font-semibold">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60">
+              <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700">
                 {filteredInventory.map((set) => (
                   <tr key={set.id} className="hover:bg-accent/40 transition-colors group">
                     <td className="py-4 px-5 font-mono font-bold text-foreground whitespace-nowrap">
                       {set.code}
                     </td>
                     <td className="py-4 px-4 whitespace-nowrap">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-primary/10 text-primary border border-primary/20">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-transparent text-primary border border-primary/40">
                         Class {set.oimlClass}
                       </span>
                     </td>
@@ -552,7 +552,7 @@ export function WeightsInventoryView() {
                   <div className="font-mono font-bold text-xs text-foreground">
                     {set.code}
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/10 text-primary border border-primary/20">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-transparent text-primary border border-primary/40">
                     Class {set.oimlClass}
                   </span>
                 </div>

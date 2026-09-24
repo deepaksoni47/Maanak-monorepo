@@ -302,7 +302,7 @@ export function ReviewAuditView() {
         {/* Top 3 KPI Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="p-4 sm:p-5 flex items-center gap-4 bg-card/60 backdrop-blur-xs border-border/70">
-            <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div className="p-3 rounded-xl text-amber-400">
               <ClockCountdown className="h-6 w-6" weight="duotone" />
             </div>
             <div>
@@ -316,7 +316,7 @@ export function ReviewAuditView() {
           </Card>
 
           <Card className="p-4 sm:p-5 flex items-center gap-4 bg-card/60 backdrop-blur-xs border-border/70">
-            <div className="p-3 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <div className="p-3 rounded-xl text-rose-400">
               <WarningCircle className="h-6 w-6" weight="duotone" />
             </div>
             <div>
@@ -330,7 +330,7 @@ export function ReviewAuditView() {
           </Card>
 
           <Card className="p-4 sm:p-5 flex items-center gap-4 bg-card/60 backdrop-blur-xs border-border/70">
-            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="p-3 rounded-xl text-emerald-400">
               <CheckCircle className="h-6 w-6" weight="duotone" />
             </div>
             <div>
@@ -381,7 +381,7 @@ export function ReviewAuditView() {
         {/* Audit Queue List */}
         {filteredItems.length === 0 ? (
           <Card className="p-12 text-center border-dashed border-border/80">
-            <div className="inline-flex p-4 rounded-full bg-emerald-500/10 text-emerald-400 mb-3">
+            <div className="inline-flex p-4 rounded-full text-emerald-500 mb-3">
               <CheckCircle className="h-8 w-8" weight="duotone" />
             </div>
             <h3 className="text-base font-semibold text-foreground">

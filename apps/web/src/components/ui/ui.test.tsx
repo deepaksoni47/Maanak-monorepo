@@ -60,32 +60,37 @@ describe("TASK-049: Shared Metrological UI Library", () => {
   describe("Badge Component & Metrological Compliance States", () => {
     test("renders PASS compliance state with emerald badge and checkmark", () => {
       const html = renderToStaticMarkup(<Badge variant="pass">PASS</Badge>);
-      assert.ok(html.includes("bg-emerald-500/10"));
+      assert.ok(html.includes("bg-transparent"));
       assert.ok(html.includes("text-emerald-600"));
+      assert.ok(html.includes("border-emerald-500"));
       assert.ok(html.includes("<svg")); // Phosphor CheckCircle icon
       assert.ok(html.includes("PASS"));
     });
 
     test("renders FAIL compliance state with destructive ember red badge", () => {
       const html = renderToStaticMarkup(<Badge variant="fail">FAIL</Badge>);
-      assert.ok(html.includes("bg-destructive/10"));
+      assert.ok(html.includes("bg-transparent"));
       assert.ok(html.includes("text-destructive"));
+      assert.ok(html.includes("border-destructive"));
       assert.ok(html.includes("<svg")); // Phosphor XCircle icon
     });
 
     test("renders WARNING compliance state for NABL 129 out-of-spec conditions", () => {
       const html = renderToStaticMarkup(<Badge variant="warning">NABL 129 WARN</Badge>);
-      assert.ok(html.includes("bg-amber-500/10"));
+      assert.ok(html.includes("bg-transparent"));
       assert.ok(html.includes("text-amber-600"));
+      assert.ok(html.includes("border-amber-500"));
       assert.ok(html.includes("<svg")); // Phosphor Warning icon
     });
 
     test("renders IN_PROGRESS and PENDING review badges", () => {
       const inProgressHtml = renderToStaticMarkup(<Badge variant="in_progress">RUNNING</Badge>);
-      assert.ok(inProgressHtml.includes("bg-primary/10"));
+      assert.ok(inProgressHtml.includes("text-primary"));
+      assert.ok(inProgressHtml.includes("border-primary"));
 
       const pendingHtml = renderToStaticMarkup(<Badge variant="pending">INSPECTION</Badge>);
-      assert.ok(pendingHtml.includes("bg-purple-500/10"));
+      assert.ok(pendingHtml.includes("text-purple-600"));
+      assert.ok(pendingHtml.includes("border-purple-500"));
     });
   });
 

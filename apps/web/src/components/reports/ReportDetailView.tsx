@@ -354,9 +354,9 @@ export function ReportDetailView({
               <span>OIML R-76 Annex A Verification Test Battery Summary</span>
             </h3>
 
-            <div className="overflow-x-auto rounded-2xl border border-border/70">
+            <div className="overflow-x-auto rounded-2xl border border-neutral-300 dark:border-neutral-700">
               <table className="w-full text-left text-xs">
-                <thead className="bg-muted/60 text-muted-foreground font-semibold border-b border-border/70">
+                <thead className="bg-muted/60 text-foreground font-semibold border-b-2 border-neutral-300 dark:border-neutral-700">
                   <tr>
                     <th className="p-3">Test Form</th>
                     <th className="p-3">Examination Scope</th>
@@ -366,7 +366,7 @@ export function ReportDetailView({
                     <th className="p-3 text-right">Compliance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
+                <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700">
                   {FORMS_SUMMARY.map((row) => (
                     <tr key={row.form} className="hover:bg-muted/20 transition">
                       <td className="p-3 font-bold text-foreground font-mono">{row.form}</td>

@@ -27,13 +27,13 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: "bg-primary/10 text-primary border-primary/25",
-  pass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
-  fail: "bg-destructive/10 text-destructive border-destructive/30",
-  warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
-  in_progress: "bg-primary/10 text-primary border-primary/30",
-  pending: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30",
-  neutral: "bg-muted text-muted-foreground border-border",
+  default: "bg-transparent text-primary border-primary/40",
+  pass: "bg-transparent text-emerald-600 dark:text-emerald-400 border-emerald-500/50",
+  fail: "bg-transparent text-destructive border-destructive/50",
+  warning: "bg-transparent text-amber-600 dark:text-amber-400 border-amber-500/50",
+  in_progress: "bg-transparent text-primary border-primary/40",
+  pending: "bg-transparent text-purple-600 dark:text-purple-400 border-purple-500/50",
+  neutral: "bg-transparent text-muted-foreground border-border",
   outline: "border-border text-foreground bg-transparent",
 };
 

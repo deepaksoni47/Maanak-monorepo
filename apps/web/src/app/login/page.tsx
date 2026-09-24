@@ -160,7 +160,7 @@ export default function LoginPage() {
             <div className="text-left">
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-2xl tracking-tight text-foreground">MAANAK</span>
-                <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-transparent border border-primary/40">
                   मानक
                 </span>
               </div>

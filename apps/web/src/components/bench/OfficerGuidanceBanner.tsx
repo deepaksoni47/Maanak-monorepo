@@ -45,7 +45,7 @@ export function OfficerGuidanceBanner({
       )}
     >
       <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-2xl bg-primary/20 text-primary flex items-center justify-center shrink-0 mt-0.5">
+        <div className="w-8 h-8 rounded-2xl text-primary flex items-center justify-center shrink-0 mt-0.5">
           <HandPointing size={18} weight="fill" />
         </div>
         <div className="space-y-1 flex-1">

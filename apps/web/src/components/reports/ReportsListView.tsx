@@ -133,7 +133,7 @@ export function ReportsListView() {
         {/* KPI Summary Strip */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="p-4 rounded-sm border border-border bg-card flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl text-primary flex items-center justify-center shrink-0">
               <Certificate size={22} weight="duotone" />
             </div>
             <div>
@@ -144,7 +144,7 @@ export function ReportsListView() {
             </div>
           </Card>
           <Card className="p-4 rounded-sm border border-border bg-card flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <ShieldCheck size={22} weight="duotone" />
             </div>
             <div>
@@ -155,7 +155,7 @@ export function ReportsListView() {
             </div>
           </Card>
           <Card className="p-4 rounded-sm border border-border bg-card flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
               <QrCode size={22} weight="duotone" />
             </div>
             <div>
@@ -191,7 +191,7 @@ export function ReportsListView() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-muted/40 text-muted-foreground border-b border-border/70 font-mono text-[11px] uppercase tracking-wider">
+                  <thead className="bg-muted/50 text-foreground border-b-2 border-neutral-300 dark:border-neutral-700 font-mono text-[11px] uppercase tracking-wider">
                     <tr>
                       <th scope="col" className="py-3 px-4">Certificate #</th>
                       <th scope="col" className="py-3 px-4">Instrument / Serial</th>
@@ -202,7 +202,7 @@ export function ReportsListView() {
                       <th scope="col" className="py-3 px-4 text-right">View / Verify</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/60">
+                  <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700">
                     {reports.map((item) => (
                       <tr key={item.id} className="hover:bg-accent/40 transition-colors">
                         <td className="py-3.5 px-4 font-mono font-bold text-foreground">
