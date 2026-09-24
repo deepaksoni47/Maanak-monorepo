@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import {
   Scales,
   CheckCircle,
+  Check,
   ArrowRight,
   ShieldCheck,
   PlusCircle,
@@ -250,98 +251,86 @@ export function DashboardView() {
     >
       <div className="space-y-6">
         {/* 4-Card KPI Analytics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Metric 1: Active Sessions */}
-          <Card className="hover:border-primary/40 transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          {/* Metric 1: Active Test Sessions */}
+          <div className="group rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card p-5 sm:p-6 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-primary dark:hover:border-primary transition-all duration-300 min-h-[168px]">
+            <div className="flex items-start justify-between">
+              <span className="text-xs sm:text-sm font-bold tracking-tight text-foreground uppercase leading-snug max-w-[120px]">
                 Active Test Sessions
-              </CardTitle>
-              <div className="w-9 h-9 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-                <Scales size={20} weight="duotone" />
+              </span>
+              <div className="w-9 h-9 rounded-xl border-1.5 border-foreground/80 dark:border-foreground/90 group-hover:border-primary group-hover:text-primary flex items-center justify-center text-foreground shrink-0 transition-all duration-300">
+                <Scales size={18} weight="regular" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold font-mono tracking-tight text-foreground">
+            </div>
+            <div className="mt-4 space-y-1">
+              <div className="text-3xl sm:text-4xl font-extrabold text-foreground group-hover:text-primary tracking-tight font-sans transition-colors duration-300">
                 {activeCount}
               </div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
-                  +2 started
-                </span>{" "}
-                today in RRSL Lab
+              <p className="text-xs text-muted-foreground">
+                <span className="font-bold uppercase text-foreground">+2 started</span> today in RRSL Lab
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Metric 2: Pending Reviews */}
-          <Card className="hover:border-amber-500/40 transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {/* Metric 2: Pending Review Audits */}
+          <div className="group rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card p-5 sm:p-6 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-primary dark:hover:border-primary transition-all duration-300 min-h-[168px]">
+            <div className="flex items-start justify-between">
+              <span className="text-xs sm:text-sm font-bold tracking-tight text-foreground uppercase leading-snug max-w-[130px]">
                 Pending Review Audits
-              </CardTitle>
-              <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                <FileMagnifyingGlass size={20} weight="duotone" />
+              </span>
+              <div className="w-9 h-9 rounded-xl border-1.5 border-foreground/80 dark:border-foreground/90 group-hover:border-primary group-hover:text-primary flex items-center justify-center text-foreground shrink-0 transition-all duration-300">
+                <FileMagnifyingGlass size={18} weight="regular" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold font-mono tracking-tight text-amber-600 dark:text-amber-400">
+            </div>
+            <div className="mt-4 space-y-1">
+              <div className="text-3xl sm:text-4xl font-extrabold text-foreground group-hover:text-primary tracking-tight font-sans transition-colors duration-300">
                 {pendingCount}
               </div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <span className="text-amber-600 dark:text-amber-400 font-semibold font-mono">
-                  1 anomaly
-                </span>{" "}
-                flagged by rule engine
+              <p className="text-xs text-muted-foreground">
+                <span className="font-bold uppercase text-foreground">1 anomaly</span> flagged by rule engine
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Metric 3: Approved Today */}
-          <Card className="hover:border-emerald-500/40 transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="group rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card p-5 sm:p-6 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-primary dark:hover:border-primary transition-all duration-300 min-h-[168px]">
+            <div className="flex items-start justify-between">
+              <span className="text-xs sm:text-sm font-bold tracking-tight text-foreground uppercase leading-snug">
                 Approved Today
-              </CardTitle>
-              <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                <CheckCircle size={20} weight="fill" />
+              </span>
+              <div className="w-8 h-8 rounded-full bg-foreground text-background group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center shrink-0 shadow-xs transition-colors duration-300">
+                <Check size={16} weight="bold" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+            </div>
+            <div className="mt-4 space-y-1">
+              <div className="text-3xl sm:text-4xl font-extrabold text-foreground group-hover:text-primary tracking-tight font-sans transition-colors duration-300">
                 {approvedCount}
               </div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
-                  100%
-                </span>{" "}
-                X.509 digitally signed
+              <p className="text-xs text-muted-foreground">
+                <span className="font-bold text-foreground">100%</span> X.509 digitally signed
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Metric 4: Compliance Rate */}
-          <Card className="hover:border-primary/40 transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {/* Metric 4: First-Pass Compliance */}
+          <div className="group rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card p-5 sm:p-6 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-primary dark:hover:border-primary transition-all duration-300 min-h-[168px]">
+            <div className="flex items-start justify-between">
+              <span className="text-xs sm:text-sm font-bold tracking-tight text-foreground uppercase leading-snug max-w-[120px]">
                 First-Pass Compliance
-              </CardTitle>
-              <div className="w-9 h-9 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-                <TrendUp size={20} weight="bold" />
+              </span>
+              <div className="w-8 h-8 rounded-full border-1.5 border-foreground/80 dark:border-foreground/90 group-hover:border-primary group-hover:text-primary flex items-center justify-center text-foreground shrink-0 transition-all duration-300">
+                <TrendUp size={16} weight="bold" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold font-mono tracking-tight text-foreground">
+            </div>
+            <div className="mt-4 space-y-1">
+              <div className="text-3xl sm:text-4xl font-extrabold text-foreground group-hover:text-primary tracking-tight font-sans transition-colors duration-300">
                 {complianceRate}
               </div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
-                  +2.4%
-                </span>{" "}
-                vs monthly benchmark
+              <p className="text-xs text-muted-foreground">
+                <span className="font-bold text-foreground">+2.4%</span> vs monthly benchmark
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* NABL 129 Standards & Compliance Health Alert Banner */}
