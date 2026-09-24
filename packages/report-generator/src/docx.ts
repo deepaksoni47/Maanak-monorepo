@@ -512,8 +512,156 @@ export async function compileOimlDocxReport(
             },
           ]),
 
+          // Modular Forms 7–14 Extensions
+          ...(reportData.results.form7WarmUp
+            ? [
+                createSectionHeader("10. FORM 7: WARM-UP TIME TEST (CLAUSE A.5.2)"),
+                createKeyValueTable([
+                  {
+                    label: "Warm-Up Time Period",
+                    value: `${reportData.results.form7WarmUp.warmUpMinutes} minutes`,
+                  },
+                  {
+                    label: "Zero Error (Start -> After Warm-up)",
+                    value: `${reportData.results.form7WarmUp.zeroErrorAtStart.toFixed(4)} -> ${reportData.results.form7WarmUp.zeroErrorAfterWarmUp.toFixed(4)} ${unit}`,
+                  },
+                  {
+                    label: `Load Error at Test Load (${reportData.results.form7WarmUp.testLoad} ${unit})`,
+                    value: `${reportData.results.form7WarmUp.loadErrorAfterWarmUp.toFixed(4)} ${unit} (MPE: ±${reportData.results.form7WarmUp.mpe.toFixed(4)} ${unit})`,
+                  },
+                  {
+                    label: "Form 7 Verdict",
+                    value: reportData.results.form7WarmUp.status,
+                  },
+                ]),
+              ]
+            : []),
+
+          ...(reportData.results.form8SpanStability
+            ? [
+                createSectionHeader(
+                  "11. FORM 8: LONG-TERM SPAN STABILITY (CLAUSE A.4.4.4)",
+                ),
+                createKeyValueTable([
+                  {
+                    label: "Span Stability Test Load",
+                    value: `${reportData.results.form8SpanStability.testLoad} ${unit} (Duration: ${reportData.results.form8SpanStability.durationDays ?? 28} days)`,
+                  },
+                  {
+                    label: "Initial vs Final Span Reading",
+                    value: `${reportData.results.form8SpanStability.initialSpan.toFixed(4)} -> ${reportData.results.form8SpanStability.finalSpan.toFixed(4)} ${unit}`,
+                  },
+                  {
+                    label: "Observed Span Drift vs Allowed",
+                    value: `${reportData.results.form8SpanStability.spanDrift.toFixed(4)} ${unit} (Allowed: ${reportData.results.form8SpanStability.maxAllowedDrift.toFixed(4)} ${unit})`,
+                  },
+                  {
+                    label: "Form 8 Verdict",
+                    value: reportData.results.form8SpanStability.status,
+                  },
+                ]),
+              ]
+            : []),
+
+          ...(reportData.results.form9TareAccuracy
+            ? [
+                createSectionHeader(
+                  "12. FORM 9: TARE WEIGHING ACCURACY & BALANCING (CLAUSE A.4.6)",
+                ),
+                createKeyValueTable([
+                  {
+                    label: "Preset Tare Load Applied",
+                    value: `${reportData.results.form9TareAccuracy.tareLoad} ${unit}`,
+                  },
+                  {
+                    label: "Net Test Load & Indication",
+                    value: `Net Load: ${reportData.results.form9TareAccuracy.netLoad} ${unit} | Indication: ${reportData.results.form9TareAccuracy.netIndication.toFixed(4)} ${unit}`,
+                  },
+                  {
+                    label: "Net Error vs Allowed MPE",
+                    value: `${reportData.results.form9TareAccuracy.netError.toFixed(4)} ${unit} (MPE: ±${reportData.results.form9TareAccuracy.mpe.toFixed(4)} ${unit})`,
+                  },
+                  {
+                    label: "Form 9 Verdict",
+                    value: reportData.results.form9TareAccuracy.status,
+                  },
+                ]),
+              ]
+            : []),
+
+          ...(reportData.results.form10VoltageVariation
+            ? [
+                createSectionHeader(
+                  "13. FORM 10: VOLTAGE VARIATIONS TEST (CLAUSE A.5.4)",
+                ),
+                createKeyValueTable([
+                  {
+                    label: "Nominal Voltage",
+                    value: `${reportData.results.form10VoltageVariation.nominalVoltage} V AC (Limits: ${Math.round(reportData.results.form10VoltageVariation.nominalVoltage * 0.85)} V to ${Math.round(reportData.results.form10VoltageVariation.nominalVoltage * 1.10)} V)`,
+                  },
+                  {
+                    label: "Tested Voltage Levels",
+                    value: `${reportData.results.form10VoltageVariation.testedVoltages?.length ?? 3} points evaluated (Nominal, -15%, +10%)`,
+                  },
+                  {
+                    label: "Maximum Indication Error",
+                    value: `${reportData.results.form10VoltageVariation.testedVoltages?.length ? Math.max(...reportData.results.form10VoltageVariation.testedVoltages.map((v) => Math.abs(v.error))).toFixed(4) : "0.0000"} ${unit}`,
+                  },
+                  {
+                    label: "Form 10 Verdict",
+                    value: reportData.results.form10VoltageVariation.status,
+                  },
+                ]),
+              ]
+            : []),
+
+          ...(reportData.results.form11MainsDips ||
+          reportData.results.form12ElectricalBursts ||
+          reportData.results.form13ElectrostaticDischarge ||
+          reportData.results.form14ElectromagneticImmunity
+            ? [
+                createSectionHeader(
+                  "14. FORMS 11–14: ELECTRICAL DISTURBANCES & IMMUNITY BATTERY (ANNEX B)",
+                ),
+                createKeyValueTable([
+                  ...(reportData.results.form11MainsDips
+                    ? [
+                        {
+                          label: "Form 11: Mains Short Dips (B.3.1)",
+                          value: `Reductions up to ${reportData.results.form11MainsDips.reductionPercent}% | Max Fault: ${reportData.results.form11MainsDips.maxObservedFault.toFixed(4)} ${unit} [${reportData.results.form11MainsDips.status}]`,
+                        },
+                      ]
+                    : []),
+                  ...(reportData.results.form12ElectricalBursts
+                    ? [
+                        {
+                          label: "Form 12: Fast Bursts (B.3.2)",
+                          value: `${reportData.results.form12ElectricalBursts.testVoltageKv} kV on ${reportData.results.form12ElectricalBursts.couplingLines} | Max Fault: ${reportData.results.form12ElectricalBursts.maxObservedFault.toFixed(4)} ${unit} [${reportData.results.form12ElectricalBursts.status}]`,
+                        },
+                      ]
+                    : []),
+                  ...(reportData.results.form13ElectrostaticDischarge
+                    ? [
+                        {
+                          label: "Form 13: ESD (B.3.3)",
+                          value: `Contact ${reportData.results.form13ElectrostaticDischarge.contactDischargeKv} kV / Air ${reportData.results.form13ElectrostaticDischarge.airDischargeKv} kV | Max Fault: ${reportData.results.form13ElectrostaticDischarge.maxObservedFault.toFixed(4)} ${unit} [${reportData.results.form13ElectrostaticDischarge.status}]`,
+                        },
+                      ]
+                    : []),
+                  ...(reportData.results.form14ElectromagneticImmunity
+                    ? [
+                        {
+                          label: "Form 14: RF Immunity (B.3.4)",
+                          value: `${reportData.results.form14ElectromagneticImmunity.fieldStrengthVPerM} V/m (${reportData.results.form14ElectromagneticImmunity.frequencyRangeMhz}) | Max Fault: ${reportData.results.form14ElectromagneticImmunity.maxObservedFault.toFixed(4)} ${unit} [${reportData.results.form14ElectromagneticImmunity.status}]`,
+                        },
+                      ]
+                    : []),
+                ]),
+              ]
+            : []),
+
           // 12. WELMEC 7.2 Cryptographic Provenance Hash Graph
-          createSectionHeader("10. WELMEC 7.2 CRYPTOGRAPHIC PROVENANCE AUDIT"),
+          createSectionHeader("15. WELMEC 7.2 CRYPTOGRAPHIC PROVENANCE AUDIT"),
           createKeyValueTable([
             {
               label: "Hash Algorithm",

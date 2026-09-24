@@ -544,4 +544,220 @@ describe("TASK-034: Official OIML R 76-2 Multi-Page PDF Compiler (pdf.ts)", () =
       );
     });
   });
+
+  // -------------------------------------------------------------------------
+  // TASK-089: Forms 7–14 Modular Test Report Schema Extension
+  // -------------------------------------------------------------------------
+  describe("TASK-089: Forms 7–14 Modular Test Report Schema Extension", () => {
+    it("compiles 6-page PDF report with Forms 7–9 (Warm-up, Span Stability, Tare Accuracy) on dedicated Modular Evaluation Page", async () => {
+      const modularReportData: OimlReportData = {
+        ...sampleReportData,
+        reportNumber: "RRSL-DEL-2026-MOD-789",
+        results: {
+          ...sampleReportData.results,
+          form7WarmUp: {
+            warmUpMinutes: 30,
+            zeroErrorAtStart: 0.0005,
+            zeroErrorAfterWarmUp: 0.0001,
+            loadErrorAtStart: 0.001,
+            loadErrorAfterWarmUp: 0.0002,
+            testLoad: 15.0,
+            mpe: 0.005,
+            status: "PASS",
+          },
+          form8SpanStability: {
+            initialSpan: 15.0,
+            finalSpan: 15.0002,
+            spanDrift: 0.0002,
+            maxAllowedDrift: 0.0025,
+            testLoad: 15.0,
+            durationDays: 28,
+            status: "PASS",
+          },
+          form9TareAccuracy: {
+            tareLoad: 2.5,
+            netLoad: 10.0,
+            netIndication: 10.0001,
+            netError: 0.0001,
+            mpe: 0.005,
+            status: "PASS",
+          },
+        },
+      };
+
+      const result = await compileOimlPdfReport(modularReportData);
+      assert.equal(result.pageCount, 6);
+
+      const parsedPdf = await PDFDocument.load(result.pdfBuffer);
+      assert.equal(parsedPdf.getPageCount(), 6);
+
+      let allText = "";
+      for (const [, obj] of parsedPdf.context.enumerateIndirectObjects()) {
+        if ((obj as any).getContents) {
+          try {
+            const decomp = zlib
+              .inflateSync(Buffer.from((obj as any).getContents()))
+              .toString();
+            const hexMatches = decomp.match(/<([0-9A-Fa-f]+)>/g) || [];
+            for (const h of hexMatches) {
+              allText +=
+                Buffer.from(h.slice(1, -1), "hex").toString("utf-8") + " ";
+            }
+          } catch {}
+        }
+      }
+
+      assert.ok(allText.includes("FORM 7: WARM-UP TIME TEST"));
+      assert.ok(allText.includes("FORM 8: LONG-TERM SPAN STABILITY"));
+      assert.ok(allText.includes("FORM 9: TARE WEIGHING ACCURACY"));
+    });
+
+    it("compiles 6-page PDF report with Forms 10–14 (Voltage Variations & Electrical Disturbance Battery)", async () => {
+      const disturbanceReportData: OimlReportData = {
+        ...sampleReportData,
+        reportNumber: "RRSL-DEL-2026-DIST-1014",
+        results: {
+          ...sampleReportData.results,
+          form10VoltageVariation: {
+            nominalVoltage: 230,
+            testedVoltages: [
+              { voltage: 195.5, indication: 15.0001, error: 0.0001, mpe: 0.005, pass: true },
+              { voltage: 230.0, indication: 15.0000, error: 0.0, mpe: 0.005, pass: true },
+              { voltage: 253.0, indication: 15.0002, error: 0.0002, mpe: 0.005, pass: true },
+            ],
+            status: "PASS",
+          },
+          form11MainsDips: {
+            reductionPercent: 100,
+            cyclesCount: 10,
+            maxObservedFault: 0.0001,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+          form12ElectricalBursts: {
+            testVoltageKv: 1.0,
+            couplingLines: "Power Mains AC",
+            maxObservedFault: 0.0002,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+          form13ElectrostaticDischarge: {
+            contactDischargeKv: 6.0,
+            airDischargeKv: 8.0,
+            dischargesCount: 10,
+            maxObservedFault: 0.0001,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+          form14ElectromagneticImmunity: {
+            fieldStrengthVPerM: 10,
+            frequencyRangeMhz: "80-2000 MHz",
+            maxObservedFault: 0.0003,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+        },
+      };
+
+      const result = await compileOimlPdfReport(disturbanceReportData);
+      assert.equal(result.pageCount, 6);
+
+      const parsedPdf = await PDFDocument.load(result.pdfBuffer);
+      assert.equal(parsedPdf.getPageCount(), 6);
+
+      let allText = "";
+      for (const [, obj] of parsedPdf.context.enumerateIndirectObjects()) {
+        if ((obj as any).getContents) {
+          try {
+            const decomp = zlib
+              .inflateSync(Buffer.from((obj as any).getContents()))
+              .toString();
+            const hexMatches = decomp.match(/<([0-9A-Fa-f]+)>/g) || [];
+            for (const h of hexMatches) {
+              allText +=
+                Buffer.from(h.slice(1, -1), "hex").toString("utf-8") + " ";
+            }
+          } catch {}
+        }
+      }
+
+      assert.ok(allText.includes("FORM 10: VOLTAGE VARIATIONS TEST"));
+      assert.ok(allText.includes("FORMS 11-14: ELECTRICAL DISTURBANCES"));
+    });
+
+    it("compiles 7-page PDF report with complete Forms 1–14 suite", async () => {
+      const fullSuiteReportData: OimlReportData = {
+        ...sampleReportData,
+        reportNumber: "RRSL-DEL-2026-FULL-1TO14",
+        results: {
+          ...sampleReportData.results,
+          form7WarmUp: {
+            warmUpMinutes: 30,
+            zeroErrorAtStart: 0.0005,
+            zeroErrorAfterWarmUp: 0.0001,
+            loadErrorAtStart: 0.001,
+            loadErrorAfterWarmUp: 0.0002,
+            testLoad: 15.0,
+            mpe: 0.005,
+            status: "PASS",
+          },
+          form8SpanStability: {
+            initialSpan: 15.0,
+            finalSpan: 15.0002,
+            spanDrift: 0.0002,
+            maxAllowedDrift: 0.0025,
+            testLoad: 15.0,
+            status: "PASS",
+          },
+          form9TareAccuracy: {
+            tareLoad: 2.5,
+            netLoad: 10.0,
+            netIndication: 10.0,
+            netError: 0.0,
+            mpe: 0.005,
+            status: "PASS",
+          },
+          form10VoltageVariation: {
+            nominalVoltage: 230,
+            testedVoltages: [],
+            status: "PASS",
+          },
+          form11MainsDips: {
+            reductionPercent: 100,
+            cyclesCount: 10,
+            maxObservedFault: 0.0001,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+          form12ElectricalBursts: {
+            testVoltageKv: 1.0,
+            couplingLines: "Power Mains AC",
+            maxObservedFault: 0.0001,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+          form13ElectrostaticDischarge: {
+            contactDischargeKv: 6.0,
+            airDischargeKv: 8.0,
+            dischargesCount: 10,
+            maxObservedFault: 0.0001,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+          form14ElectromagneticImmunity: {
+            fieldStrengthVPerM: 10,
+            frequencyRangeMhz: "80-2000 MHz",
+            maxObservedFault: 0.0001,
+            significantFaultLimit: 0.005,
+            status: "PASS",
+          },
+        },
+      };
+
+      const result = await compileOimlPdfReport(fullSuiteReportData);
+      assert.equal(result.pageCount, 7);
+      assert.ok(result.pdfBuffer.length > 5000);
+    });
+  });
 });
+

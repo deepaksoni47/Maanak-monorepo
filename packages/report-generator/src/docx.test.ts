@@ -222,6 +222,92 @@ describe("TASK-035: Editable Word Document (.docx) Compiler (docx.ts)", () => {
     );
     assert.ok(docXml.includes("ECCENTRICITY"), "Must contain Form 3 Header");
   });
+
+  it("compiles .docx document containing Forms 7 through 14 modular tables and electrical disturbance battery", async () => {
+    const fullReportData: OimlReportData = {
+      ...sampleReportData,
+      reportNumber: "RRSL-DEL-2026-DOCX-FULL",
+      results: {
+        ...sampleReportData.results,
+        form7WarmUp: {
+          warmUpMinutes: 30,
+          zeroErrorAtStart: 0.0005,
+          zeroErrorAfterWarmUp: 0.0001,
+          loadErrorAtStart: 0.001,
+          loadErrorAfterWarmUp: 0.0002,
+          testLoad: 15.0,
+          mpe: 0.005,
+          status: "PASS",
+        },
+        form8SpanStability: {
+          initialSpan: 15.0,
+          finalSpan: 15.0002,
+          spanDrift: 0.0002,
+          maxAllowedDrift: 0.0025,
+          testLoad: 15.0,
+          durationDays: 28,
+          status: "PASS",
+        },
+        form9TareAccuracy: {
+          tareLoad: 2.5,
+          netLoad: 10.0,
+          netIndication: 10.0,
+          netError: 0.0,
+          mpe: 0.005,
+          status: "PASS",
+        },
+        form10VoltageVariation: {
+          nominalVoltage: 230,
+          testedVoltages: [
+            { voltage: 230.0, indication: 15.0, error: 0.0, mpe: 0.005, pass: true },
+          ],
+          status: "PASS",
+        },
+        form11MainsDips: {
+          reductionPercent: 100,
+          cyclesCount: 10,
+          maxObservedFault: 0.0001,
+          significantFaultLimit: 0.005,
+          status: "PASS",
+        },
+        form12ElectricalBursts: {
+          testVoltageKv: 1.0,
+          couplingLines: "Power Lines",
+          maxObservedFault: 0.0001,
+          significantFaultLimit: 0.005,
+          status: "PASS",
+        },
+        form13ElectrostaticDischarge: {
+          contactDischargeKv: 6.0,
+          airDischargeKv: 8.0,
+          dischargesCount: 10,
+          maxObservedFault: 0.0001,
+          significantFaultLimit: 0.005,
+          status: "PASS",
+        },
+        form14ElectromagneticImmunity: {
+          fieldStrengthVPerM: 10,
+          frequencyRangeMhz: "80-2000 MHz",
+          maxObservedFault: 0.0001,
+          significantFaultLimit: 0.005,
+          status: "PASS",
+        },
+      },
+    };
+
+    const result = await compileOimlDocxReport(fullReportData);
+    assert.ok(result);
+    assert.ok(result.docxBuffer);
+    assert.equal(result.docxBuffer.subarray(0, 2).toString(), "PK");
+
+    const docXml = extractZipEntry(result.docxBuffer, "word/document.xml");
+    assert.ok(docXml);
+    assert.ok(docXml.includes("WARM-UP TIME TEST"), "Must contain Form 7 Header");
+    assert.ok(docXml.includes("LONG-TERM SPAN STABILITY"), "Must contain Form 8 Header");
+    assert.ok(docXml.includes("TARE WEIGHING ACCURACY"), "Must contain Form 9 Header");
+    assert.ok(docXml.includes("VOLTAGE VARIATIONS TEST"), "Must contain Form 10 Header");
+    assert.ok(docXml.includes("ELECTRICAL DISTURBANCES"), "Must contain Forms 11-14 Header");
+  });
 });
 
 function extractZipEntry(zipBuffer: Buffer, entryName: string): string | null {
