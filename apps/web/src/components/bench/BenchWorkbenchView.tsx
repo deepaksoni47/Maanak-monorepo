@@ -661,7 +661,7 @@ export function BenchWorkbenchView() {
                   key={step.stepNumber}
                   type="button"
                   onClick={() => setCurrentStepIndex(idx)}
-                  className={`flex flex-col justify-between p-1.5 sm:p-2 rounded-2xl border text-xs transition-all min-h-[64px] ${
+                  className={`flex flex-col justify-between p-1.5 sm:p-2 rounded-2xl border transition-all min-h-[72px] sm:min-h-[76px] ${
                     isCurrent
                       ? "border-primary bg-primary/10 text-primary font-bold shadow-xs ring-2 ring-primary/20"
                       : isSaved
@@ -675,9 +675,12 @@ export function BenchWorkbenchView() {
                     <span className="font-mono text-[10px] font-bold opacity-75">#{step.stepNumber}</span>
                   </div>
                   <span className="sr-only">Step #{step.stepNumber}</span>
-                  <div className="w-full my-auto flex flex-col items-center justify-center text-center">
-                    <span className="text-xs sm:text-sm font-mono truncate max-w-full font-extrabold tracking-tight">
-                      {step.appliedLoad} {step.unit}
+                  <div className="w-full my-auto flex items-baseline justify-center gap-1 text-center py-0.5">
+                    <span className="text-base sm:text-lg font-mono font-black tracking-tight leading-none">
+                      {step.appliedLoad}
+                    </span>
+                    <span className="text-[11px] sm:text-xs font-mono font-semibold opacity-85 leading-none">
+                      {step.unit}
                     </span>
                   </div>
                   <div className="w-full flex items-center justify-center h-3">
