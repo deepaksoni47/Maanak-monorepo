@@ -311,9 +311,9 @@ export function Form6CreepCard({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header Summary Banner */}
-      <div className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+      <div className="rounded-xl border border-neutral-300 dark:border-neutral-700 bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl text-primary flex items-center justify-center shrink-0">
             <Hourglass size={20} weight="duotone" />
           </div>
           <div>
@@ -331,7 +331,7 @@ export function Form6CreepCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg shrink-0">
+        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg shrink-0 border border-neutral-300 dark:border-neutral-700">
           <span>Test Load: Max = {effectiveMax} {unit}</span>
           <span>·</span>
           <span>e: {effectiveE} {unit}</span>
@@ -339,7 +339,7 @@ export function Form6CreepCard({
       </div>
 
       {/* Integrated Countdown & Milestone Stopwatch */}
-      <Card className="border border-primary/20 bg-primary/5 shadow-xs">
+      <Card className="border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs">
         <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
@@ -379,7 +379,7 @@ export function Form6CreepCard({
                 setElapsedSeconds(0);
               }}
               disabled={disabled}
-              className="gap-1.5 h-9 text-xs"
+              className="gap-1.5 h-9 text-xs border-neutral-300 dark:border-neutral-700"
             >
               <ArrowClockwise size={14} />
               <span>Reset</span>
@@ -391,7 +391,7 @@ export function Form6CreepCard({
               size="sm"
               onClick={handleSimulateNextMilestone}
               disabled={disabled || elapsedSeconds >= 1830}
-              className="gap-1.5 h-9 text-xs border-primary/30 text-primary hover:bg-primary/10"
+              className="gap-1.5 h-9 text-xs border-neutral-300 dark:border-neutral-700 text-primary hover:bg-primary/10"
             >
               <FastForward size={14} weight="bold" />
               <span>Simulate Next Milestone</span>
@@ -403,7 +403,7 @@ export function Form6CreepCard({
       {/* Statutory Evaluation Criteria Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {/* 30-Minute Creep */}
-        <div className="p-3.5 rounded-xl border border-border bg-card shadow-xs">
+        <div className="p-4 sm:p-5 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs flex flex-col justify-between hover:border-primary transition-all">
           <div className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between">
             <span>30-min Creep (|P30 - P0|)</span>
             <Gauge size={14} className="text-primary" />
@@ -427,7 +427,7 @@ export function Form6CreepCard({
         </div>
 
         {/* 15-to-30-Minute Creep Rate */}
-        <div className="p-3.5 rounded-xl border border-border bg-card shadow-xs">
+        <div className="p-4 sm:p-5 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs flex flex-col justify-between hover:border-primary transition-all">
           <div className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between">
             <span>15–30 min (|P30 - P15|)</span>
             <Gauge size={14} className="text-primary" />
@@ -451,7 +451,7 @@ export function Form6CreepCard({
         </div>
 
         {/* Zero Return Drift */}
-        <div className="p-3.5 rounded-xl border border-border bg-card shadow-xs">
+        <div className="p-4 sm:p-5 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs flex flex-col justify-between hover:border-primary transition-all">
           <div className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between">
             <span>Zero Return Drift (30.5m)</span>
             <Gauge size={14} className="text-primary" />
@@ -475,7 +475,7 @@ export function Form6CreepCard({
         </div>
 
         {/* Overall Status */}
-        <div className="p-3.5 rounded-xl border border-border bg-card shadow-xs flex flex-col justify-between">
+        <div className="p-4 sm:p-5 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs flex flex-col justify-between hover:border-primary transition-all">
           <div className="text-[11px] font-semibold text-muted-foreground">
             Form 6 Creep Status
           </div>
@@ -497,8 +497,8 @@ export function Form6CreepCard({
       </div>
 
       {/* Creep Timed Observations Ledger */}
-      <Card className="border border-border bg-card shadow-xs">
-        <CardHeader className="p-4 sm:p-5 border-b border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
+      <Card className="border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs">
+        <CardHeader className="p-4 sm:p-5 border-b border-neutral-300 dark:border-neutral-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
           <div>
             <CardTitle className="text-sm font-bold text-foreground">
               Timed Creep Observations under Max Load ({effectiveMax} {unit})
@@ -524,7 +524,7 @@ export function Form6CreepCard({
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-muted/40 border-b border-border text-muted-foreground font-mono text-[11px]">
+              <tr className="border-b-2 border-neutral-300 dark:border-neutral-700 bg-card text-muted-foreground font-semibold uppercase tracking-wider text-xs">
                 <th className="py-2.5 px-3 font-semibold">Milestone / Time</th>
                 <th className="py-2.5 px-3 font-semibold">Load (L)</th>
                 <th className="py-2.5 px-3 font-semibold min-w-[130px]">Indication (I)</th>
@@ -533,12 +533,12 @@ export function Form6CreepCard({
                 <th className="py-2.5 px-3 font-semibold">Creep Δ from P0</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/60 font-mono">
+            <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700 font-mono">
               {creepSteps.map((step) => {
                 const p0 = creepSteps[0]?.P || step.appliedLoad;
                 const deltaFromP0 = +(step.P - p0).toFixed(5);
                 return (
-                  <tr key={step.timeMinutes} className="hover:bg-muted/30 transition-colors">
+                  <tr key={step.timeMinutes} className="hover:bg-accent/40 transition-colors group">
                     <td className="py-2.5 px-3 font-bold text-foreground">
                       {step.label}
                     </td>
@@ -592,10 +592,10 @@ export function Form6CreepCard({
       </Card>
 
       {/* Zero Return Recovery Section (t = 30.5 min) */}
-      <Card className="border border-border bg-card shadow-xs">
-        <CardHeader className="p-4 sm:p-5 border-b border-border/80 bg-muted/20">
+      <Card className="border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs">
+        <CardHeader className="p-4 sm:p-5 border-b border-neutral-300 dark:border-neutral-700 bg-muted/20">
           <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold flex items-center justify-center text-xs">
+            <span className="w-6 h-6 rounded-md border border-neutral-300 dark:border-neutral-700 text-emerald-600 dark:text-emerald-400 font-mono font-bold flex items-center justify-center text-xs">
               0
             </span>
             <CardTitle className="text-sm font-bold text-foreground">
@@ -645,7 +645,7 @@ export function Form6CreepCard({
               <label className="text-xs font-semibold text-muted-foreground block mb-1">
                 Zero Return Turning Point (P₀,ret)
               </label>
-              <div className="h-10 px-3 rounded-md border border-border bg-muted/30 flex items-center justify-between font-mono text-sm font-bold text-foreground">
+              <div className="h-10 px-3 rounded-md border border-neutral-300 dark:border-neutral-700 bg-muted/30 flex items-center justify-between font-mono text-sm font-bold text-foreground">
                 <span>{zeroReturn.P.toFixed(5)} {unit}</span>
                 <Badge
                   variant={results.isZeroReturnValid ? "pass" : "fail"}

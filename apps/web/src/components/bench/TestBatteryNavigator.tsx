@@ -101,7 +101,7 @@ export function TestBatteryNavigator({
     <div
       role="tablist"
       aria-label="OIML R-76 Statutory Test Battery Forms"
-      className={`rounded-2xl border border-border/80 bg-muted/40 p-1.5 overflow-x-auto scrollbar-none flex items-stretch gap-1.5 sm:gap-2 shadow-xs ${className}`}
+      className={`rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-muted/40 p-1.5 overflow-x-auto scrollbar-none flex items-stretch gap-1.5 sm:gap-2 shadow-xs ${className}`}
     >
       {STATUTORY_FORMS.map((form) => {
         const Icon = form.icon;
@@ -157,7 +157,7 @@ export function TestBatteryNavigator({
                     FAIL
                   </Badge>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-[9px] font-mono text-muted-foreground font-medium px-1.5 py-0.5 rounded-full bg-muted">
+                  <span className="inline-flex items-center gap-1 text-[9px] font-mono text-muted-foreground font-medium px-1.5 py-0.5 rounded-full bg-transparent border border-neutral-300 dark:border-neutral-700">
                     <Clock size={10} className="shrink-0" />
                     {statusDetail.progressPercent > 0 ? `${statusDetail.progressPercent}%` : "0%"}
                   </span>

@@ -161,11 +161,11 @@ export function EvidenceVaultCard({
   );
 
   return (
-    <Card className={`border border-border bg-card shadow-xs ${className}`}>
+    <Card className={`border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs ${className}`}>
       {/* Header */}
-      <CardHeader className="p-4 sm:p-5 border-b border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
+      <CardHeader className="p-4 sm:p-5 border-b border-neutral-300 dark:border-neutral-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl text-primary flex items-center justify-center shrink-0">
             <ShieldCheck size={22} weight="duotone" />
           </div>
           <div>
@@ -183,7 +183,7 @@ export function EvidenceVaultCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg shrink-0">
+        <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg shrink-0 border border-neutral-300 dark:border-neutral-700">
           <LockKey size={13} className="text-emerald-500" />
           <span>{evidenceList.length} Files Anchored</span>
         </div>
@@ -204,7 +204,7 @@ export function EvidenceVaultCard({
                 className={`p-3 rounded-xl border text-left transition-all ${
                   isSelected
                     ? "border-primary bg-primary/10 shadow-xs"
-                    : "border-border bg-card hover:bg-muted/40"
+                    : "border-neutral-300 dark:border-neutral-700 bg-card hover:bg-muted/40"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -228,7 +228,7 @@ export function EvidenceVaultCard({
         </div>
 
         {/* Upload Action Area */}
-        <div className="rounded-xl border border-dashed border-border bg-muted/20 p-5 flex flex-col items-center justify-center text-center space-y-3">
+        <div className="rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 bg-muted/20 p-5 flex flex-col items-center justify-center text-center space-y-3">
           <div className="flex items-center gap-3">
             {/* Standard File Upload */}
             <input
@@ -305,7 +305,7 @@ export function EvidenceVaultCard({
           </div>
 
           {filteredItems.length === 0 ? (
-            <div className="p-8 text-center rounded-xl border border-border bg-card text-muted-foreground text-xs">
+            <div className="p-8 text-center rounded-xl border border-neutral-300 dark:border-neutral-700 bg-card text-muted-foreground text-xs">
               No evidence files uploaded for this category yet. Use the camera or upload button above.
             </div>
           ) : (
@@ -316,9 +316,9 @@ export function EvidenceVaultCard({
                 return (
                   <div
                     key={item.id}
-                    className="p-3.5 rounded-xl border border-border bg-card shadow-xs flex items-start gap-3 hover:border-primary/40 transition-colors"
+                    className="p-3.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs flex items-start gap-3 hover:border-primary transition-colors"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
+                    <div className="w-10 h-10 flex items-center justify-center shrink-0 text-muted-foreground">
                       {isPdf ? (
                         <FilePdf size={22} weight="duotone" className="text-destructive" />
                       ) : (
@@ -343,7 +343,7 @@ export function EvidenceVaultCard({
                       {/* SHA-256 Fingerprint Pill */}
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] text-muted-foreground font-mono">SHA-256:</span>
-                        <code className="text-[10px] font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded truncate max-w-[170px]">
+                        <code className="text-[10px] font-mono text-primary bg-transparent border border-neutral-300 dark:border-neutral-700 px-1.5 py-0.5 rounded truncate max-w-[170px]">
                           {item.fileHashSha256}
                         </code>
                         <button
@@ -387,8 +387,8 @@ export function EvidenceVaultCard({
         {/* Modal / Lightbox Preview */}
         {previewItem && (
           <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-card border border-border rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95">
-              <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
+            <div className="bg-card border border-neutral-300 dark:border-neutral-700 rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95">
+              <div className="p-4 border-b border-neutral-300 dark:border-neutral-700 flex items-center justify-between bg-muted/20">
                 <div className="flex items-center gap-2">
                   <FileImage size={18} className="text-primary" />
                   <span className="text-xs font-bold text-foreground truncate max-w-md">
@@ -430,7 +430,7 @@ export function EvidenceVaultCard({
                 )}
               </div>
 
-              <div className="p-3.5 border-t border-border bg-card flex items-center justify-between text-xs font-mono text-muted-foreground">
+              <div className="p-3.5 border-t border-neutral-300 dark:border-neutral-700 bg-card flex items-center justify-between text-xs font-mono text-muted-foreground">
                 <span className="truncate max-w-[400px]">
                   Fingerprint: {previewItem.fileHashSha256}
                 </span>

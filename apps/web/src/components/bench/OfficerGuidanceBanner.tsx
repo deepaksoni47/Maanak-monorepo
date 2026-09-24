@@ -40,7 +40,7 @@ export function OfficerGuidanceBanner({
   return (
     <div
       className={cn(
-        "rounded-sm border border-primary/30 bg-primary/5 p-4 sm:p-5 space-y-3",
+        "rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card p-4 sm:p-5 space-y-3 shadow-xs",
         className
       )}
     >
@@ -53,7 +53,7 @@ export function OfficerGuidanceBanner({
             <span className="text-xs font-bold uppercase tracking-wider text-primary">
               Officer Field Guidance · Step #{stepNumber}
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary font-bold">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border border-neutral-300 dark:border-neutral-700 bg-transparent text-primary font-bold">
               {direction === "ASCENDING" ? "Increasing Load" : "Decreasing Load"}
             </span>
           </div>
@@ -69,7 +69,7 @@ export function OfficerGuidanceBanner({
       </div>
 
       {onQuickFill && (
-        <div className="flex items-center justify-between pt-2 border-t border-primary/20 text-xs">
+        <div className="flex items-center justify-between pt-2 border-t border-neutral-300 dark:border-neutral-700 text-xs">
           <span className="text-muted-foreground text-[11px]">
             Reading matches nominal load exactly?
           </span>
@@ -78,7 +78,7 @@ export function OfficerGuidanceBanner({
             variant="outline"
             size="sm"
             onClick={onQuickFill}
-            className="h-8 min-h-[36px] text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10"
+            className="h-8 min-h-[36px] text-xs font-semibold border-neutral-300 dark:border-neutral-700 text-primary hover:border-primary"
           >
             Quick Auto-Fill Indication ({appliedLoad} {unit})
           </Button>

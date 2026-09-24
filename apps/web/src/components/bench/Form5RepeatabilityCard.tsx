@@ -297,9 +297,9 @@ export function Form5RepeatabilityCard({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header Summary Banner */}
-      <div className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+      <div className="rounded-xl border border-neutral-300 dark:border-neutral-700 bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl text-primary flex items-center justify-center shrink-0">
             <Repeat size={20} weight="duotone" />
           </div>
           <div>
@@ -317,7 +317,7 @@ export function Form5RepeatabilityCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg shrink-0">
+        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg shrink-0 border border-neutral-300 dark:border-neutral-700">
           <span>Accuracy: {accuracyClass}</span>
           <span>·</span>
           <span>e: {effectiveE} {unit}</span>
@@ -325,7 +325,7 @@ export function Form5RepeatabilityCard({
       </div>
 
       {/* Series Switcher Tabs */}
-      <div className="flex items-center gap-2 border-b border-border pb-3">
+      <div className="flex items-center gap-2 border-b border-neutral-300 dark:border-neutral-700 pb-3">
         <button
           type="button"
           onClick={() => setActiveTab("series_half_max")}
@@ -374,7 +374,7 @@ export function Form5RepeatabilityCard({
       {/* Real-Time Statistical & Compliance Metrics Card */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {/* Repeatability Spread */}
-        <div className="p-3.5 rounded-xl border border-border bg-card shadow-xs">
+        <div className="p-4 sm:p-5 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs flex flex-col justify-between hover:border-primary transition-all">
           <div className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between">
             <span>Repeatability Spread (ΔE)</span>
             <Gauge size={14} className="text-primary" />
@@ -391,7 +391,7 @@ export function Form5RepeatabilityCard({
         </div>
 
         {/* Statutory Limit (MPE) */}
-        <div className="p-3.5 rounded-xl border border-border bg-card shadow-xs">
+        <div className="p-4 sm:p-5 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs flex flex-col justify-between hover:border-primary transition-all">
           <div className="text-[11px] font-semibold text-muted-foreground">
             Statutory MPE Threshold
           </div>
@@ -407,7 +407,7 @@ export function Form5RepeatabilityCard({
         </div>
 
         {/* Standard Deviation */}
-        <div className="p-3.5 rounded-xl border border-border bg-card shadow-xs">
+        <div className="p-4 sm:p-5 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs flex flex-col justify-between hover:border-primary transition-all">
           <div className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between">
             <span>Std Deviation (s)</span>
             <TrendUp size={14} className="text-muted-foreground" />
@@ -424,7 +424,7 @@ export function Form5RepeatabilityCard({
         </div>
 
         {/* Compliance State */}
-        <div className="p-3.5 rounded-xl border border-border bg-card shadow-xs flex flex-col justify-between">
+        <div className="p-4 sm:p-5 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs flex flex-col justify-between hover:border-primary transition-all">
           <div className="text-[11px] font-semibold text-muted-foreground">
             Clause A.4.10 Status
           </div>
@@ -444,11 +444,11 @@ export function Form5RepeatabilityCard({
       </div>
 
       {/* 10-Cycle Data Sheet Table */}
-      <Card className="border border-border bg-card shadow-xs">
-        <CardHeader className="p-4 sm:p-5 border-b border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
+      <Card className="border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs">
+        <CardHeader className="p-4 sm:p-5 border-b border-neutral-300 dark:border-neutral-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-md bg-primary/10 text-primary font-mono font-bold flex items-center justify-center text-xs">
+              <span className="w-6 h-6 rounded-md border border-neutral-300 dark:border-neutral-700 text-primary font-mono font-bold flex items-center justify-center text-xs">
                 {activeTab === "series_half_max" ? "A" : "B"}
               </span>
               <CardTitle className="text-sm font-bold text-foreground">
@@ -467,7 +467,7 @@ export function Form5RepeatabilityCard({
               size="sm"
               onClick={handleQuickPrefill}
               disabled={disabled}
-              className="text-xs gap-1.5 h-8"
+              className="text-xs gap-1.5 h-8 border-neutral-300 dark:border-neutral-700"
             >
               <Sparkle size={13} className="text-primary" />
               <span>Reset Nominal</span>
@@ -489,7 +489,7 @@ export function Form5RepeatabilityCard({
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-muted/40 border-b border-border text-muted-foreground font-mono text-[11px]">
+              <tr className="border-b-2 border-neutral-300 dark:border-neutral-700 bg-card text-muted-foreground font-semibold uppercase tracking-wider text-xs">
                 <th className="py-2.5 px-3 font-semibold text-center w-12">#</th>
                 <th className="py-2.5 px-3 font-semibold">Load (L)</th>
                 <th className="py-2.5 px-3 font-semibold min-w-[120px]">Indication (I)</th>
@@ -499,11 +499,11 @@ export function Form5RepeatabilityCard({
                 <th className="py-2.5 px-3 font-semibold text-center w-24">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/60 font-mono">
+            <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700 font-mono">
               {currentSeries.cycles.map((row) => (
                 <tr
                   key={row.cycleIndex}
-                  className={`hover:bg-muted/30 transition-colors ${
+                  className={`hover:bg-accent/40 transition-colors group ${
                     !row.isCompliant ? "bg-destructive/5" : ""
                   }`}
                 >
@@ -572,7 +572,7 @@ export function Form5RepeatabilityCard({
       </Card>
 
       {/* Bottom Actions Bar */}
-      <div className="p-4 rounded-xl border border-border bg-card flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+      <div className="p-4 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-card flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <CheckCircle
             size={16}

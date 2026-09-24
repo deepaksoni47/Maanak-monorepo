@@ -245,9 +245,9 @@ export function Form2TempDriftCard({
                   ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
                   : isSaved
                   ? res.isOverallPass
-                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
-                    : "bg-destructive/10 text-destructive border-destructive/30"
-                  : "bg-card text-muted-foreground border-border hover:bg-muted/50 hover:text-foreground"
+                    ? "bg-transparent text-emerald-700 dark:text-emerald-400 border-neutral-300 dark:border-neutral-700"
+                    : "bg-transparent text-destructive border-neutral-300 dark:border-neutral-700"
+                  : "bg-card text-muted-foreground border-neutral-300 dark:border-neutral-700 hover:bg-muted/50 hover:text-foreground"
               }`}
             >
               <div
@@ -256,9 +256,9 @@ export function Form2TempDriftCard({
                     ? "bg-primary-foreground/20 text-primary-foreground"
                     : isSaved
                     ? res.isOverallPass
-                      ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300"
-                      : "bg-destructive/20 text-destructive"
-                    : "bg-muted text-foreground"
+                      ? "border border-neutral-300 dark:border-neutral-700 text-emerald-600 dark:text-emerald-300"
+                      : "border border-neutral-300 dark:border-neutral-700 text-destructive"
+                    : "border border-neutral-300 dark:border-neutral-700 text-foreground"
                 }`}
               >
                 #{st.stepIndex}
@@ -275,11 +275,11 @@ export function Form2TempDriftCard({
       </div>
 
       {/* Active Temperature Step Observation Card */}
-      <Card className="border border-border bg-card shadow-xs overflow-hidden">
-        <CardHeader className="p-4 sm:p-5 border-b border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
+      <Card className="border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs overflow-hidden">
+        <CardHeader className="p-4 sm:p-5 border-b border-neutral-300 dark:border-neutral-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
           <div>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-xl text-primary flex items-center justify-center shrink-0">
                 <Thermometer size={18} weight="duotone" />
               </div>
               <CardTitle className="text-sm font-bold text-foreground">
@@ -307,7 +307,7 @@ export function Form2TempDriftCard({
 
         <CardContent className="p-4 sm:p-6 space-y-6">
           {/* Chamber Ambient Settings Strip */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl border border-border/80 bg-muted/30">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-muted/30">
             {/* Temperature Setting */}
             <div className="space-y-1">
               <label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
@@ -445,7 +445,7 @@ export function Form2TempDriftCard({
                         key={fraction}
                         type="button"
                         onClick={() => handleUpdateCurrentStep({ deltaL0: presetVal })}
-                        className="text-[10px] font-mono px-2 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer border border-border/50"
+                        className="text-[10px] font-mono px-2 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer border border-neutral-300 dark:border-neutral-700"
                       >
                         {fraction}e ({presetVal})
                       </button>
@@ -456,7 +456,7 @@ export function Form2TempDriftCard({
             </div>
 
             {/* Right: Real-time Mathematical Deterministic Evaluation */}
-            <div className="space-y-3 rounded-xl border border-border/90 bg-muted/20 p-4">
+            <div className="space-y-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-muted/20 p-4">
               <h4 className="text-xs font-bold text-foreground flex items-center justify-between">
                 <span>Calculated Zero Metrics</span>
                 <span className="text-[10px] font-mono text-primary font-bold">Clause A.5.3.2</span>
@@ -464,13 +464,13 @@ export function Form2TempDriftCard({
 
               {/* Turning Point & Zero Error */}
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 rounded-lg bg-card border border-border/60">
+                <div className="p-2.5 rounded-lg bg-card border border-neutral-300 dark:border-neutral-700">
                   <span className="text-[10px] text-muted-foreground block">Zero Turning Point ($P_0$)</span>
                   <span className="font-mono font-bold text-sm text-foreground">
                     {currentResult.P0 >= 0 ? `+${currentResult.P0.toFixed(4)}` : currentResult.P0.toFixed(4)} {unit}
                   </span>
                 </div>
-                <div className="p-2.5 rounded-lg bg-card border border-border/60">
+                <div className="p-2.5 rounded-lg bg-card border border-neutral-300 dark:border-neutral-700">
                   <span className="text-[10px] text-muted-foreground block">Zero Error ($E_0$)</span>
                   <span className={`font-mono font-bold text-sm ${currentResult.isZeroCompliant ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
                     {currentResult.E0 >= 0 ? `+${currentResult.E0.toFixed(4)}` : currentResult.E0.toFixed(4)} {unit}
@@ -481,7 +481,7 @@ export function Form2TempDriftCard({
 
               {/* Temperature Transition Metrics (if step > 1) */}
               {previousStep && (
-                <div className="space-y-2 pt-1 border-t border-border/60">
+                <div className="space-y-2 pt-1 border-t border-neutral-300 dark:border-neutral-700">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Transition from Step #{previousStep.stepIndex}:</span>
                     <span className="font-mono font-bold text-foreground">
@@ -490,7 +490,7 @@ export function Form2TempDriftCard({
                   </div>
 
                   {/* Chamber Ramp Rate Check */}
-                  <div className="p-2.5 rounded-lg bg-card border border-border/60 flex items-center justify-between text-xs">
+                  <div className="p-2.5 rounded-lg bg-card border border-neutral-300 dark:border-neutral-700 flex items-center justify-between text-xs">
                     <div>
                       <span className="text-[10px] text-muted-foreground block">Chamber Ramp Rate ($\Delta T / \Delta t$)</span>
                       <span className="font-mono font-bold text-foreground">
@@ -510,7 +510,7 @@ export function Form2TempDriftCard({
                   </div>
 
                   {/* Thermal Zero Drift Check */}
-                  <div className="p-2.5 rounded-lg bg-card border border-border/60 flex items-center justify-between text-xs">
+                  <div className="p-2.5 rounded-lg bg-card border border-neutral-300 dark:border-neutral-700 flex items-center justify-between text-xs">
                     <div>
                       <span className="text-[10px] text-muted-foreground block">Zero Drift ($\Delta E_0$)</span>
                       <span className="font-mono font-bold text-foreground">
@@ -536,8 +536,8 @@ export function Form2TempDriftCard({
               {/* Status summary banner */}
               <div className={`p-2.5 rounded-lg border text-xs flex items-center gap-2 ${
                 currentResult.isOverallPass
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
-                  : "bg-destructive/10 border-destructive/30 text-destructive"
+                  ? "border-neutral-300 dark:border-neutral-700 bg-card text-emerald-600 dark:text-emerald-400"
+                  : "border-neutral-300 dark:border-neutral-700 bg-card text-destructive"
               }`}>
                 {currentResult.isOverallPass ? <CheckCircle size={16} /> : <WarningCircle size={16} />}
                 <span className="font-semibold text-[11px]">
@@ -550,7 +550,7 @@ export function Form2TempDriftCard({
           </div>
 
           {/* Action Row */}
-          <div className="flex items-center justify-between pt-3 border-t border-border/80">
+          <div className="flex items-center justify-between pt-3 border-t border-neutral-300 dark:border-neutral-700">
             <div className="text-xs text-muted-foreground">
               Step <strong className="text-foreground">{activeStepIndex + 1}</strong> of {steps.length}
             </div>

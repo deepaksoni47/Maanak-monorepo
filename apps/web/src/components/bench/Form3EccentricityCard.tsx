@@ -194,9 +194,9 @@ export function Form3EccentricityCard({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Statutory Header Info Banner */}
-      <div className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+      <div className="rounded-xl border border-neutral-300 dark:border-neutral-700 bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl text-primary flex items-center justify-center shrink-0">
             <CornersOut size={20} weight="duotone" />
           </div>
           <div>
@@ -214,7 +214,7 @@ export function Form3EccentricityCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg shrink-0">
+        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg shrink-0 border border-neutral-300 dark:border-neutral-700">
           <span>Max: {maxCapacityKg} {unit}</span>
           <span>·</span>
           <span>e: {verificationIntervalKg} {unit}</span>
@@ -226,7 +226,7 @@ export function Form3EccentricityCard({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Interactive 5-Position Receptor Diagram (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
+          <div className="rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card p-4 sm:p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-foreground uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                 <Crosshair size={14} className="text-primary" />
@@ -263,7 +263,7 @@ export function Form3EccentricityCard({
                           ? res.isCompliant
                             ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-800 dark:text-emerald-300"
                             : "bg-destructive/15 border-destructive/50 text-destructive"
-                          : "bg-card border-border hover:bg-muted/80 text-muted-foreground"
+                          : "bg-card border-neutral-300 dark:border-neutral-700 hover:bg-muted/80 text-muted-foreground"
                       }`}
                     >
                       <span className="text-[10px] font-mono font-bold">
@@ -289,7 +289,7 @@ export function Form3EccentricityCard({
               </div>
 
               {/* Pan Callout Footer */}
-              <div className="text-center text-[10px] text-muted-foreground font-mono pt-1 border-t border-border/40">
+              <div className="text-center text-[10px] text-muted-foreground font-mono pt-1 border-t border-neutral-300 dark:border-neutral-700">
                 OIML R 76-1 Figure 10: 4-Quadrant & Center Layout
               </div>
             </div>
@@ -304,7 +304,7 @@ export function Form3EccentricityCard({
                   className={`min-h-[44px] py-1 px-1.5 rounded-lg text-center text-xs font-mono transition-all border ${
                     idx === activePosIndex
                       ? "bg-primary text-primary-foreground font-bold border-primary"
-                      : "bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:text-foreground"
+                      : "bg-muted/50 text-muted-foreground border-neutral-300 dark:border-neutral-700 hover:bg-muted hover:text-foreground"
                   }`}
                 >
                   <div className="font-bold">#{def.num}</div>
@@ -317,11 +317,11 @@ export function Form3EccentricityCard({
 
         {/* Right: Observation Entry & Live Calculation Card (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
-          <Card className="border border-border bg-card shadow-xs">
-            <CardHeader className="p-4 sm:p-5 border-b border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
+          <Card className="border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs">
+            <CardHeader className="p-4 sm:p-5 border-b border-neutral-300 dark:border-neutral-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-mono font-bold flex items-center justify-center text-xs">
+                  <span className="w-7 h-7 rounded-lg border border-neutral-300 dark:border-neutral-700 text-primary font-mono font-bold flex items-center justify-center text-xs">
                     #{currentPos.positionNumber}
                   </span>
                   <CardTitle className="text-sm font-bold text-foreground">
@@ -372,7 +372,7 @@ export function Form3EccentricityCard({
                     <button
                       type="button"
                       onClick={() => handleUpdateCurrentPos({ indication: testLoadLecc })}
-                      className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer border border-border/50"
+                      className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer border border-neutral-300 dark:border-neutral-700"
                     >
                       Auto-Fill Nominal ({testLoadLecc} {unit})
                     </button>
@@ -407,7 +407,7 @@ export function Form3EccentricityCard({
                           key={fraction}
                           type="button"
                           onClick={() => handleUpdateCurrentPos({ deltaL: presetVal })}
-                          className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer border border-border/50"
+                          className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer border border-neutral-300 dark:border-neutral-700"
                         >
                           {fraction}e
                         </button>
@@ -418,21 +418,21 @@ export function Form3EccentricityCard({
               </div>
 
               {/* Calculated Metrological Output Panel */}
-              <div className="p-4 rounded-xl border border-border/90 bg-muted/20 space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold text-foreground border-b border-border/60 pb-2">
+              <div className="p-4 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-muted/20 space-y-3">
+                <div className="flex items-center justify-between text-xs font-bold text-foreground border-b border-neutral-300 dark:border-neutral-700 pb-2">
                   <span>Clause A.4.7 Mathematical Evaluation</span>
                   <span className="font-mono text-primary">MPE: ±{(currentResult.mpeLimit * 1000).toFixed(1)} g</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-                  <div className="p-2.5 rounded-lg bg-card border border-border/60">
+                  <div className="p-2.5 rounded-lg bg-card border border-neutral-300 dark:border-neutral-700">
                     <span className="text-[10px] text-muted-foreground block">Turning Point ($P$)</span>
                     <span className="font-mono font-bold text-sm text-foreground">
                       {currentResult.P.toFixed(4)} {unit}
                     </span>
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-card border border-border/60">
+                  <div className="p-2.5 rounded-lg bg-card border border-neutral-300 dark:border-neutral-700">
                     <span className="text-[10px] text-muted-foreground block">Corrected Error ($E_c$)</span>
                     <span className={`font-mono font-bold text-sm ${currentResult.isCompliant ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
                       {(currentResult.Ec * 1000).toFixed(1)} g
@@ -441,7 +441,7 @@ export function Form3EccentricityCard({
                   </div>
 
                   {currentPos.positionNumber !== 1 && (
-                    <div className="p-2.5 rounded-lg bg-card border border-border/60">
+                    <div className="p-2.5 rounded-lg bg-card border border-neutral-300 dark:border-neutral-700">
                       <span className="text-[10px] text-muted-foreground block">Spread vs Center</span>
                       <span className={`font-mono font-bold text-sm ${currentResult.isSpreadCompliant ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
                         {currentResult.spreadToCenter !== undefined ? `${(currentResult.spreadToCenter * 1000).toFixed(1)} g` : "—"}
@@ -453,8 +453,8 @@ export function Form3EccentricityCard({
                 {/* Status Guidance */}
                 <div className={`p-2.5 rounded-lg border text-xs flex items-center gap-2 ${
                   currentResult.isCompliant
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
-                    : "bg-destructive/10 border-destructive/30 text-destructive"
+                    ? "border border-neutral-300 dark:border-neutral-700 bg-card text-emerald-600 dark:text-emerald-400"
+                    : "border border-neutral-300 dark:border-neutral-700 bg-card text-destructive"
                 }`}>
                   {currentResult.isCompliant ? <CheckCircle size={16} /> : <WarningCircle size={16} />}
                   <span className="font-semibold text-[11px]">
@@ -466,7 +466,7 @@ export function Form3EccentricityCard({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-2 border-t border-border/80">
+              <div className="flex items-center justify-between pt-2 border-t border-neutral-300 dark:border-neutral-700">
                 <div className="text-xs text-muted-foreground">
                   Position <strong className="text-foreground">{activePosIndex + 1}</strong> of {positions.length}
                 </div>

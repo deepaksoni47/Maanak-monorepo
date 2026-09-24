@@ -39,7 +39,7 @@ export function ToleranceSafetyGauge({
   const completionPercent = totalSteps > 0 ? ((currentStepIndex + 1) / totalSteps) * 100 : 0;
 
   return (
-    <Card className={cn("rounded-sm border border-border bg-card p-4 sm:p-5 space-y-4", className)}>
+    <Card className={cn("rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card p-4 sm:p-5 space-y-4 shadow-xs", className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-2xl text-primary flex items-center justify-center">
@@ -58,12 +58,12 @@ export function ToleranceSafetyGauge({
         <div className="text-right">
           <span
             className={cn(
-              "text-xs sm:text-sm font-mono font-bold px-2 py-0.5 rounded-lg border",
+              "text-xs sm:text-sm font-mono font-bold px-2.5 py-0.5 rounded-full border bg-transparent",
               isCompliant
                 ? isNearBoundary
-                  ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
-                  : "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                : "bg-destructive/10 border-destructive/30 text-destructive"
+                  ? "border-amber-500 text-amber-600 dark:text-amber-400"
+                  : "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                : "border-destructive text-destructive"
             )}
           >
             {safeMarginPercent.toFixed(1)}% SAFE MARGIN
@@ -83,7 +83,7 @@ export function ToleranceSafetyGauge({
           </span>
         </div>
 
-        <div className="h-3 w-full bg-muted/60 rounded-full overflow-hidden p-0.5 border border-border/50">
+        <div className="h-3 w-full bg-muted/40 rounded-full overflow-hidden p-0.5 border border-neutral-300 dark:border-neutral-700">
           <div
             className={cn(
               "h-full rounded-full transition-all duration-300",
@@ -105,7 +105,7 @@ export function ToleranceSafetyGauge({
       </div>
 
       {/* Test Battery Schedule Completion */}
-      <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
+      <div className="pt-2 border-t border-neutral-300 dark:border-neutral-700 flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">Test Battery Progress:</span>
           <span className="font-mono font-bold text-foreground">

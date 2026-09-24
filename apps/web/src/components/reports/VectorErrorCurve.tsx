@@ -101,7 +101,7 @@ export function VectorErrorCurve({
 
   return (
     <div
-      className={`rounded-2xl border border-border/80 bg-card/60 p-4 font-sans ${className}`}
+      className={`rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card p-4 font-sans ${className}`}
       data-testid="vector-error-curve"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">

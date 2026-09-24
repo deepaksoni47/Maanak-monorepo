@@ -171,9 +171,9 @@ export function Form4DiscriminationCard({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header Summary Banner */}
-      <div className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+      <div className="rounded-xl border border-neutral-300 dark:border-neutral-700 bg-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl text-primary flex items-center justify-center shrink-0">
             <Crosshair size={20} weight="duotone" />
           </div>
           <div>
@@ -191,7 +191,7 @@ export function Form4DiscriminationCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg shrink-0">
+        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg shrink-0 border border-neutral-300 dark:border-neutral-700">
           <span>Scale Interval d: {effectiveD} {unit}</span>
           <span>·</span>
           <span>Auxiliary Load: {(1.4 * effectiveD).toFixed(4)} {unit}</span>
@@ -215,9 +215,9 @@ export function Form4DiscriminationCard({
                   ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold ring-2 ring-primary/20"
                   : isSaved
                   ? res.isCompliant
-                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
-                    : "bg-destructive/10 text-destructive border-destructive/30"
-                  : "bg-card text-muted-foreground border-border hover:bg-muted/50 hover:text-foreground"
+                    ? "bg-transparent text-emerald-700 dark:text-emerald-400 border-neutral-300 dark:border-neutral-700"
+                    : "bg-transparent text-destructive border-neutral-300 dark:border-neutral-700"
+                  : "bg-card text-muted-foreground border-neutral-300 dark:border-neutral-700 hover:bg-muted/50 hover:text-foreground"
               }`}
             >
               <div className="flex items-center justify-between text-xs">
@@ -238,11 +238,11 @@ export function Form4DiscriminationCard({
       </div>
 
       {/* Active Discrimination Observation Card */}
-      <Card className="border border-border bg-card shadow-xs">
-        <CardHeader className="p-4 sm:p-5 border-b border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
+      <Card className="border border-neutral-300 dark:border-neutral-700 bg-card shadow-xs">
+        <CardHeader className="p-4 sm:p-5 border-b border-neutral-300 dark:border-neutral-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-mono font-bold flex items-center justify-center text-xs">
+              <span className="w-7 h-7 rounded-lg border border-neutral-300 dark:border-neutral-700 text-primary font-mono font-bold flex items-center justify-center text-xs">
                 #{currentPoint.pointIndex}
               </span>
               <CardTitle className="text-sm font-bold text-foreground">
@@ -275,10 +275,10 @@ export function Form4DiscriminationCard({
             {/* Left: Input Columns */}
             <div className="space-y-4">
               {/* Step A: Initial Indication I1 */}
-              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/20 space-y-2">
+              <div className="p-3.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-muted/20 space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <label className="font-bold text-foreground flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-full bg-primary/10 text-primary font-mono font-bold flex items-center justify-center text-[10px]">
+                    <span className="w-5 h-5 rounded-full border border-neutral-300 dark:border-neutral-700 text-primary font-mono font-bold flex items-center justify-center text-[10px]">
                       A
                     </span>
                     Initial Base Indication ($I_1$)
@@ -300,7 +300,7 @@ export function Form4DiscriminationCard({
               </div>
 
               {/* Step B: Auxiliary 1.4d Load Added Gently */}
-              <div className="p-3.5 rounded-xl border border-primary/30 bg-primary/5 space-y-2">
+              <div className="p-3.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-card space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <label className="font-bold text-primary flex items-center gap-1.5">
                     <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground font-mono font-bold flex items-center justify-center text-[10px]">
@@ -318,10 +318,10 @@ export function Form4DiscriminationCard({
               </div>
 
               {/* Step C: Final Indication I2 */}
-              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/20 space-y-2">
+              <div className="p-3.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-muted/20 space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <label className="font-bold text-foreground flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-full bg-primary/10 text-primary font-mono font-bold flex items-center justify-center text-[10px]">
+                    <span className="w-5 h-5 rounded-full border border-neutral-300 dark:border-neutral-700 text-primary font-mono font-bold flex items-center justify-center text-[10px]">
                       C
                     </span>
                     Observed Final Indication ($I_2$)
@@ -350,7 +350,7 @@ export function Form4DiscriminationCard({
                         finalIndicationI2: +(currentPoint.initialIndicationI1 + effectiveD).toFixed(4),
                       })
                     }
-                    className="text-[10px] font-mono px-2 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer border border-border/50"
+                    className="text-[10px] font-mono px-2 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer border border-neutral-300 dark:border-neutral-700"
                   >
                     +1.0d Response ({(currentPoint.initialIndicationI1 + effectiveD).toFixed(4)} {unit})
                   </button>
@@ -370,16 +370,16 @@ export function Form4DiscriminationCard({
             </div>
 
             {/* Right: Real-Time Discrimination Analysis Gauge */}
-            <div className="p-4 rounded-xl border border-border/90 bg-muted/20 space-y-4 flex flex-col justify-between">
+            <div className="p-4 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-muted/20 space-y-4 flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between text-xs font-bold text-foreground border-b border-border/60 pb-2">
+                <div className="flex items-center justify-between text-xs font-bold text-foreground border-b border-neutral-300 dark:border-neutral-700 pb-2">
                   <span>Clause 3.8.2.1 Response Analysis</span>
                   <span className="font-mono text-primary font-bold">1.4d Test</span>
                 </div>
 
                 <div className="space-y-3 pt-3">
                   {/* Step Change Metric */}
-                  <div className="p-3 rounded-lg bg-card border border-border/60 flex items-center justify-between">
+                  <div className="p-3 rounded-lg bg-card border border-neutral-300 dark:border-neutral-700 flex items-center justify-between">
                     <div>
                       <span className="text-[10px] text-muted-foreground block">
                         Observed Step Change ($\Delta I = I_2 - I_1$)
@@ -424,8 +424,8 @@ export function Form4DiscriminationCard({
                   <div
                     className={`p-3 rounded-lg border text-xs flex items-start gap-2.5 ${
                       currentResult.isCompliant
-                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
-                        : "bg-destructive/10 border-destructive/30 text-destructive"
+                        ? "border border-neutral-300 dark:border-neutral-700 bg-card text-emerald-600 dark:text-emerald-400"
+                        : "border border-neutral-300 dark:border-neutral-700 bg-card text-destructive"
                     }`}
                   >
                     {currentResult.isCompliant ? (
@@ -450,7 +450,7 @@ export function Form4DiscriminationCard({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-3 border-t border-border/80">
+              <div className="flex items-center justify-between pt-3 border-t border-neutral-300 dark:border-neutral-700">
                 <div className="text-xs text-muted-foreground">
                   Point <strong className="text-foreground">{activePointIndex + 1}</strong> of {points.length}
                 </div>

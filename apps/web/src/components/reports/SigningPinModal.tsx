@@ -144,11 +144,11 @@ export function SigningPinModal({
       aria-labelledby="signing-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200"
     >
-      <div className="relative w-full max-w-lg rounded-sm bg-card border border-border p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-lg rounded-2xl bg-card border border-neutral-300 dark:border-neutral-700 p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
         {/* Header with Close */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-primary/10 text-primary border border-primary/20">
+            <div className="text-primary flex items-center justify-center shrink-0">
               <Key className="h-6 w-6" weight="duotone" />
             </div>
             <div>
@@ -176,15 +176,15 @@ export function SigningPinModal({
 
         {/* Live Director X.509 Certificate Metadata Card */}
         <div
-          className="p-4 rounded-2xl bg-muted/40 border border-border/80 text-xs space-y-2.5"
+          className="p-4 rounded-2xl bg-card border border-neutral-300 dark:border-neutral-700 text-xs space-y-2.5"
           data-testid="x509-certificate-metadata"
         >
-          <div className="flex items-center justify-between border-b border-border/60 pb-2">
+          <div className="flex items-center justify-between border-b border-neutral-300 dark:border-neutral-700 pb-2">
             <span className="font-semibold text-foreground flex items-center gap-1.5">
               <Certificate className="h-4 w-4 text-primary" weight="bold" />
               <span>Live X.509 Token Credentials</span>
             </span>
-            <Badge variant="pass" className="text-[10px] py-0 px-2 uppercase font-mono">
+            <Badge variant="pass" showIcon={false} className="text-[10px] py-0 px-2 uppercase font-mono">
               Hardware DSC Active
             </Badge>
           </div>
@@ -219,7 +219,7 @@ export function SigningPinModal({
             </div>
           </div>
 
-          <div className="pt-1.5 border-t border-border/60">
+          <div className="pt-1.5 border-t border-neutral-300 dark:border-neutral-700">
             <span className="text-[10px] uppercase text-muted-foreground/70 block flex items-center gap-1">
               <Fingerprint className="h-3 w-3 text-primary" />
               <span>SHA-256 Public Key Fingerprint</span>
@@ -246,8 +246,8 @@ export function SigningPinModal({
                 key={i}
                 className={`h-11 w-11 rounded-xl border flex items-center justify-center text-lg font-bold transition ${
                   i < pin.length
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border/80 bg-background text-muted-foreground/30"
+                    ? "border-primary bg-transparent text-primary"
+                    : "border-neutral-300 dark:border-neutral-700 bg-transparent text-muted-foreground/30"
                 }`}
               >
                 {i < pin.length ? "●" : "—"}
@@ -275,7 +275,7 @@ export function SigningPinModal({
               variant="outline"
               disabled={isSigning}
               onClick={() => handleDigitClick(num)}
-              className="min-h-[48px] text-base font-semibold border-border/70 hover:bg-muted/60"
+              className="min-h-[48px] text-base font-semibold border-neutral-300 dark:border-neutral-700 hover:border-primary"
             >
               {num}
             </Button>
@@ -285,7 +285,7 @@ export function SigningPinModal({
             variant="outline"
             disabled={isSigning}
             onClick={handleClear}
-            className="min-h-[48px] text-xs font-semibold text-muted-foreground hover:bg-muted/60"
+            className="min-h-[48px] text-xs font-semibold text-muted-foreground border-neutral-300 dark:border-neutral-700 hover:border-primary"
           >
             Clear
           </Button>
@@ -294,7 +294,7 @@ export function SigningPinModal({
             variant="outline"
             disabled={isSigning}
             onClick={() => handleDigitClick("0")}
-            className="min-h-[48px] text-base font-semibold border-border/70 hover:bg-muted/60"
+            className="min-h-[48px] text-base font-semibold border-neutral-300 dark:border-neutral-700 hover:border-primary"
           >
             0
           </Button>
@@ -303,7 +303,7 @@ export function SigningPinModal({
             variant="outline"
             disabled={isSigning}
             onClick={handleBackspace}
-            className="min-h-[48px] text-xs font-semibold text-muted-foreground hover:bg-muted/60"
+            className="min-h-[48px] text-xs font-semibold text-muted-foreground border-neutral-300 dark:border-neutral-700 hover:border-primary"
           >
             ⌫
           </Button>
@@ -336,7 +336,7 @@ export function SigningPinModal({
             variant="outline"
             disabled={isSigning}
             onClick={onClose}
-            className="w-full min-h-[48px] text-xs"
+            className="w-full min-h-[48px] text-xs border-neutral-300 dark:border-neutral-700 hover:border-primary"
           >
             Cancel
           </Button>

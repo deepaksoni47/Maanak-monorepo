@@ -177,6 +177,7 @@ export function ReportDetailView({
               </h1>
               <Badge
                 variant={isApprovedLocked ? "pass" : "pending"}
+                showIcon={false}
                 className="font-mono text-xs uppercase"
                 data-testid="session-status-badge"
               >
@@ -235,7 +236,7 @@ export function ReportDetailView({
             data-testid="approved-locked-banner"
           >
             <div className="flex items-start sm:items-center gap-3.5">
-              <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+              <div className="text-emerald-500 shrink-0">
                 <LockKey className="h-6 w-6" weight="duotone" />
               </div>
               <div className="space-y-0.5">
@@ -243,7 +244,7 @@ export function ReportDetailView({
                   <h3 className="text-sm font-bold text-emerald-400">
                     APPROVED &amp; STATUTORILY LOCKED (WORM)
                   </h3>
-                  <Badge variant="pass" className="text-[10px] py-0 px-2 uppercase font-mono">
+                  <Badge variant="pass" showIcon={false} className="text-[10px] py-0 px-2 uppercase font-mono">
                     WELMEC 7.2 Sealed
                   </Badge>
                 </div>
@@ -286,9 +287,9 @@ export function ReportDetailView({
         )}
 
         {/* Official Certificate Card Preview */}
-        <Card className="p-6 sm:p-8 bg-card/80 backdrop-blur-xs border-border/80 shadow-md space-y-6">
+        <Card className="p-6 sm:p-8 bg-card border border-neutral-300 dark:border-neutral-700 shadow-md space-y-6">
           {/* Institutional Header Strip */}
-          <div className="border-b border-border/70 pb-6 text-center space-y-2">
+          <div className="border-b border-neutral-300 dark:border-neutral-700 pb-6 text-center space-y-2">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
               Government of India • Ministry of Consumer Affairs, Food &amp; Public Distribution
             </div>
@@ -311,7 +312,7 @@ export function ReportDetailView({
               <span>Instrument Verification Specifications</span>
             </h3>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-muted/30 border border-border/60 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-card border border-neutral-300 dark:border-neutral-700 text-xs">
               <div>
                 <span className="text-muted-foreground block">Instrument Model</span>
                 <strong className="text-foreground text-sm font-semibold">Essae DS-215</strong>
@@ -368,14 +369,14 @@ export function ReportDetailView({
                 </thead>
                 <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700">
                   {FORMS_SUMMARY.map((row) => (
-                    <tr key={row.form} className="hover:bg-muted/20 transition">
+                    <tr key={row.form} className="hover:bg-accent/40 transition">
                       <td className="p-3 font-bold text-foreground font-mono">{row.form}</td>
                       <td className="p-3 font-medium text-foreground">{row.title}</td>
                       <td className="p-3 font-mono text-muted-foreground text-[11px]">{row.rule}</td>
                       <td className="p-3 font-mono text-foreground">{row.result}</td>
                       <td className="p-3 font-mono text-muted-foreground">{row.limit}</td>
                       <td className="p-3 text-right">
-                        <Badge variant="pass" className="text-[10px] py-0 px-2 uppercase font-bold">
+                        <Badge variant="pass" showIcon={false} className="text-[10px] py-0 px-2 uppercase font-bold">
                           {row.status}
                         </Badge>
                       </td>
@@ -392,7 +393,7 @@ export function ReportDetailView({
           </div>
 
           {/* Cryptographic Provenance Block (WELMEC 7.2) */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-muted/40 border border-border/80 space-y-3">
+          <div className="p-4 sm:p-5 rounded-2xl bg-card border border-neutral-300 dark:border-neutral-700 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-primary" weight="duotone" />
@@ -400,19 +401,19 @@ export function ReportDetailView({
                   WELMEC 7.2 Software Guide Tamper-Evident Provenance Seal
                 </h4>
               </div>
-              <Badge variant="pass" className="text-[10px] font-mono">
+              <Badge variant="pass" showIcon={false} className="text-[10px] font-mono">
                 SQL Tamper Seal: VERIFIED
               </Badge>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
-              <div className="p-3 rounded-xl bg-background/60 border border-border/60">
+              <div className="p-3 rounded-xl bg-card border border-neutral-300 dark:border-neutral-700">
                 <span className="text-[11px] text-muted-foreground block">Genesis Node Hash</span>
                 <span className="text-[10px] text-foreground break-all">
                   4a58b8f72a91283d5a84e2098d63a89047bf1b2c45e6d78a9c1e0f3b4a58b8f7
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-background/60 border border-border/60">
+              <div className="p-3 rounded-xl bg-card border border-neutral-300 dark:border-neutral-700">
                 <span className="text-[11px] text-muted-foreground block">
                   {signature?.finalClosureHash ? "Final Closure Node Hash (SHA-256)" : "Merkle Chain Root (SHA-256)"}
                 </span>
@@ -420,14 +421,14 @@ export function ReportDetailView({
                   {signature?.finalClosureHash || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
                 </span>
               </div>
-              <div className="p-3 rounded-xl bg-background/60 border border-border/60 flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-card border border-neutral-300 dark:border-neutral-700 flex items-center justify-between">
                 <div>
                   <span className="text-[11px] text-muted-foreground block">Block Depth</span>
                   <span className="text-sm font-bold text-foreground">
                     {signature ? "19 Nodes (Sealed)" : "18 Linked Nodes"}
                   </span>
                 </div>
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <div className="text-primary flex items-center justify-center shrink-0">
                   <QrCode className="h-7 w-7" />
                 </div>
               </div>
@@ -435,7 +436,7 @@ export function ReportDetailView({
           </div>
 
           {/* Director Executive Signing Console UI (Live X.509 cert metadata & seal) (TASK-084) */}
-          <div className="pt-2 border-t border-border/70">
+          <div className="pt-2 border-t border-neutral-300 dark:border-neutral-700">
             {signature ? (
               <div
                 className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 space-y-4 animate-in fade-in"
@@ -443,7 +444,7 @@ export function ReportDetailView({
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-3.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
+                    <div className="text-emerald-500 shrink-0">
                       <Certificate className="h-8 w-8" weight="duotone" />
                     </div>
                     <div>
@@ -451,7 +452,7 @@ export function ReportDetailView({
                         <h4 className="text-base font-bold text-foreground">
                           Digitally Signed &amp; Statutorily Locked by {signature.signedBy}
                         </h4>
-                        <Badge variant="pass" className="text-[10px] py-0 px-2 font-mono">
+                        <Badge variant="pass" showIcon={false} className="text-[10px] py-0 px-2 font-mono">
                           X.509 Validated
                         </Badge>
                       </div>
@@ -475,7 +476,7 @@ export function ReportDetailView({
                 </div>
 
                 {/* Detailed Live X.509 Certificate & Provenance Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-xl bg-background/80 border border-emerald-500/30 text-xs font-mono">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-xl bg-card border border-neutral-300 dark:border-neutral-700 text-xs font-mono">
                   <div>
                     <span className="text-[10px] text-muted-foreground block uppercase">Certificate Serial</span>
                     <strong className="text-primary break-all">{signature.serialNumber}</strong>
@@ -495,7 +496,7 @@ export function ReportDetailView({
                 </div>
 
                 {signature.sha256Fingerprint && (
-                  <div className="p-2.5 rounded-lg bg-background/50 border border-border/60 text-[10px] font-mono text-muted-foreground flex items-center gap-2">
+                  <div className="p-2.5 rounded-lg bg-card border border-neutral-300 dark:border-neutral-700 text-[10px] font-mono text-muted-foreground flex items-center gap-2">
                     <Fingerprint className="h-4 w-4 text-emerald-400 shrink-0" />
                     <span className="shrink-0 text-muted-foreground font-semibold">SHA-256 Fingerprint:</span>
                     <span className="text-primary truncate">{signature.sha256Fingerprint}</span>
@@ -503,7 +504,7 @@ export function ReportDetailView({
                 )}
               </div>
             ) : (
-              <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="p-5 rounded-2xl bg-card border border-neutral-300 dark:border-neutral-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
                     <Key className="h-5 w-5 text-amber-500" weight="fill" />
