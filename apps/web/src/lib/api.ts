@@ -347,3 +347,59 @@ export const evidenceApi = {
   getProvenanceNodes: (sessionId: string) =>
     apiRequest(`/api/v1/evidence/session/${sessionId}/provenance`),
 };
+
+export const adminApi = {
+  listUsers: (params: { role?: string; laboratoryId?: string; isActive?: boolean; search?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (params.role) query.append("role", params.role);
+    if (params.laboratoryId) query.append("laboratoryId", params.laboratoryId);
+    if (params.isActive !== undefined) query.append("isActive", String(params.isActive));
+    if (params.search) query.append("search", params.search);
+    const qs = query.toString();
+    return apiRequest(`/api/v1/admin/users${qs ? `?${qs}` : ""}`);
+  },
+
+  createUser: (userData: {
+    fullName: string;
+    email: string;
+    username?: string;
+    password?: string;
+    role: string;
+    designation?: string;
+    laboratoryId?: string;
+    mobileNumber?: string;
+    governmentIdNo?: string;
+  }) =>
+    apiRequest("/api/v1/admin/users", {
+      method: "POST",
+      body: JSON.stringify(userData),
+    }),
+
+  updateUser: (
+    id: string,
+    updates: {
+      fullName?: string;
+      role?: string;
+      designation?: string;
+      laboratoryId?: string;
+      mobileNumber?: string;
+      isActive?: boolean;
+    }
+  ) =>
+    apiRequest(`/api/v1/admin/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    }),
+
+  listRoles: () => apiRequest("/api/v1/admin/roles"),
+
+  listAuditLogs: (params: { action?: string; entityType?: string; limit?: number; offset?: number } = {}) => {
+    const query = new URLSearchParams();
+    if (params.action) query.append("action", params.action);
+    if (params.entityType) query.append("entityType", params.entityType);
+    if (params.limit) query.append("limit", String(params.limit));
+    if (params.offset) query.append("offset", String(params.offset));
+    const qs = query.toString();
+    return apiRequest(`/api/v1/admin/audit-logs${qs ? `?${qs}` : ""}`);
+  },
+};

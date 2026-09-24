@@ -246,7 +246,7 @@ graph TD
 | **`TASK-094`** | MOD-18 | Next.js Client-Side Route Protection & Edge Middleware (`middleware.ts`)                           | **`VERIFIED`** | `TASK-058` (Verified)                                               | Verified: routes-config.ts statutory matrix, middleware.ts Edge JWT role extraction & redirects to /login or /access-denied, auth cookie sync, and 403 AccessDeniedPage (195/195 Web tests pass, clean Next.js build) | `pnpm --filter @maanak/web test` |
 | **`TASK-095`** | MOD-18 | Role-Scoped Navigation & Dynamic Sidebar Filtering in `Shell.tsx` and `MobileNav.tsx`               | **`VERIFIED`** | `TASK-094` (Verified)                                               | Verified: filterNavItemsByRole in MobileNav.tsx and Shell.tsx, role-scoped sidebar & drawer links, adaptive bottom navigation slots, and /admin/users nav item (196/196 Web tests pass, clean Next.js build) | `pnpm --filter @maanak/web test` |
 | **`TASK-096`** | MOD-18 | Backend Administrative API Endpoints (`/api/v1/admin/*` for personnel & roles)                    | **`VERIFIED`** | `TASK-046` (Verified)                                               | Verified: createAdminRouter in apps/api/src/routes/admin.ts guarded by requireAuth & requireRole(ADMIN), user provisioning with Argon2id, role updates, roles catalog, and audit trail queries (173/173 API tests pass) | `pnpm --filter @maanak/api test` |
-| **`TASK-097`** | MOD-18 | Frontend Administrative Portal & User Management Page (`/admin/users`)                              | **`READY`**    | `TASK-094` (Verified), `TASK-096` (Verified)                        | Promoted to READY: TASK-094 and TASK-096 verified; ready for frontend administrative portal & user management page | `pnpm --filter @maanak/web test` |
+| **`TASK-097`** | MOD-18 | Frontend Administrative Portal & User Management Page (`/admin/users`)                              | **`VERIFIED`** | `TASK-094` (Verified), `TASK-096` (Verified)                        | Verified: UserManagementView component, adminApi integration, /admin/users page with Shell breadcrumbs, personnel provisioning modal, and role editor (201/201 Web tests pass, clean Next.js build) | `pnpm --filter @maanak/web test` |
 
 ---
 
@@ -257,7 +257,7 @@ graph TD
    - Core metrology engine, Table 3/6 brackets, NABL 129 gatekeeper, WELMEC 7.2 hash graph, and Form 1 weighing performance operational.
 2. **Phase 2: Production-Ready Complete Handover Track (`TASK-071` through `TASK-097`)**:
    - **Total Track Scope**: 27 atomic tasks across Modules 12 through 18.
-   - **Current State**: **26 Tasks `VERIFIED`** (`TASK-071` through `TASK-096`), **1 Task `READY` for immediate execution** (`TASK-097`), **0 Tasks `BLOCKED`**.
+   - **Current State**: **All 27 Tasks `VERIFIED`** (`TASK-071` through `TASK-097`) with 100% passing automated test suites (**413 total automated tests**: 39 `@maanak/report-generator`, 173 `@maanak/api`, 201 `@maanak/web`).
    - **Target Deliverable**: Complete enterprise legal metrology platform with full Forms 1–17 report generation, multipart evidence management, WORM database locks, multi-tenant RRSL facility isolation, IndexedDB edge sync, role-based route guards, and administrative user management.
 
 
