@@ -334,24 +334,19 @@ export function DashboardView() {
         </div>
 
         {/* NABL 129 Standards & Compliance Health Alert Banner */}
-        <div className="rounded-sm border border-emerald-500/30 bg-emerald-500/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-              <ShieldCheck size={22} weight="fill" />
+        <div className="rounded-sm border border-neutral-300 dark:border-neutral-700 bg-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="text-sm font-bold text-foreground">
+                NABL 129 Standard Weights Health: 100% In Calibration
+              </h4>
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-neutral-300 dark:border-neutral-700 text-foreground">
+                {weightsValidBadge}
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h4 className="text-sm font-bold text-foreground">
-                  NABL 129 Standard Weights Health: 100% In Calibration
-                </h4>
-                <Badge variant="pass" showIcon={false} className="py-0.5 px-2 text-[10px]">
-                  {weightsValidBadge}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                All working standards (E2, F1, F2, M1) comply with Clause 3.7.1 uncertainty limits (U ≤ ⅓ MPE). Next recalibration due in 42 days.
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              All working standards (E2, F1, F2, M1) comply with Clause 3.7.1 uncertainty limits (U ≤ ⅓ MPE). Next recalibration due in 42 days.
+            </p>
           </div>
           <Link href="/weights" className="shrink-0">
             <Button
@@ -516,7 +511,7 @@ export function DashboardView() {
           <Link href="/instruments/new" className="block group">
             <Card className="h-full hover:border-primary/50 transition-all">
               <CardContent className="p-5 flex items-start gap-4">
-                <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <div className="w-11 h-11 rounded-2xl  flex items-center justify-center shrink-0 group-hover:text-primary group-hover:scale-105 transition-transform">
                   <PlusCircle size={24} weight="duotone" />
                 </div>
                 <div>
@@ -532,13 +527,13 @@ export function DashboardView() {
           </Link>
 
           <Link href="/review" className="block group">
-            <Card className="h-full hover:border-amber-500/50 transition-all">
+            <Card className="h-full hover:border-primary/50 transition-all">
               <CardContent className="p-5 flex items-start gap-4">
-                <div className="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <div className="w-11 h-11 rounded-2xl  flex items-center justify-center shrink-0 group-hover:text-primary group-hover:scale-105 transition-transform">
                   <FileMagnifyingGlass size={24} weight="duotone" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-foreground group-hover:text-amber-500 transition-colors">
+                  <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                     Senior Reviewer Audit
                   </h4>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -550,13 +545,13 @@ export function DashboardView() {
           </Link>
 
           <Link href="/verify" className="block group">
-            <Card className="h-full hover:border-emerald-500/50 transition-all">
+            <Card className="h-full hover:border-primary/50 transition-all">
               <CardContent className="p-5 flex items-start gap-4">
-                <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <div className="w-11 h-11 rounded-2xl text-foreground group-hover:text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-all">
                   <ShieldCheck size={24} weight="duotone" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-foreground group-hover:text-emerald-500 transition-colors">
+                  <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                     Public QR Verification
                   </h4>
                   <p className="text-xs text-muted-foreground mt-1">
