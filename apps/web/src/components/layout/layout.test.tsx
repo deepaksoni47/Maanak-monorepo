@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Breadcrumbs } from "./Breadcrumbs";
-import { MobileNav, MAIN_NAV_ITEMS } from "./MobileNav";
+import { MobileNav, MAIN_NAV_ITEMS, filterNavItemsByRole } from "./MobileNav";
+import { Role } from "../../lib/routes-config.js";
 import { Shell } from "./Shell";
 import { Navbar } from "./Navbar";
 import { BottomNav, LANDING_BOTTOM_NAV_ITEMS } from "./BottomNav";
@@ -54,7 +55,44 @@ describe("TASK-048: Universal Responsive Mobile Shell & Navigation", () => {
       assert.ok(routes.includes("/rule-packs"), "Missing /rule-packs route");
       assert.ok(routes.includes("/weights"), "Missing /weights route");
       assert.ok(routes.includes("/verify"), "Missing /verify route");
-      assert.strictEqual(MAIN_NAV_ITEMS.length, 9);
+      assert.ok(routes.includes("/admin/users"), "Missing /admin/users route");
+      assert.strictEqual(MAIN_NAV_ITEMS.length, 10);
+    });
+
+    test("TASK-095: filterNavItemsByRole filters routes based on officer role", () => {
+      // INSPECTOR should see bench, intake, reports, but not review, rule-packs, or admin/users
+      const inspectorRoutes = filterNavItemsByRole(MAIN_NAV_ITEMS, Role.INSPECTOR).map((i) => i.href);
+      assert.ok(inspectorRoutes.includes("/bench"));
+      assert.ok(inspectorRoutes.includes("/dashboard"));
+      assert.ok(inspectorRoutes.includes("/instruments"));
+      assert.ok(inspectorRoutes.includes("/reports"));
+      assert.ok(!inspectorRoutes.includes("/review"));
+      assert.ok(!inspectorRoutes.includes("/rule-packs"));
+      assert.ok(!inspectorRoutes.includes("/admin/users"));
+
+      // REVIEWER should see review, reports, but not bench, rule-packs, or admin/users
+      const reviewerRoutes = filterNavItemsByRole(MAIN_NAV_ITEMS, Role.REVIEWER).map((i) => i.href);
+      assert.ok(reviewerRoutes.includes("/review"));
+      assert.ok(reviewerRoutes.includes("/dashboard"));
+      assert.ok(reviewerRoutes.includes("/reports"));
+      assert.ok(!reviewerRoutes.includes("/bench"));
+      assert.ok(!reviewerRoutes.includes("/rule-packs"));
+      assert.ok(!reviewerRoutes.includes("/admin/users"));
+
+      // DIRECTOR should see review, reports, but not bench or admin/users
+      const directorRoutes = filterNavItemsByRole(MAIN_NAV_ITEMS, Role.DIRECTOR).map((i) => i.href);
+      assert.ok(directorRoutes.includes("/review"));
+      assert.ok(!directorRoutes.includes("/bench"));
+      assert.ok(!directorRoutes.includes("/rule-packs"));
+      assert.ok(!directorRoutes.includes("/admin/users"));
+
+      // ADMIN has unrestricted visibility of all routes
+      const adminRoutes = filterNavItemsByRole(MAIN_NAV_ITEMS, Role.ADMIN).map((i) => i.href);
+      assert.strictEqual(adminRoutes.length, 10);
+      assert.ok(adminRoutes.includes("/admin/users"));
+      assert.ok(adminRoutes.includes("/rule-packs"));
+      assert.ok(adminRoutes.includes("/bench"));
+      assert.ok(adminRoutes.includes("/review"));
     });
 
     test("renders mobile hamburger button with min 48px touch target and accessibility label", () => {

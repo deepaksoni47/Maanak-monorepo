@@ -4,7 +4,7 @@ import React, { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MobileNav, MAIN_NAV_ITEMS } from "./MobileNav";
+import { MobileNav, MAIN_NAV_ITEMS, filterNavItemsByRole } from "./MobileNav";
 import { Breadcrumbs, BreadcrumbItem } from "./Breadcrumbs";
 import {
   User,
@@ -77,7 +77,7 @@ export function Shell({
 
           {/* Navigation Links */}
           <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-170px)] scrollbar-none">
-            {MAIN_NAV_ITEMS.map((item) => {
+            {filterNavItemsByRole(MAIN_NAV_ITEMS, user?.role).map((item) => {
               const Icon = item.icon;
               const currentPath = pathname || "";
               const isActive =

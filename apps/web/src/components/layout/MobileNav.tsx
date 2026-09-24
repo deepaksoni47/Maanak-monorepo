@@ -21,8 +21,10 @@ import {
   WifiSlash,
   SignOut,
   SignIn,
+  Users,
 } from "@phosphor-icons/react";
 import { useAuth } from "@/lib/auth-context";
+import { Role } from "@/lib/routes-config";
 import { FacilitySwitcher } from "./FacilitySwitcher";
 
 export interface NavItem {
@@ -30,19 +32,83 @@ export interface NavItem {
   href: string;
   icon: React.ComponentType<{ size?: number; weight?: "bold" | "duotone" | "fill" | "regular"; className?: string }>;
   badge?: string;
+  allowedRoles?: Role[];
 }
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: ChartLineUp },
-  { label: "Instrument Intake", href: "/instruments", icon: Scales },
-  { label: "Bench Execution", href: "/bench", icon: Flask },
-  { label: "Reviewer Audit", href: "/review", icon: MagnifyingGlass },
-  { label: "Test Reports", href: "/reports", icon: FileText },
-  { label: "Audit & Provenance", href: "/provenance", icon: LockKey },
-  { label: "Standards & Rules", href: "/rule-packs", icon: Gear },
-  { label: "Standard Weights", href: "/weights", icon: ShieldCheck },
-  { label: "Public Verification", href: "/verify", icon: QrCode },
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: ChartLineUp,
+    allowedRoles: [Role.INSPECTOR, Role.REVIEWER, Role.DIRECTOR, Role.ADMIN],
+  },
+  {
+    label: "Instrument Intake",
+    href: "/instruments",
+    icon: Scales,
+    allowedRoles: [Role.INSPECTOR, Role.REVIEWER, Role.DIRECTOR, Role.ADMIN],
+  },
+  {
+    label: "Bench Execution",
+    href: "/bench",
+    icon: Flask,
+    allowedRoles: [Role.INSPECTOR, Role.ADMIN],
+  },
+  {
+    label: "Reviewer Audit",
+    href: "/review",
+    icon: MagnifyingGlass,
+    allowedRoles: [Role.REVIEWER, Role.DIRECTOR, Role.ADMIN],
+  },
+  {
+    label: "Test Reports",
+    href: "/reports",
+    icon: FileText,
+    allowedRoles: [Role.INSPECTOR, Role.REVIEWER, Role.DIRECTOR, Role.ADMIN],
+  },
+  {
+    label: "Audit & Provenance",
+    href: "/provenance",
+    icon: LockKey,
+    allowedRoles: [Role.INSPECTOR, Role.REVIEWER, Role.DIRECTOR, Role.ADMIN],
+  },
+  {
+    label: "Standards & Rules",
+    href: "/rule-packs",
+    icon: Gear,
+    allowedRoles: [Role.ADMIN],
+  },
+  {
+    label: "Standard Weights",
+    href: "/weights",
+    icon: ShieldCheck,
+    allowedRoles: [Role.INSPECTOR, Role.REVIEWER, Role.DIRECTOR, Role.ADMIN],
+  },
+  {
+    label: "Personnel & Access",
+    href: "/admin/users",
+    icon: Users,
+    allowedRoles: [Role.ADMIN],
+  },
+  {
+    label: "Public Verification",
+    href: "/verify",
+    icon: QrCode,
+  },
 ];
+
+export function filterNavItemsByRole(items: NavItem[], role?: string | null): NavItem[] {
+  if (!role) {
+    // When no officer is logged in (unauthenticated/guest mode), hide admin-only links
+    return items.filter(
+      (item) => !item.allowedRoles || !item.allowedRoles.every((r) => r === Role.ADMIN)
+    );
+  }
+  return items.filter((item) => {
+    if (!item.allowedRoles || item.allowedRoles.length === 0) return true;
+    return item.allowedRoles.includes(role as Role);
+  });
+}
 
 export interface MobileNavProps {
   onMenuToggle?: (isOpen: boolean) => void;
@@ -201,7 +267,7 @@ export function MobileNav({ onMenuToggle }: MobileNavProps) {
 
               {/* Drawer Nav Links */}
               <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-190px)]">
-                {MAIN_NAV_ITEMS.map((item) => {
+                {filterNavItemsByRole(MAIN_NAV_ITEMS, user?.role).map((item) => {
                   const Icon = item.icon;
                   const currentPath = pathname || "";
                   const isActive =
