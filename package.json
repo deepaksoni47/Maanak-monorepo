@@ -11,6 +11,7 @@
   "scripts": {
     "postinstall": "pnpm --filter @maanak/db run generate",
     "build": "turbo run build",
+    "start": "node scripts/start-render.js",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
