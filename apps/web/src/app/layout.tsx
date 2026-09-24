@@ -36,6 +36,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "@/lib/auth-context";
+import { FacilityProvider } from "@/lib/facility-context";
 
 export default function RootLayout({
   children,
@@ -46,7 +47,9 @@ export default function RootLayout({
     <html lang="en" className="h-full" suppressHydrationWarning>
       <body className="min-h-full bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary">
         <AuthProvider>
-          {children}
+          <FacilityProvider>
+            {children}
+          </FacilityProvider>
         </AuthProvider>
       </body>
     </html>

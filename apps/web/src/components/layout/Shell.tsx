@@ -14,6 +14,7 @@ import {
   SignIn,
 } from "@phosphor-icons/react";
 import { useAuth } from "@/lib/auth-context";
+import { FacilitySwitcher } from "./FacilitySwitcher";
 
 export interface ShellProps {
   children: ReactNode;
@@ -67,6 +68,11 @@ export function Shell({
               <span className="text-[10px] font-mono font-bold text-primary px-1.5 py-0.5 rounded-xs bg-primary/10 border border-primary/20">
                 OIML R-76
               </span>
+            </div>
+
+            {/* RRSL Multi-Facility Node Indicator / Switcher (TASK-087) */}
+            <div className="px-3 pt-3 pb-1" data-testid="sidebar-facility-section">
+              <FacilitySwitcher compact={false} />
             </div>
 
           {/* Navigation Links */}

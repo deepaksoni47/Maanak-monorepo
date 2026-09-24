@@ -13,12 +13,16 @@ import {
   FileMagnifyingGlass,
   ArrowSquareOut,
   SlidersHorizontal,
+  Buildings,
+  Globe,
+  MapPin,
 } from "@phosphor-icons/react";
 import { Shell } from "@/components/layout/Shell";
 import { Badge, BadgeVariant } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { sessionsApi, weightsApi } from "@/lib/api";
+import { useFacility, ALL_FACILITIES_ID } from "@/lib/facility-context";
 
 export interface FormattedSession {
   id: string;
@@ -33,7 +37,93 @@ export interface FormattedSession {
   updatedAt: string;
   status: BadgeVariant;
   statusLabel: string;
+  facilityCode?: string;
+  facilityName?: string;
 }
+
+export interface FacilityMetrics {
+  activeCount: number | string;
+  pendingCount: number | string;
+  approvedCount: number | string;
+  complianceRate: string;
+  weightsValidBadge: string;
+  weightsDetail: string;
+  activeSubtitle: string;
+  jurisdictionNote: string;
+}
+
+export const FACILITY_METRICS_MAP: Record<string, FacilityMetrics> = {
+  ALL: {
+    activeCount: 48,
+    pendingCount: 9,
+    approvedCount: 28,
+    complianceRate: "95.8%",
+    weightsValidBadge: "ALL 114 WORKING STANDARDS VALID",
+    weightsDetail: "National aggregated working standards (E2, F1, F2, M1) across all 6 RRSL facilities comply with Clause 3.7.1 uncertainty limits (U ≤ ⅓ MPE).",
+    activeSubtitle: "+12 started today across Pan-India Network",
+    jurisdictionNote: "Pan-India National Metrology Grid · Aggregated Multi-Facility Overview",
+  },
+  "rrsl-fbd": {
+    activeCount: 14,
+    pendingCount: 3,
+    approvedCount: 8,
+    complianceRate: "94.2%",
+    weightsValidBadge: "ALL 24 SETS VALID",
+    weightsDetail: "All working standards (E2, F1, F2, M1) comply with Clause 3.7.1 uncertainty limits (U ≤ ⅓ MPE). Next recalibration due in 42 days.",
+    activeSubtitle: "+2 started today in RRSL Lab",
+    jurisdictionNote: "Northern Zone Jurisdiction (Delhi-NCR, Haryana, Punjab, Rajasthan, HP)",
+  },
+  "rrsl-amd": {
+    activeCount: 12,
+    pendingCount: 2,
+    approvedCount: 7,
+    complianceRate: "96.1%",
+    weightsValidBadge: "ALL 20 SETS VALID",
+    weightsDetail: "Western Region primary reference E2/F1 sets calibrated against NPL standards. Zero uncertainty exceptions.",
+    activeSubtitle: "+1 started today in Ahmedabad Testing Bay",
+    jurisdictionNote: "Western Zone Jurisdiction (Gujarat, Maharashtra, Goa, Madhya Pradesh)",
+  },
+  "rrsl-blr": {
+    activeCount: 9,
+    pendingCount: 2,
+    approvedCount: 5,
+    complianceRate: "97.2%",
+    weightsValidBadge: "ALL 22 SETS VALID",
+    weightsDetail: "Southern Region Class I & II precision standard weight sets with NABL CC-3102 certification.",
+    activeSubtitle: "+3 started today in Bengaluru Testing Bay",
+    jurisdictionNote: "Southern Zone Jurisdiction (Karnataka, Tamil Nadu, Kerala, AP, Telangana)",
+  },
+  "rrsl-bbi": {
+    activeCount: 5,
+    pendingCount: 1,
+    approvedCount: 3,
+    complianceRate: "93.8%",
+    weightsValidBadge: "ALL 16 SETS VALID",
+    weightsDetail: "Eastern Region high-capacity heavy NAWI verification standards active in Bhubaneswar bay.",
+    activeSubtitle: "+1 started today in Bhubaneswar Testing Bay",
+    jurisdictionNote: "Eastern Zone Jurisdiction (Odisha, West Bengal, Bihar, Jharkhand, Chhattisgarh)",
+  },
+  "rrsl-vns": {
+    activeCount: 4,
+    pendingCount: 1,
+    approvedCount: 3,
+    complianceRate: "95.0%",
+    weightsValidBadge: "ALL 18 SETS VALID",
+    weightsDetail: "Central Region standard weights repository with valid traceable calibration certificates.",
+    activeSubtitle: "+0 started today in Varanasi Testing Bay",
+    jurisdictionNote: "Central Zone Jurisdiction (Uttar Pradesh, Uttarakhand, Central Terai)",
+  },
+  "rrsl-gau": {
+    activeCount: 4,
+    pendingCount: 0,
+    approvedCount: 2,
+    complianceRate: "98.0%",
+    weightsValidBadge: "ALL 14 SETS VALID",
+    weightsDetail: "North-Eastern Zone working standards with climate-controlled storage and humidity compensation.",
+    activeSubtitle: "+1 started today in Guwahati Testing Bay",
+    jurisdictionNote: "North-Eastern Zone Jurisdiction (Assam, Meghalaya, Arunachal, Nagaland, Manipur, Mizoram, Tripura)",
+  },
+};
 
 export const RECENT_SESSIONS: FormattedSession[] = [
   {
@@ -49,6 +139,8 @@ export const RECENT_SESSIONS: FormattedSession[] = [
     updatedAt: "10 mins ago",
     status: "pass",
     statusLabel: "PASSED",
+    facilityCode: "RRSL-FBD",
+    facilityName: "RRSL Faridabad",
   },
   {
     id: "sess-02",
@@ -63,6 +155,8 @@ export const RECENT_SESSIONS: FormattedSession[] = [
     updatedAt: "25 mins ago",
     status: "in_progress",
     statusLabel: "TESTING",
+    facilityCode: "RRSL-FBD",
+    facilityName: "RRSL Faridabad",
   },
   {
     id: "sess-03",
@@ -77,6 +171,8 @@ export const RECENT_SESSIONS: FormattedSession[] = [
     updatedAt: "1 hour ago",
     status: "pending",
     statusLabel: "IN REVIEW",
+    facilityCode: "RRSL-FBD",
+    facilityName: "RRSL Faridabad",
   },
   {
     id: "sess-04",
@@ -91,6 +187,8 @@ export const RECENT_SESSIONS: FormattedSession[] = [
     updatedAt: "3 hours ago",
     status: "fail",
     statusLabel: "MPE EXCEEDED",
+    facilityCode: "RRSL-FBD",
+    facilityName: "RRSL Faridabad",
   },
   {
     id: "sess-05",
@@ -105,6 +203,72 @@ export const RECENT_SESSIONS: FormattedSession[] = [
     updatedAt: "5 hours ago",
     status: "pass",
     statusLabel: "CERTIFIED",
+    facilityCode: "RRSL-AMD",
+    facilityName: "RRSL Ahmedabad",
+  },
+  {
+    id: "sess-06",
+    sessionNumber: "TS-2026-0137",
+    model: "Citizen CT-500",
+    manufacturer: "Citizen Scales India",
+    accuracyClass: "II",
+    maxCapacity: "500 g",
+    verificationInterval: "10 mg",
+    inspector: "Er. D. Sen",
+    stage: "Form 5: Repeatability",
+    updatedAt: "6 hours ago",
+    status: "pass",
+    statusLabel: "PASSED",
+    facilityCode: "RRSL-BLR",
+    facilityName: "RRSL Bengaluru",
+  },
+  {
+    id: "sess-07",
+    sessionNumber: "TS-2026-0136",
+    model: "CAS SW-11",
+    manufacturer: "CAS India",
+    accuracyClass: "III",
+    maxCapacity: "20 kg",
+    verificationInterval: "5 g",
+    inspector: "Er. B. Mishra",
+    stage: "Form 6: Creep & Zero Return",
+    updatedAt: "8 hours ago",
+    status: "pass",
+    statusLabel: "CERTIFIED",
+    facilityCode: "RRSL-BBI",
+    facilityName: "RRSL Bhubaneswar",
+  },
+  {
+    id: "sess-08",
+    sessionNumber: "TS-2026-0135",
+    model: "Shimadzu ATX224",
+    manufacturer: "Shimadzu Metrology",
+    accuracyClass: "I",
+    maxCapacity: "220 g",
+    verificationInterval: "0.1 mg",
+    inspector: "Er. M. Tripathi",
+    stage: "Form 1: Weighing (10/10)",
+    updatedAt: "9 hours ago",
+    status: "pending",
+    statusLabel: "IN REVIEW",
+    facilityCode: "RRSL-VNS",
+    facilityName: "RRSL Varanasi",
+  },
+  {
+    id: "sess-09",
+    sessionNumber: "TS-2026-0134",
+    model: "Eagle DI-500",
+    manufacturer: "Eagle Systems",
+    accuracyClass: "III",
+    maxCapacity: "50 kg",
+    verificationInterval: "10 g",
+    inspector: "Er. P. Gogoi",
+    stage: "Form 1: Ready to Start",
+    updatedAt: "12 hours ago",
+    status: "in_progress",
+    statusLabel: "TESTING",
+    facilityCode: "RRSL-GAU",
+    facilityName: "RRSL Guwahati",
   },
 ];
 
@@ -144,12 +308,32 @@ function formatRelativeTime(dateString?: string | Date | null): string {
 }
 
 export function DashboardView() {
+  const {
+    currentFacility,
+    selectedFacilityId,
+    setSelectedFacilityId,
+    facilities,
+    isAllFacilities,
+    canSwitchFacility,
+  } = useFacility();
+
   const [sessions, setSessions] = useState<FormattedSession[]>(RECENT_SESSIONS);
-  const [activeCount, setActiveCount] = useState<number | string>(14);
-  const [pendingCount, setPendingCount] = useState<number | string>(3);
-  const [approvedCount, setApprovedCount] = useState<number | string>(8);
-  const [complianceRate, setComplianceRate] = useState<string>("94.2%");
-  const [weightsValidBadge, setWeightsValidBadge] = useState<string>("ALL 24 SETS VALID");
+  const [hasLiveSessions, setHasLiveSessions] = useState(false);
+  const [hasLiveWeights, setHasLiveWeights] = useState(false);
+  const [liveActiveCount, setLiveActiveCount] = useState<number>(14);
+  const [livePendingCount, setLivePendingCount] = useState<number>(3);
+  const [liveApprovedCount, setLiveApprovedCount] = useState<number>(8);
+  const [liveComplianceRate, setLiveComplianceRate] = useState<string>("94.2%");
+  const [liveWeightsBadge, setLiveWeightsBadge] = useState<string>("ALL 24 SETS VALID");
+
+  const facilityMetrics =
+    FACILITY_METRICS_MAP[currentFacility.id] || FACILITY_METRICS_MAP["rrsl-fbd"];
+
+  const activeCount = hasLiveSessions ? liveActiveCount : facilityMetrics.activeCount;
+  const pendingCount = hasLiveSessions ? livePendingCount : facilityMetrics.pendingCount;
+  const approvedCount = hasLiveSessions ? liveApprovedCount : facilityMetrics.approvedCount;
+  const complianceRate = hasLiveSessions ? liveComplianceRate : facilityMetrics.complianceRate;
+  const weightsValidBadge = hasLiveWeights ? liveWeightsBadge : facilityMetrics.weightsValidBadge;
 
   useEffect(() => {
     let isMounted = true;
@@ -189,10 +373,13 @@ export function DashboardView() {
                 updatedAt: formatRelativeTime(s.updatedAt || s.startedAt),
                 status: variant,
                 statusLabel: label,
+                facilityCode: s.laboratory?.code || "RRSL-FBD",
+                facilityName: s.laboratory?.name || "RRSL Faridabad",
               };
             });
 
             setSessions(mapped);
+            setHasLiveSessions(true);
 
             const active = rawSessions.filter(
               (s) => s.status === "IN_PROGRESS" || s.status === "DRAFT",
@@ -202,18 +389,19 @@ export function DashboardView() {
               (s) => s.status === "COMPLETED" || s.status === "CERTIFIED",
             ).length;
 
-            setActiveCount(active);
-            setPendingCount(pending);
-            setApprovedCount(approved);
+            setLiveActiveCount(active);
+            setLivePendingCount(pending);
+            setLiveApprovedCount(approved);
 
             const totalEvaluated = approved + rawSessions.filter((s) => s.status === "FAILED").length;
             if (totalEvaluated > 0) {
-              setComplianceRate(`${((approved / totalEvaluated) * 100).toFixed(1)}%`);
+              setLiveComplianceRate(`${((approved / totalEvaluated) * 100).toFixed(1)}%`);
             }
           }
 
           if (weightsRes.status === "fulfilled" && weightsRes.value?.count !== undefined) {
-            setWeightsValidBadge(`ALL ${weightsRes.value.count} SETS VALID`);
+            setLiveWeightsBadge(`ALL ${weightsRes.value.count} SETS VALID`);
+            setHasLiveWeights(true);
           }
         }
       } catch (err) {
@@ -226,6 +414,21 @@ export function DashboardView() {
       isMounted = false;
     };
   }, []);
+
+  // Filter sessions based on facility selection
+  const displayedSessions = isAllFacilities
+    ? sessions
+    : sessions.filter((s) => {
+        const code = (s.facilityCode || "").toUpperCase();
+        const facCode = currentFacility.code.toUpperCase();
+        const facId = currentFacility.id.toLowerCase();
+        return (
+          code === facCode ||
+          code.includes(facCode) ||
+          (s.facilityName && s.facilityName.toLowerCase().includes(currentFacility.city.toLowerCase()))
+        );
+      });
+  const effectiveSessions = displayedSessions.length > 0 ? displayedSessions : sessions.slice(0, 4);
 
   return (
     <Shell
@@ -250,6 +453,80 @@ export function DashboardView() {
       }
     >
       <div className="space-y-6">
+        {/* Facility Scope & Multi-Branch Switcher Bar (TASK-087) */}
+        <div
+          className="rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-card p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs"
+          data-testid="dashboard-facility-bar"
+        >
+          <div className="flex items-start md:items-center gap-3">
+            <div className="text-primary flex items-center justify-center shrink-0 mt-0.5 md:mt-0">
+              {isAllFacilities ? (
+                <Globe size={24} weight="duotone" />
+              ) : (
+                <Buildings size={24} weight="duotone" />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-bold text-foreground">
+                  {currentFacility.name}
+                </h3>
+                <span
+                  className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-neutral-300 dark:border-neutral-700 bg-transparent text-primary"
+                  data-testid="facility-jurisdiction-pill"
+                >
+                  {isAllFacilities ? "PAN-INDIA GRID" : currentFacility.nablAccreditationNo}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {facilityMetrics.jurisdictionNote}
+              </p>
+            </div>
+          </div>
+
+          {/* Multi-Facility Filter Switcher for Admin / Authorized Viewers */}
+          {canSwitchFacility && (
+            <div className="flex items-center gap-2 flex-wrap" data-testid="dashboard-facility-switcher">
+              <span className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
+                <MapPin size={14} />
+                <span>Filter Branch:</span>
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setSelectedFacilityId(ALL_FACILITIES_ID)}
+                  className={`px-3 py-1 text-xs rounded-full border font-semibold transition-all ${
+                    isAllFacilities
+                      ? "border-primary text-primary bg-primary/10 shadow-xs"
+                      : "border-neutral-300 dark:border-neutral-700 bg-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                  data-testid="filter-facility-all"
+                >
+                  All (National)
+                </button>
+                {facilities.map((fac) => {
+                  const isSelected = selectedFacilityId === fac.id;
+                  return (
+                    <button
+                      key={fac.id}
+                      type="button"
+                      onClick={() => setSelectedFacilityId(fac.id)}
+                      className={`px-2.5 py-1 text-xs rounded-full border font-semibold transition-all ${
+                        isSelected
+                          ? "border-primary text-primary bg-primary/10 shadow-xs"
+                          : "border-neutral-300 dark:border-neutral-700 bg-transparent text-muted-foreground hover:text-foreground"
+                      }`}
+                      data-testid={`filter-facility-${fac.code.toLowerCase()}`}
+                    >
+                      {fac.city}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* 4-Card KPI Analytics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {/* Metric 1: Active Test Sessions */}
@@ -267,7 +544,7 @@ export function DashboardView() {
                 {activeCount}
               </div>
               <p className="text-xs text-muted-foreground">
-                <span className="font-bold uppercase text-foreground">+2 started</span> today in RRSL Lab
+                <span className="font-bold uppercase text-foreground">{facilityMetrics.activeSubtitle}</span>
               </p>
             </div>
           </div>
@@ -345,7 +622,7 @@ export function DashboardView() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              All working standards (E2, F1, F2, M1) comply with Clause 3.7.1 uncertainty limits (U ≤ ⅓ MPE). Next recalibration due in 42 days.
+              {facilityMetrics.weightsDetail}
             </p>
           </div>
           <Link href="/weights" className="shrink-0">
@@ -398,13 +675,20 @@ export function DashboardView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700">
-                {sessions.map((session) => (
+                {effectiveSessions.map((session) => (
                   <tr
                     key={session.id}
                     className="hover:bg-accent/40 transition-colors group"
                   >
                     <td className="py-4 px-5 font-mono font-semibold text-foreground whitespace-nowrap">
-                      {session.sessionNumber}
+                      <div className="flex items-center gap-2">
+                        <span>{session.sessionNumber}</span>
+                        {session.facilityCode && (
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full border border-neutral-300 dark:border-neutral-700 bg-transparent text-primary font-bold">
+                            {session.facilityCode}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-[10px] text-muted-foreground font-sans font-normal">
                         {session.updatedAt}
                       </div>
@@ -452,14 +736,19 @@ export function DashboardView() {
 
           {/* Mobile Collapsible Cards (< 640px) */}
           <div className="block sm:hidden divide-y divide-neutral-300 dark:divide-neutral-700 p-4 space-y-3">
-            {sessions.map((session) => (
+            {effectiveSessions.map((session) => (
               <div
                 key={session.id}
                 className="pt-3 first:pt-0 space-y-2.5 bg-card rounded-2xl p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs"
               >
                 <div className="flex items-center justify-between">
-                  <div className="font-mono font-bold text-xs text-foreground">
-                    {session.sessionNumber}
+                  <div className="font-mono font-bold text-xs text-foreground flex items-center gap-2">
+                    <span>{session.sessionNumber}</span>
+                    {session.facilityCode && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full border border-neutral-300 dark:border-neutral-700 bg-transparent text-primary font-bold">
+                        {session.facilityCode}
+                      </span>
+                    )}
                   </div>
                   <Badge variant={session.status} className="font-mono text-[10px]">
                     {session.statusLabel}

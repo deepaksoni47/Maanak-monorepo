@@ -23,6 +23,7 @@ import {
   SignIn,
 } from "@phosphor-icons/react";
 import { useAuth } from "@/lib/auth-context";
+import { FacilitySwitcher } from "./FacilitySwitcher";
 
 export interface NavItem {
   label: string;
@@ -191,6 +192,11 @@ export function MobileNav({ onMenuToggle }: MobileNavProps) {
                 >
                   <X size={22} weight="bold" />
                 </button>
+              </div>
+
+              {/* RRSL Multi-Facility Node Indicator / Switcher (TASK-087) */}
+              <div className="px-3 pt-3 pb-1">
+                <FacilitySwitcher compact={false} />
               </div>
 
               {/* Drawer Nav Links */}
