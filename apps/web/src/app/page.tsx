@@ -223,7 +223,7 @@ export default function HomePage() {
       </section>
 
       {/* Section 2: Step-by-Step Lab Testing Journey */}
-      <section className="py-14 lg:py-20 bg-neutral-50/60 dark:bg-slate-950/40 border-y border-border/40">
+      <section className="py-14 lg:py-20 border-y border-border/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-2 mb-12 lg:mb-14">
             <span className="text-xs font-bold uppercase tracking-wider text-primary">Simple 4-Step Process</span>
@@ -366,7 +366,7 @@ export default function HomePage() {
                     className={`px-3.5 py-2 rounded-2xl text-xs font-semibold transition-all min-h-[44px] ${
                       selectedLoad === item.value
                         ? "bg-primary text-primary-foreground shadow-xs font-bold"
-                        : "bg-background border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                        : "bg-card border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                     }`}
                   >
                     {item.label}
@@ -424,7 +424,7 @@ export default function HomePage() {
       </section>
 
       {/* Section 4: Accuracy Classes Supported (Educational & Practical) */}
-      <section className="py-14 lg:py-20 border-t border-border/80 bg-muted/20">
+      <section className="py-14 lg:py-20 border-t border-border/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
             <div className="space-y-1.5 max-w-2xl">
