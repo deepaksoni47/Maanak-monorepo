@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { getApiBaseUrl } from "@/lib/api";
 
 export interface UserProfile {
   id: string;
@@ -18,7 +19,7 @@ export interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (identifier: string, password?: string) => Promise<boolean>;
+  login: (identifier: string, password?: string) => Promise<{ success: boolean; error?: string } | boolean>;
   register: (userData: {
     fullName: string;
     email: string;
@@ -33,7 +34,6 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const TOKEN_KEY = "maanak_access_token";
 const USER_KEY = "maanak_user_profile";
 
@@ -94,7 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           // Verify with backend asynchronously
           try {
-            const res = await fetch(`${API_URL}/api/v1/auth/me`, {
+            const baseUrl = getApiBaseUrl();
+            const res = await fetch(`${baseUrl}/api/v1/auth/me`, {
               headers: { Authorization: `Bearer ${storedToken}` },
             });
             if (res.ok) {
@@ -140,8 +141,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (identifier: string, password = "password123"): Promise<boolean> => {
     setIsLoading(true);
+    const baseUrl = getApiBaseUrl();
     try {
-      const res = await fetch(`${API_URL}/api/v1/auth/login`, {
+      const res = await fetch(`${baseUrl}/api/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: identifier, password }),
@@ -186,8 +188,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       facility?: string;
     }): Promise<boolean> => {
       setIsLoading(true);
+      const baseUrl = getApiBaseUrl();
       try {
-        const res = await fetch(`${API_URL}/api/v1/auth/register`, {
+        const res = await fetch(`${baseUrl}/api/v1/auth/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(userData),
