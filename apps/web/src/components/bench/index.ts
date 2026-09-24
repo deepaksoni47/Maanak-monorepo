@@ -5,4 +5,5 @@ export * from "./ObservationLedgerTable";
 export * from "./ToleranceSafetyGauge";
 export * from "./OfficerGuidanceBanner";
 export * from "./TestBatteryNavigator";
+export * from "./Form2TempDriftCard";
 export * from "./BenchWorkbenchView";

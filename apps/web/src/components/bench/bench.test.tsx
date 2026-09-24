@@ -8,6 +8,9 @@ import {
   VernierKeypad,
   BenchCardSkeleton,
   TestBatteryNavigator,
+  Form2TempDriftCard,
+  computeForm2StepResult,
+  DEFAULT_FORM2_STEPS,
 } from "./index";
 
 describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
@@ -270,6 +273,72 @@ describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
       assert.ok(html.includes('aria-selected="false"'));
       assert.ok(html.includes('id="tab-form2"'));
       assert.ok(html.includes('aria-selected="false"'));
+    });
+  });
+
+  describe("TASK-072: Form 2 Temperature Effect on No-Load & Thermal Drift", () => {
+    test("computes zero turning point P0 and zero error E0 accurately", () => {
+      const step1 = DEFAULT_FORM2_STEPS[0];
+      const res1 = computeForm2StepResult(step1);
+      assert.equal(res1.P0, 0.0);
+      assert.equal(res1.E0, 0.0);
+      assert.equal(res1.isZeroCompliant, true);
+      assert.equal(res1.isOverallPass, true);
+    });
+
+    test("computes chamber ramp rate and thermal zero drift between consecutive steps", () => {
+      const step1 = DEFAULT_FORM2_STEPS[0];
+      const step2 = DEFAULT_FORM2_STEPS[1];
+
+      const res2 = computeForm2StepResult(step2, step1, "CLASS_III");
+      assert.equal(res2.deltaT, 20);
+      assert.equal(res2.elapsedHours, 5.0);
+      assert.equal(res2.rampRateCPerHour, 4.0);
+      assert.equal(res2.isRampRateCompliant, true);
+
+      assert.equal(res2.zeroDrift, 0.0005);
+      assert.equal(res2.maxAllowedDrift, 0.02);
+      assert.equal(res2.isDriftCompliant, true);
+      assert.equal(res2.isOverallPass, true);
+    });
+
+    test("flags violation when chamber ramp rate exceeds 5.0 °C/h", () => {
+      const step1 = { ...DEFAULT_FORM2_STEPS[0], temperatureC: 20.0 };
+      const fastStep2 = {
+        ...DEFAULT_FORM2_STEPS[1],
+        temperatureC: 40.0,
+        elapsedMinutes: 120, // 2 hours -> 20 / 2 = 10.0 °C/h
+      };
+
+      const res = computeForm2StepResult(fastStep2, step1, "CLASS_III");
+      assert.equal(res.rampRateCPerHour, 10.0);
+      assert.equal(res.isRampRateCompliant, false);
+      assert.equal(res.isOverallPass, false);
+    });
+
+    test("renders Form2TempDriftCard UI with all 4 statutory temperature steps", () => {
+      const html = renderToStaticMarkup(
+        <Form2TempDriftCard
+          eVal={0.005}
+          unit="kg"
+          accuracyClass="CLASS_III"
+        />
+      );
+
+      assert.ok(html.includes("+20°C Chamber") || html.includes("20°C Chamber"));
+      assert.ok(html.includes("+40°C Chamber") || html.includes("40°C Chamber"));
+      assert.ok(html.includes("-10°C Chamber"));
+
+      assert.ok(html.includes("OIML R 76-1 Clause A.5.3.2"));
+      assert.ok(html.includes("Chamber Temperature (°C)"));
+      assert.ok(html.includes("Relative Humidity (% RH)"));
+      assert.ok(html.includes("Soak Duration (min)"));
+
+      assert.ok(html.includes("Observed Zero Indication"));
+      assert.ok(html.includes("Vernier Added Load"));
+
+      assert.ok(html.includes("PASS"));
+      assert.ok(html.includes("Save &amp; Advance") || html.includes("Save & Advance"));
     });
   });
 });

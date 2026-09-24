@@ -37,6 +37,7 @@ import { ObservationLedgerTable, LedgerEntry } from "./ObservationLedgerTable";
 import { ToleranceSafetyGauge } from "./ToleranceSafetyGauge";
 import { OfficerGuidanceBanner } from "./OfficerGuidanceBanner";
 import { TestBatteryNavigator, FormId, STATUTORY_FORMS } from "./TestBatteryNavigator";
+import { Form2TempDriftCard } from "./Form2TempDriftCard";
 import { observationsApi, sessionsApi, instrumentsApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -857,6 +858,23 @@ export function BenchWorkbenchView() {
           }}
         />
           </>
+        ) : activeForm === "form2" ? (
+          <Form2TempDriftCard
+            eVal={selectedInstrument.verificationIntervalKg}
+            unit={selectedInstrument.verificationInterval?.split(" ")[1] || "kg"}
+            accuracyClass={selectedInstrument.accuracyClass}
+            onSaveStep={(st, res) => {
+              enqueueOfflineObservation({
+                sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
+                stepNumber: st.stepIndex,
+                nominalLoad: `0 ${st.unit}`,
+                indication: `${st.indicationZeroI0} ${st.unit}`,
+                deltaL: `${st.deltaL0} ${st.unit}`,
+                turningPointP: `${res.P0.toFixed(4)} ${st.unit}`,
+                errorEc: `${res.E0.toFixed(4)} ${st.unit}`,
+              }).catch(() => {});
+            }}
+          />
         ) : (
           <div
             id={`panel-${activeForm}`}
@@ -902,8 +920,6 @@ export function BenchWorkbenchView() {
                 <span>OIML Statutory Test Protocol & Objective</span>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                {activeForm === "form2" &&
-                  "OIML R 76-1 A.4.4.2 & A.5.3.1: Evaluate temperature effect on zero and no-load indication across reference temperature brackets (-10°C, 20°C, 40°C). Thermal drift must not exceed 1e per 5°C."}
                 {activeForm === "form3" &&
                   "OIML R 76-1 A.4.7: Apply 1/3 Max load sequentially across 4 quadrants and center receptor position. Difference between any corner and center indication must not exceed 1 MPE."}
                 {activeForm === "form4" &&
