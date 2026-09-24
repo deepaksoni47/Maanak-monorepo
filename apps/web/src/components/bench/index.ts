@@ -9,4 +9,5 @@ export * from "./Form2TempDriftCard";
 export * from "./Form3EccentricityCard";
 export * from "./Form4DiscriminationCard";
 export * from "./Form5RepeatabilityCard";
+export * from "./Form6CreepCard";
 export * from "./BenchWorkbenchView";

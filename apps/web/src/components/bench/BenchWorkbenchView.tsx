@@ -41,6 +41,7 @@ import { Form2TempDriftCard } from "./Form2TempDriftCard";
 import { Form3EccentricityCard } from "./Form3EccentricityCard";
 import { Form4DiscriminationCard } from "./Form4DiscriminationCard";
 import { Form5RepeatabilityCard } from "./Form5RepeatabilityCard";
+import { Form6CreepCard } from "./Form6CreepCard";
 import { observationsApi, sessionsApi, instrumentsApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -933,6 +934,24 @@ export function BenchWorkbenchView() {
               }).catch(() => {});
             }}
           />
+        ) : activeForm === "form6" ? (
+          <Form6CreepCard
+            maxCapacityKg={selectedInstrument.maxCapacityKg}
+            verificationIntervalKg={selectedInstrument.verificationIntervalKg}
+            accuracyClass={selectedInstrument.accuracyClass}
+            unit={selectedInstrument.verificationInterval?.split(" ")[1] || "kg"}
+            onSaveForm6={(steps, zeroRet, res) => {
+              enqueueOfflineObservation({
+                sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
+                stepNumber: 30,
+                nominalLoad: `${selectedInstrument.maxCapacityKg} ${steps[0]?.unit || "kg"}`,
+                indication: `${res.totalCreep30m} ${steps[0]?.unit || "kg"}`,
+                deltaL: `0 ${steps[0]?.unit || "kg"}`,
+                turningPointP: `${steps[steps.length - 1]?.P || 0} ${steps[0]?.unit || "kg"}`,
+                errorEc: `${res.totalCreep30m} ${steps[0]?.unit || "kg"}`,
+              }).catch(() => {});
+            }}
+          />
         ) : (
           <div
             id={`panel-${activeForm}`}
@@ -978,8 +997,7 @@ export function BenchWorkbenchView() {
                 <span>OIML Statutory Test Protocol & Objective</span>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                {activeForm === "form6" &&
-                  "OIML R 76-1 A.4.11: 30-minute timed load deformation test under Max load, followed by 30-second post-discharge zero return recovery evaluation."}
+                Annex A Statutory Test Protocol: Complete the required test schedule under controlled environmental conditions.
               </p>
             </div>
 

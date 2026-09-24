@@ -22,6 +22,10 @@ import {
   computeCycleMetrics,
   computeRepeatabilitySeriesResult,
   generateDefault10Cycles,
+  Form6CreepCard,
+  computeCreepTurningPoint,
+  evaluateForm6CreepCompliance,
+  generateDefaultForm6Steps,
 } from "./index";
 
 describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
@@ -587,6 +591,88 @@ describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
       assert.ok(html.includes("PASS (SPREAD OK)"));
       assert.ok(html.includes("Reset Nominal"));
       assert.ok(html.includes("Save Series"));
+    });
+  });
+
+  describe("TASK-076: Form 6 Bench Card: 30-Minute Creep & Zero Return Timed Workbench", () => {
+    test("generates 4 statutory creep steps (0, 5, 15, 30 min) and zero return post-discharge", () => {
+      const { creepSteps, zeroStart, zeroReturn } = generateDefaultForm6Steps(15.0, 0.005, "kg");
+      assert.equal(creepSteps.length, 4);
+      assert.equal(creepSteps[0].timeMinutes, 0);
+      assert.equal(creepSteps[0].appliedLoad, 15.0);
+      assert.equal(creepSteps[1].timeMinutes, 5);
+      assert.equal(creepSteps[2].timeMinutes, 15);
+      assert.equal(creepSteps[3].timeMinutes, 30);
+      assert.equal(creepSteps[3].appliedLoad, 15.0);
+
+      assert.equal(zeroStart.P, 0);
+      assert.equal(zeroReturn.timeMinutes, 30.5);
+      assert.equal(zeroReturn.appliedLoad, 0);
+    });
+
+    test("computes creep turning point P accurately with vernier deltaL", () => {
+      // I = 15.002, deltaL = 0.0025, e = 0.005 -> P = 15.002 + 0.0025 - 0.0025 = 15.002
+      const P = computeCreepTurningPoint(15.002, 0.0025, 0.005);
+      assert.equal(P, 15.002);
+    });
+
+    test("evaluates creep compliance when 30m creep <= 0.5e and 15-30m creep <= 0.2e", () => {
+      const { creepSteps, zeroStart, zeroReturn } = generateDefaultForm6Steps(15.0, 0.005, "kg");
+      // e = 0.005 kg -> 0.5e = 0.0025 kg, 0.2e = 0.0010 kg
+      // At t=0: P = 15.000
+      // At t=15: P = 15.001 (+0.001)
+      // At t=30: P = 15.0015 (+0.0015 total, +0.0005 between 15 and 30)
+      creepSteps[2] = { ...creepSteps[2], P: 15.001 };
+      creepSteps[3] = { ...creepSteps[3], P: 15.0015 };
+
+      const res = evaluateForm6CreepCompliance(creepSteps, zeroStart.P, zeroReturn.P, 0.005);
+      assert.equal(res.totalCreep30m, 0.0015);
+      assert.equal(res.maxAllowedCreep30m, 0.0025);
+      assert.equal(res.isTotalCreepValid, true);
+
+      assert.equal(res.creep15To30m, 0.0005);
+      assert.equal(res.maxAllowedCreep15To30m, 0.001);
+      assert.equal(res.isCreep15To30mValid, true);
+
+      assert.equal(res.zeroReturnDrift, 0);
+      assert.equal(res.maxAllowedZeroReturn, 0.0025);
+      assert.equal(res.isZeroReturnValid, true);
+
+      assert.equal(res.isOverallCompliant, true);
+    });
+
+    test("flags violation when 30m creep exceeds statutory 0.5e threshold", () => {
+      const { creepSteps, zeroStart, zeroReturn } = generateDefaultForm6Steps(15.0, 0.005, "kg");
+      // Creep of 0.0035 kg exceeds 0.5e = 0.0025 kg
+      creepSteps[3] = { ...creepSteps[3], P: 15.0035 };
+
+      const res = evaluateForm6CreepCompliance(creepSteps, zeroStart.P, zeroReturn.P, 0.005);
+      assert.equal(res.totalCreep30m, 0.0035);
+      assert.equal(res.isTotalCreepValid, false);
+      assert.equal(res.isOverallCompliant, false);
+    });
+
+    test("renders Form6CreepCard UI with stopwatch, milestone table, and zero recovery section", () => {
+      const html = renderToStaticMarkup(
+        <Form6CreepCard
+          maxCapacityKg={15}
+          verificationIntervalKg={0.005}
+          accuracyClass="CLASS_III"
+          unit="kg"
+        />
+      );
+
+      assert.ok(html.includes("Form 6: Creep"));
+      assert.ok(html.includes("Clause A.4.11"));
+      assert.ok(html.includes("Test Timer"));
+      assert.ok(html.includes("30:00 Target"));
+      assert.ok(html.includes("Start Timer"));
+      assert.ok(html.includes("Simulate Next Milestone"));
+      assert.ok(html.includes("t = 0 min (Initial Load)"));
+      assert.ok(html.includes("t = 15 min (Midpoint Creep)"));
+      assert.ok(html.includes("t = 30 min (Final Creep &amp; Unload)") || html.includes("t = 30 min (Final Creep & Unload)"));
+      assert.ok(html.includes("Zero Return Recovery Evaluation"));
+      assert.ok(html.includes("PASS (ALL CRITERIA)"));
     });
   });
 });
