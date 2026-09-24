@@ -6,12 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsc --noEmit && node --import tsx --test \"src/components/layout/layout.test.tsx\" \"src/components/ui/GridBackground.test.tsx\" \"src/components/ui/grid-pattern.test.tsx\" \"src/components/ui/ui.test.tsx\" \"src/components/bench/bench.test.tsx\" \"src/components/evidence/evidence.test.tsx\" \"src/app/dashboard/dashboard.test.tsx\" \"src/components/dashboard/DashboardFacility.test.tsx\" \"src/app/instruments/new/intake.test.tsx\" \"src/app/weights/weights.test.tsx\" \"src/app/bench/bench-page.test.tsx\" \"src/app/review/review.test.tsx\" \"src/app/reports/**/reports.test.tsx\" \"src/app/verify/**/verify.test.tsx\" \"src/lib/offline-sync.test.tsx\" \"src/app/login/login.test.tsx\" \"src/lib/api.test.ts\"",
+    "test": "tsc --noEmit && node --import tsx --test \"src/components/layout/layout.test.tsx\" \"src/components/ui/GridBackground.test.tsx\" \"src/components/ui/grid-pattern.test.tsx\" \"src/components/ui/ui.test.tsx\" \"src/components/bench/bench.test.tsx\" \"src/components/evidence/evidence.test.tsx\" \"src/app/dashboard/dashboard.test.tsx\" \"src/components/dashboard/DashboardFacility.test.tsx\" \"src/app/instruments/new/intake.test.tsx\" \"src/app/weights/weights.test.tsx\" \"src/app/bench/bench-page.test.tsx\" \"src/app/review/review.test.tsx\" \"src/app/reports/**/reports.test.tsx\" \"src/app/verify/**/verify.test.tsx\" \"src/lib/offline-sync.test.tsx\" \"src/lib/offline-db.test.ts\" \"src/app/login/login.test.tsx\" \"src/lib/api.test.ts\"",
     "lint": "next lint"
   },
   "dependencies": {
     "@maanak/types": "workspace:*",
     "@phosphor-icons/react": "^2.1.7",
+    "idb": "^8.0.3",
     "next": "16.3.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
