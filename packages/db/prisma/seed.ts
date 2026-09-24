@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import argon2 from 'argon2';
 import {
   accuracyClassesSeed,
   rolesSeed,
@@ -89,9 +90,13 @@ async function main() {
   // -----------------------------------------------------------------
   // 4. Users: 4 Key RRSL Metrology Personas
   // -----------------------------------------------------------------
-  console.log('  -> Seeding Users (inspector, reviewer, director, admin)...');
-  const dummyArgon2Hash =
-    '$argon2id$v=19$m=65536,t=3,p=4$dGVzdHNhbHQxMjM0NTY3OA$YVbM7qY8eQ7aK0eF2aD3vP8kE1mR5tY9uI3oP7sA2wE';
+  console.log('  -> Seeding Users (inspector, reviewer, director, admin presets)...');
+  const validArgon2Hash = await argon2.hash('password123', {
+    type: argon2.argon2id,
+    memoryCost: 19456,
+    timeCost: 2,
+    parallelism: 1,
+  });
 
   const userMap = new Map<string, string>();
   for (const u of usersSeed) {
@@ -106,7 +111,7 @@ async function main() {
         governmentIdNo: u.governmentIdNo,
         laboratoryId: lab.id,
         roleId: roleId,
-        passwordHash: dummyArgon2Hash,
+        passwordHash: validArgon2Hash,
         isActive: true,
       },
       create: {
@@ -118,7 +123,7 @@ async function main() {
         governmentIdNo: u.governmentIdNo,
         laboratoryId: lab.id,
         roleId: roleId,
-        passwordHash: dummyArgon2Hash,
+        passwordHash: validArgon2Hash,
         isActive: true,
       },
     });
