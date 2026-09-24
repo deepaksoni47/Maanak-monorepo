@@ -243,12 +243,16 @@ export const reviewApi = {
     decision: "APPROVED" | "FLAGGED_FOR_CORRECTION" | "REJECTED";
     notes?: string;
     comments?: string;
+    flaggedFormId?: string;
+    rejectionReason?: string;
     reviewStage?: "INTAKE_REVIEW" | "SECOND_LEVEL_REVIEW" | "DIRECTOR_APPROVAL";
   }) => {
     const payload = {
       testSessionId: decisionData.testSessionId || decisionData.sessionId,
       decision: decisionData.decision,
       comments: decisionData.comments || decisionData.notes || "Senior Reviewer evaluation completed.",
+      flaggedFormId: decisionData.flaggedFormId,
+      rejectionReason: decisionData.rejectionReason,
       reviewStage: decisionData.reviewStage || "SECOND_LEVEL_REVIEW",
     };
     return apiRequest("/api/v1/review/decision", {

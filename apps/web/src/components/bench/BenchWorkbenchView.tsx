@@ -216,10 +216,21 @@ function useSafeBenchParams(): {
   instrumentId: string | null;
   sessionId: string | null;
   form: FormId | null;
+  status: string | null;
+  flaggedClause: string | null;
+  notes: string | null;
 } {
   try {
     const searchParams = useSearchParams();
-    if (!searchParams) return { instrumentId: null, sessionId: null, form: null };
+    if (!searchParams)
+      return {
+        instrumentId: null,
+        sessionId: null,
+        form: null,
+        status: null,
+        flaggedClause: null,
+        notes: null,
+      };
     const rawForm = searchParams.get("form") as FormId | null;
     const isValidForm =
       rawForm && ["form1", "form2", "form3", "form4", "form5", "form6"].includes(rawForm);
@@ -227,17 +238,53 @@ function useSafeBenchParams(): {
       instrumentId: searchParams.get("instrumentId"),
       sessionId: searchParams.get("session") || searchParams.get("sessionId"),
       form: isValidForm ? rawForm : null,
+      status: searchParams.get("status"),
+      flaggedClause: searchParams.get("flaggedClause"),
+      notes: searchParams.get("notes"),
     };
   } catch {
-    return { instrumentId: null, sessionId: null, form: null };
+    return {
+      instrumentId: null,
+      sessionId: null,
+      form: null,
+      status: null,
+      flaggedClause: null,
+      notes: null,
+    };
   }
 }
 
-export function BenchWorkbenchView() {
+export interface BenchWorkbenchViewProps {
+  initialStatus?: string;
+  initialFlaggedClause?: string;
+  initialReviewerNotes?: string;
+}
+
+export function BenchWorkbenchView({
+  initialStatus,
+  initialFlaggedClause,
+  initialReviewerNotes,
+}: BenchWorkbenchViewProps = {}) {
   const { user } = useAuth();
-  const { instrumentId: urlInstId, sessionId: urlSessionId, form: urlForm } = useSafeBenchParams();
+  const {
+    instrumentId: urlInstId,
+    sessionId: urlSessionId,
+    form: urlForm,
+    status: urlStatus,
+    flaggedClause: urlFlaggedClause,
+    notes: urlNotes,
+  } = useSafeBenchParams();
   const [activeSessionId, setActiveSessionId] = useState<string | null>(urlSessionId);
   const [activeForm, setActiveForm] = useState<FormId>(urlForm || "form1");
+  const [sessionStatus, setSessionStatus] = useState<string | null>(
+    initialStatus !== undefined ? initialStatus : urlStatus,
+  );
+  const [flaggedClause, setFlaggedClause] = useState<string | null>(
+    initialFlaggedClause !== undefined ? initialFlaggedClause : urlFlaggedClause,
+  );
+  const [reviewerNotes, setReviewerNotes] = useState<string | null>(
+    initialReviewerNotes !== undefined ? initialReviewerNotes : urlNotes,
+  );
 
   const handleSelectForm = (formId: FormId) => {
     setActiveForm(formId);
@@ -643,6 +690,35 @@ export function BenchWorkbenchView() {
 
         {/* Offline PWA Sync Status Banner */}
         <OfflineSyncBanner sessionId={`TS-${selectedInstrument.serialNumber}`} />
+
+        {/* Session Returned for Correction Alert Banner (OIML R 76-1 / TASK-081) */}
+        {sessionStatus === "RETURNED_TO_OFFICER" && (
+          <div
+            role="alert"
+            className="p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-200 flex items-start gap-3 animate-in fade-in"
+          >
+            <WarningCircle size={22} weight="fill" className="text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1 space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-bold text-amber-100">
+                  Session Returned for Officer Correction
+                </span>
+                <Badge variant="warning" showIcon={false} className="text-[10px] font-mono py-0 px-2 uppercase">
+                  RE-TEST UNLOCKED
+                </Badge>
+              </div>
+              <p className="text-xs text-amber-200/90 leading-relaxed">
+                {reviewerNotes ||
+                  "The Senior Reviewer flagged anomalies in this session. You may re-execute only the flagged test clause while all other compliant test data is preserved."}
+              </p>
+              {flaggedClause && (
+                <div className="text-[11px] font-mono font-semibold text-amber-300 pt-0.5">
+                  Flagged Test Clause: <span className="underline uppercase">{flaggedClause}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Statutory Test Battery Multi-Form Navigator */}
         <TestBatteryNavigator

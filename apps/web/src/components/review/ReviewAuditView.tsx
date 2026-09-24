@@ -199,7 +199,8 @@ export function ReviewAuditView() {
   };
 
   const handleDecision = async (
-    action: "APPROVED" | "FLAGGED_FOR_CORRECTION" | "REJECTED"
+    action: "APPROVED" | "FLAGGED_FOR_CORRECTION" | "REJECTED",
+    options?: { comments?: string; flaggedFormId?: string }
   ) => {
     if (!selectedItem) return;
 
@@ -210,7 +211,7 @@ export function ReviewAuditView() {
       msg = `Session ${selectedItem.sessionNumber} approved by Senior Reviewer.`;
       type = "success";
     } else if (action === "FLAGGED_FOR_CORRECTION") {
-      msg = `Session ${selectedItem.sessionNumber} flagged for correction and re-test requested.`;
+      msg = options?.comments || `Session ${selectedItem.sessionNumber} flagged for correction and re-test requested.`;
       type = "warning";
     } else {
       msg = `Session ${selectedItem.sessionNumber} rejected under OIML R-76 Clause 3.5.1.`;
@@ -223,6 +224,7 @@ export function ReviewAuditView() {
         testSessionId: selectedItem.id,
         decision: action,
         comments: msg,
+        flaggedFormId: options?.flaggedFormId,
         reviewStage: "SECOND_LEVEL_REVIEW",
       });
     } catch (err) {

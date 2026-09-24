@@ -35,13 +35,19 @@ const CreateSessionRequestSchema = z.object({
 const UpdateSessionStatusSchema = z.object({
   status: z.enum([
     "DRAFT",
+    "OBSERVATION_COMPLETE",
     "IN_PROGRESS",
     "UNDER_REVIEW",
+    "RETURNED_TO_OFFICER",
+    "PENDING_DIRECTOR_APPROVAL",
+    "APPROVED_LOCKED",
     "COMPLETED",
     "CANCELLED",
     "LOCKED",
   ]),
   comments: z.string().optional(),
+  flaggedFormId: z.string().optional(),
+  rejectionNotes: z.string().optional(),
 });
 
 export function createSessionsRouter(
@@ -494,10 +500,42 @@ export function createSessionsRouter(
         const nextStatus = validated.status;
 
         const allowedTransitions: Record<string, string[]> = {
-          DRAFT: ["IN_PROGRESS", "CANCELLED"],
-          IN_PROGRESS: ["UNDER_REVIEW", "DRAFT", "CANCELLED"],
-          UNDER_REVIEW: ["COMPLETED", "IN_PROGRESS", "LOCKED"],
-          COMPLETED: ["LOCKED"],
+          DRAFT: ["IN_PROGRESS", "OBSERVATION_COMPLETE", "CANCELLED"],
+          IN_PROGRESS: [
+            "OBSERVATION_COMPLETE",
+            "UNDER_REVIEW",
+            "RETURNED_TO_OFFICER",
+            "DRAFT",
+            "CANCELLED",
+          ],
+          OBSERVATION_COMPLETE: [
+            "UNDER_REVIEW",
+            "IN_PROGRESS",
+            "RETURNED_TO_OFFICER",
+            "CANCELLED",
+          ],
+          UNDER_REVIEW: [
+            "RETURNED_TO_OFFICER",
+            "PENDING_DIRECTOR_APPROVAL",
+            "COMPLETED",
+            "APPROVED_LOCKED",
+            "IN_PROGRESS",
+            "LOCKED",
+          ],
+          RETURNED_TO_OFFICER: [
+            "IN_PROGRESS",
+            "OBSERVATION_COMPLETE",
+            "UNDER_REVIEW",
+            "CANCELLED",
+          ],
+          PENDING_DIRECTOR_APPROVAL: [
+            "APPROVED_LOCKED",
+            "RETURNED_TO_OFFICER",
+            "COMPLETED",
+            "LOCKED",
+          ],
+          APPROVED_LOCKED: [],
+          COMPLETED: ["LOCKED", "APPROVED_LOCKED", "RETURNED_TO_OFFICER"],
           CANCELLED: [],
           LOCKED: [],
         };
@@ -520,7 +558,10 @@ export function createSessionsRouter(
           status: nextStatus,
         };
 
-        if (nextStatus === "COMPLETED" && !session.completedAt) {
+        if (
+          (nextStatus === "COMPLETED" || nextStatus === "APPROVED_LOCKED") &&
+          !session.completedAt
+        ) {
           updateData.completedAt = new Date();
         }
 
@@ -540,6 +581,21 @@ export function createSessionsRouter(
               decision: "PENDING_REVIEW",
               comments:
                 validated.comments || "Session submitted for technical review.",
+              automatedAnomalyFlags: [],
+            },
+          });
+        } else if (nextStatus === "RETURNED_TO_OFFICER") {
+          const formattedComments = validated.flaggedFormId
+            ? `[FLAGGED_CLAUSE: ${validated.flaggedFormId}] ${validated.comments || validated.rejectionNotes || "Returned for correction."}`
+            : (validated.comments || validated.rejectionNotes || "Session returned to testing officer for correction.");
+
+          await db.reviewAudit.create({
+            data: {
+              testSessionId: id,
+              reviewerUserId: req.user!.sub,
+              reviewStage: "SECOND_LEVEL_REVIEW",
+              decision: "FLAGGED_FOR_CORRECTION",
+              comments: formattedComments,
               automatedAnomalyFlags: [],
             },
           });

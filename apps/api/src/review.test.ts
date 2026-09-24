@@ -336,7 +336,7 @@ describe("TASK-044: Reviewer Anomaly Audit Routes (/api/v1/review)", () => {
       assert.ok(storedProvNodes[0].currentNodeHashSha256);
     });
 
-    it("records FLAGGED_FOR_CORRECTION decision: transitions session status to IN_PROGRESS and stores flags", async () => {
+    it("records FLAGGED_FOR_CORRECTION decision: transitions session status to RETURNED_TO_OFFICER and stores flags (TASK-081)", async () => {
       const res = await request(app)
         .post("/api/v1/review/decision")
         .set("Authorization", `Bearer ${reviewerTokens.accessToken}`)
@@ -344,16 +344,42 @@ describe("TASK-044: Reviewer Anomaly Audit Routes (/api/v1/review)", () => {
           testSessionId: mockAnomalySessionId,
           reviewStage: "SECOND_LEVEL_REVIEW",
           decision: "FLAGGED_FOR_CORRECTION",
+          flaggedFormId: "form1",
           comments:
             "Flagged non-monotonic step at 5kg load. Please re-take observations.",
         });
 
       assert.equal(res.status, 201);
-      assert.equal(res.body.sessionStatus, "IN_PROGRESS");
+      assert.equal(res.body.sessionStatus, "RETURNED_TO_OFFICER");
       assert.ok(res.body.anomaliesDetected >= 2);
 
       const session = storedSessions.find((s) => s.id === mockAnomalySessionId);
-      assert.equal(session.status, "IN_PROGRESS");
+      assert.equal(session.status, "RETURNED_TO_OFFICER");
+
+      // Verify audit record contains flaggedFormId tag
+      const audit = storedAudits.find(
+        (a) => a.testSessionId === mockAnomalySessionId,
+      );
+      assert.ok(audit);
+      assert.ok(audit.comments.includes("[FLAGGED_CLAUSE: form1]"));
+    });
+
+    it("records DIRECTOR_APPROVAL decision: transitions session status to APPROVED_LOCKED (TASK-081)", async () => {
+      const res = await request(app)
+        .post("/api/v1/review/decision")
+        .set("Authorization", `Bearer ${directorTokens.accessToken}`)
+        .send({
+          testSessionId: mockCleanSessionId,
+          reviewStage: "DIRECTOR_APPROVAL",
+          decision: "APPROVED",
+          comments: "Final statutory approval by Laboratory Director under Section 22.",
+        });
+
+      assert.equal(res.status, 201);
+      assert.equal(res.body.sessionStatus, "APPROVED_LOCKED");
+
+      const session = storedSessions.find((s) => s.id === mockCleanSessionId);
+      assert.equal(session.status, "APPROVED_LOCKED");
     });
   });
 

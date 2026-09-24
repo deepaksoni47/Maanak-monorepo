@@ -26,6 +26,7 @@ import {
   computeCreepTurningPoint,
   evaluateForm6CreepCompliance,
   generateDefaultForm6Steps,
+  BenchWorkbenchView,
 } from "./index";
 
 describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
@@ -673,6 +674,31 @@ describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
       assert.ok(html.includes("t = 30 min (Final Creep &amp; Unload)") || html.includes("t = 30 min (Final Creep & Unload)"));
       assert.ok(html.includes("Zero Return Recovery Evaluation"));
       assert.ok(html.includes("PASS (ALL CRITERIA)"));
+    });
+  });
+
+  describe("TASK-081: Strict Session State Machine & Re-Test Correction Loop", () => {
+    test("renders amber Session Returned for Correction banner when status is RETURNED_TO_OFFICER", () => {
+      const html = renderToStaticMarkup(
+        <BenchWorkbenchView
+          initialStatus="RETURNED_TO_OFFICER"
+          initialFlaggedClause="form3"
+          initialReviewerNotes="Corner load position #3 out of tolerance. Please re-run eccentricity test."
+        />
+      );
+
+      assert.ok(html.includes("Session Returned for Officer Correction"));
+      assert.ok(html.includes("RE-TEST UNLOCKED"));
+      assert.ok(html.includes("Corner load position #3 out of tolerance"));
+      assert.ok(html.includes("form3"));
+    });
+
+    test("does not render correction alert when session status is normal (IN_PROGRESS)", () => {
+      const html = renderToStaticMarkup(
+        <BenchWorkbenchView initialStatus="IN_PROGRESS" />
+      );
+
+      assert.ok(!html.includes("Session Returned for Officer Correction"));
     });
   });
 });

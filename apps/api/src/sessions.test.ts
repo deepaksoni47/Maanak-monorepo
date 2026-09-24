@@ -561,5 +561,79 @@ describe("TASK-042: Test Session & Dynamic Plan Routes (/api/v1/sessions)", () =
       assert.equal(res.body.session.status, "COMPLETED");
       assert.ok(res.body.session.completedAt);
     });
+
+    it("transitions session through complete correction loop: UNDER_REVIEW -> RETURNED_TO_OFFICER -> IN_PROGRESS (TASK-081)", async () => {
+      // Step 1: DRAFT -> IN_PROGRESS -> UNDER_REVIEW
+      await request(app)
+        .patch(`/api/v1/sessions/${createdSessionId}/status`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({ status: "IN_PROGRESS" });
+
+      await request(app)
+        .patch(`/api/v1/sessions/${createdSessionId}/status`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({ status: "UNDER_REVIEW" });
+
+      // Step 2: UNDER_REVIEW -> RETURNED_TO_OFFICER (Reviewer rejection)
+      const resReturn = await request(app)
+        .patch(`/api/v1/sessions/${createdSessionId}/status`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({
+          status: "RETURNED_TO_OFFICER",
+          flaggedFormId: "form3",
+          comments: "Eccentricity corner load point #3 non-compliant. Please re-run.",
+        });
+
+      assert.equal(resReturn.status, 200);
+      assert.equal(resReturn.body.session.status, "RETURNED_TO_OFFICER");
+
+      // Verify audit record was created for FLAGGED_FOR_CORRECTION
+      const audit = storedAudits.find(
+        (a) => a.testSessionId === createdSessionId && a.decision === "FLAGGED_FOR_CORRECTION",
+      );
+      assert.ok(audit);
+      assert.ok(audit.comments.includes("[FLAGGED_CLAUSE: form3]"));
+
+      // Step 3: RETURNED_TO_OFFICER -> IN_PROGRESS (Officer unlocks bench for re-test)
+      const resRetest = await request(app)
+        .patch(`/api/v1/sessions/${createdSessionId}/status`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({ status: "IN_PROGRESS" });
+
+      assert.equal(resRetest.status, 200);
+      assert.equal(resRetest.body.session.status, "IN_PROGRESS");
+    });
+
+    it("transitions session through executive director sign-off: UNDER_REVIEW -> PENDING_DIRECTOR_APPROVAL -> APPROVED_LOCKED (TASK-081)", async () => {
+      // Step 1: DRAFT -> IN_PROGRESS -> UNDER_REVIEW
+      await request(app)
+        .patch(`/api/v1/sessions/${createdSessionId}/status`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({ status: "IN_PROGRESS" });
+
+      await request(app)
+        .patch(`/api/v1/sessions/${createdSessionId}/status`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({ status: "UNDER_REVIEW" });
+
+      // Step 2: UNDER_REVIEW -> PENDING_DIRECTOR_APPROVAL (Senior Reviewer approves)
+      const resPending = await request(app)
+        .patch(`/api/v1/sessions/${createdSessionId}/status`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({ status: "PENDING_DIRECTOR_APPROVAL" });
+
+      assert.equal(resPending.status, 200);
+      assert.equal(resPending.body.session.status, "PENDING_DIRECTOR_APPROVAL");
+
+      // Step 3: PENDING_DIRECTOR_APPROVAL -> APPROVED_LOCKED (Director PKI sign-off)
+      const resApproved = await request(app)
+        .patch(`/api/v1/sessions/${createdSessionId}/status`)
+        .set("Authorization", `Bearer ${inspectorTokens.accessToken}`)
+        .send({ status: "APPROVED_LOCKED" });
+
+      assert.equal(resApproved.status, 200);
+      assert.equal(resApproved.body.session.status, "APPROVED_LOCKED");
+      assert.ok(resApproved.body.session.completedAt);
+    });
   });
 });

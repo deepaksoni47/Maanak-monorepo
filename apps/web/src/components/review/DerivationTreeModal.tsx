@@ -40,7 +40,10 @@ export interface DerivationTreeModalProps {
   item: FlaggedAuditItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onDecision?: (action: "APPROVED" | "FLAGGED_FOR_CORRECTION" | "REJECTED") => void;
+  onDecision?: (
+    action: "APPROVED" | "FLAGGED_FOR_CORRECTION" | "REJECTED",
+    options?: { comments?: string; flaggedFormId?: string }
+  ) => void;
 }
 
 export function DerivationTreeModal({
@@ -49,6 +52,17 @@ export function DerivationTreeModal({
   onClose,
   onDecision,
 }: DerivationTreeModalProps) {
+  const [flaggedClause, setFlaggedClause] = React.useState<string>("form1");
+  const [isRejectionOpen, setIsRejectionOpen] = React.useState<boolean>(false);
+  const [rejectionNotes, setRejectionNotes] = React.useState<string>("");
+
+  React.useEffect(() => {
+    if (item) {
+      setRejectionNotes(`Flagged ${item.anomalyTitle}: ${item.anomalyDescription}`);
+      setIsRejectionOpen(false);
+    }
+  }, [item]);
+
   if (!isOpen || !item) return null;
 
   return (
@@ -190,6 +204,56 @@ export function DerivationTreeModal({
           </div>
         </div>
 
+        {/* Reviewer Correction Re-Test Configuration Panel */}
+        {isRejectionOpen && (
+          <div className="p-4 rounded-xl border border-destructive/40 bg-destructive/5 space-y-3 animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-destructive flex items-center gap-1.5">
+                <Warning size={16} weight="bold" />
+                Return to Officer for Re-Testing
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsRejectionOpen(false)}
+                className="text-[11px] text-muted-foreground hover:underline"
+              >
+                Dismiss
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-foreground">
+                Flagged Test Clause to Unlock for Re-Test:
+              </label>
+              <select
+                value={flaggedClause}
+                onChange={(e) => setFlaggedClause(e.target.value)}
+                className="w-full text-xs p-2 rounded-lg bg-card border border-border text-foreground font-mono focus:outline-hidden focus:ring-1 focus:ring-primary"
+              >
+                <option value="form1">Form 1: Weighing Performance (Clause A.4.4.3)</option>
+                <option value="form2">Form 2: Thermal Drift & No-Load (Clause A.4.4.2)</option>
+                <option value="form3">Form 3: Eccentricity & Corner Load (Clause A.4.7)</option>
+                <option value="form4">Form 4: Discrimination 1.4d (Clause A.4.8)</option>
+                <option value="form5">Form 5: Repeatability 10-Cycle (Clause A.4.10)</option>
+                <option value="form6">Form 6: 30-Minute Creep (Clause A.4.11)</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-foreground">
+                Reviewer Instructions for Testing Officer:
+              </label>
+              <textarea
+                value={rejectionNotes}
+                onChange={(e) => setRejectionNotes(e.target.value)}
+                rows={2}
+                placeholder="Specific guidance for re-test..."
+                className="w-full text-xs p-2 rounded-lg bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
+        )}
+
         {/* Reviewer Action Buttons */}
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-end gap-2.5">
           <Button
@@ -201,17 +265,31 @@ export function DerivationTreeModal({
             Cancel
           </Button>
 
-          <Button
-            type="button"
-            variant="destructive"
-            className="w-full sm:w-auto text-xs font-bold min-h-[48px]"
-            onClick={() => {
-              onDecision?.("FLAGGED_FOR_CORRECTION");
-              onClose();
-            }}
-          >
-            Flag for Re-Test &amp; Notify Officer
-          </Button>
+          {isRejectionOpen ? (
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full sm:w-auto text-xs font-bold min-h-[48px]"
+              onClick={() => {
+                onDecision?.("FLAGGED_FOR_CORRECTION", {
+                  comments: rejectionNotes,
+                  flaggedFormId: flaggedClause,
+                });
+                onClose();
+              }}
+            >
+              Confirm Re-Test Flag &amp; Notify Officer
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full sm:w-auto text-xs font-bold min-h-[48px]"
+              onClick={() => setIsRejectionOpen(true)}
+            >
+              Flag for Re-Test &amp; Notify Officer
+            </Button>
+          )}
 
           <Button
             type="button"

@@ -24,6 +24,8 @@ const SubmitReviewDecisionSchema = z.object({
     .default("SECOND_LEVEL_REVIEW"),
   decision: z.enum(["APPROVED", "FLAGGED_FOR_CORRECTION", "REJECTED"]),
   comments: z.string().min(1, "Reviewer comments are required"),
+  flaggedFormId: z.string().optional(),
+  rejectionReason: z.string().optional(),
 });
 
 export function createReviewRouter(options: ReviewRouterOptions = {}): Router {
@@ -219,22 +221,29 @@ export function createReviewRouter(options: ReviewRouterOptions = {}): Router {
         // Determine new session status based on reviewer decision
         let nextSessionStatus: string;
         if (validated.decision === "APPROVED") {
-          nextSessionStatus = "COMPLETED";
+          nextSessionStatus =
+            validated.reviewStage === "DIRECTOR_APPROVAL"
+              ? "APPROVED_LOCKED"
+              : "COMPLETED";
         } else if (validated.decision === "FLAGGED_FOR_CORRECTION") {
-          nextSessionStatus = "IN_PROGRESS"; // returned to inspector
+          nextSessionStatus = "RETURNED_TO_OFFICER";
         } else {
           nextSessionStatus = "LOCKED"; // rejected/cancelled
         }
 
         const result = await db.$transaction(async (tx) => {
           // 1. Create ReviewAudit entry
+          const formattedComments = validated.flaggedFormId
+            ? `[FLAGGED_CLAUSE: ${validated.flaggedFormId}] ${validated.comments}`
+            : validated.comments;
+
           const reviewAudit = await tx.reviewAudit.create({
             data: {
               testSessionId: session.id,
               reviewerUserId: reviewerId,
               reviewStage: validated.reviewStage,
               decision: validated.decision,
-              comments: validated.comments,
+              comments: formattedComments,
               automatedAnomalyFlagsJson:
                 auditReport.flags as unknown as Prisma.InputJsonValue,
               reviewedAt: new Date(),
