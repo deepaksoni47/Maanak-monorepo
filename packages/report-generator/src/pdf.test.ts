@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import zlib from "node:zlib";
 import { PDFDocument } from "pdf-lib";
 import {
   generateTestKeyPairAndCertificate,
@@ -347,5 +348,200 @@ describe("TASK-034: Official OIML R 76-2 Multi-Page PDF Compiler (pdf.ts)", () =
       sigMetadata.reason,
       "Official Metrological Verification Approval",
     );
+  });
+
+  describe("TASK-080: PDF Report Annex Evidence Embedder (High-Res Photo & Sealing Diagram)", () => {
+    // 1x1 valid sample image buffers for unit tests
+    const samplePngBuffer = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "base64",
+    );
+    const sampleJpgBuffer = Buffer.from(
+      "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=",
+      "base64",
+    );
+
+    it("compiles 6-page PDF report with embedded nameplate photo and sealing diagram on Annex Page 6", async () => {
+      const reportWithEvidence: OimlReportData = {
+        ...sampleReportData,
+        reportNumber: "RRSL-DEL-2026-EVID-01",
+        evidenceAttachments: [
+          {
+            type: "NAMEPLATE_PHOTO",
+            imageBuffer: samplePngBuffer,
+            fileName: "unit_nameplate_rating_tag.png",
+            mimeType: "image/png",
+            fileHashSha256: "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+            description: "High-resolution macro photo of indelible scale rating plate showing Max 15kg and e=5g.",
+          },
+          {
+            type: "SEALING_DIAGRAM",
+            imageBuffer: sampleJpgBuffer,
+            fileName: "physical_sealing_location_plan.jpg",
+            mimeType: "image/jpeg",
+            fileHashSha256: "a1c4356789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            description: "CAD schematic of physical wire/lead seal locations and calibration locking screws.",
+          },
+        ],
+      };
+
+      const result = await compileOimlPdfReport(reportWithEvidence);
+
+      assert.ok(Buffer.isBuffer(result.pdfBuffer));
+      assert.equal(
+        result.pageCount,
+        6,
+        "Must compile exactly 6 pages (5 core pages + 1 Annex page for 2 attachments)",
+      );
+
+      const parsedPdf = await PDFDocument.load(result.pdfBuffer);
+      assert.equal(parsedPdf.getPageCount(), 6);
+
+      const annexPage = parsedPdf.getPage(5);
+      const { width, height } = annexPage.getSize();
+      assert.ok(Math.abs(width - 595.28) < 1);
+      assert.ok(Math.abs(height - 841.89) < 1);
+
+      // Helper to extract all decoded text from PDF content streams
+      const extractAllPdfText = (doc: PDFDocument): string => {
+        let allText = "";
+        for (const [, obj] of doc.context.enumerateIndirectObjects()) {
+          if ((obj as any).getContents) {
+            try {
+              const decomp = zlib
+                .inflateSync(Buffer.from((obj as any).getContents()))
+                .toString();
+              const hexMatches = decomp.match(/<([0-9A-Fa-f]+)>/g) || [];
+              for (const h of hexMatches) {
+                allText +=
+                  Buffer.from(h.slice(1, -1), "hex").toString("utf-8") + " ";
+              }
+            } catch {}
+          }
+        }
+        return allText;
+      };
+
+      const extractedText = extractAllPdfText(parsedPdf);
+      assert.ok(extractedText.includes("ANNEX A"));
+      assert.ok(extractedText.includes("NAMEPLATE"));
+      assert.ok(extractedText.includes("SEALING"));
+      assert.ok(extractedText.includes("SHA-256 Watermark:"));
+      assert.ok(
+        extractedText.includes(
+          "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+        ),
+      );
+      assert.ok(extractedText.includes("WELMEC 7.2 INTEGRITY: ANCHORED"));
+      assert.ok(extractedText.includes("Lead/wire security seal"));
+
+      // Verify embedded image XObject streams are present in PDF
+      const pdfString = result.pdfBuffer.toString("latin1");
+      const imgMatches = pdfString.match(/\/Subtype \/Image/g) || [];
+      assert.ok(
+        imgMatches.length >= 3,
+        "Must contain QR code image and embedded evidence images",
+      );
+    });
+
+    it("dynamically allocates multiple Annex pages when evidence count exceeds 2", async () => {
+      const reportWith3Items: OimlReportData = {
+        ...sampleReportData,
+        reportNumber: "RRSL-DEL-2026-EVID-02",
+        evidenceAttachments: [
+          {
+            type: "NAMEPLATE_PHOTO",
+            imageBuffer: samplePngBuffer,
+            fileName: "photo1.png",
+            fileHashSha256: "1111111111111111111111111111111111111111111111111111111111111111",
+          },
+          {
+            type: "SEALING_DIAGRAM",
+            imageBuffer: sampleJpgBuffer,
+            fileName: "diagram1.jpg",
+            fileHashSha256: "2222222222222222222222222222222222222222222222222222222222222222",
+          },
+          {
+            type: "CIRCUIT_SCHEMATIC",
+            fileName: "schematic1.pdf",
+            mimeType: "application/pdf",
+            fileHashSha256: "3333333333333333333333333333333333333333333333333333333333333333",
+            description: "PCB layout and junction box wiring diagram.",
+          },
+        ],
+      };
+
+      const result = await compileOimlPdfReport(reportWith3Items);
+      assert.equal(
+        result.pageCount,
+        7,
+        "Must compile exactly 7 pages (5 core pages + 2 Annex pages for 3 attachments)",
+      );
+
+      const parsedPdf = await PDFDocument.load(result.pdfBuffer);
+      assert.equal(parsedPdf.getPageCount(), 7);
+
+      let allText = "";
+      for (const [, obj] of parsedPdf.context.enumerateIndirectObjects()) {
+        if ((obj as any).getContents) {
+          try {
+            const decomp = zlib
+              .inflateSync(Buffer.from((obj as any).getContents()))
+              .toString();
+            const hexMatches = decomp.match(/<([0-9A-Fa-f]+)>/g) || [];
+            for (const h of hexMatches) {
+              allText +=
+                Buffer.from(h.slice(1, -1), "hex").toString("utf-8") + " ";
+            }
+          } catch {}
+        }
+      }
+
+      assert.ok(allText.includes("PART 1/2"));
+      assert.ok(allText.includes("PART 2/2"));
+    });
+
+    it("renders wireframe graphic placeholder gracefully when imageBuffer is not provided", async () => {
+      const reportWithPlaceholder: OimlReportData = {
+        ...sampleReportData,
+        reportNumber: "RRSL-DEL-2026-EVID-03",
+        evidenceAttachments: [
+          {
+            type: "USER_MANUAL",
+            fileName: "handbook.pdf",
+            mimeType: "application/pdf",
+            fileHashSha256: "4444444444444444444444444444444444444444444444444444444444444444",
+            description: "Operating instructions and verification manual excerpt.",
+          },
+        ],
+      };
+
+      const result = await compileOimlPdfReport(reportWithPlaceholder);
+      assert.equal(result.pageCount, 6);
+
+      const parsedPdf = await PDFDocument.load(result.pdfBuffer);
+      let allText = "";
+      for (const [, obj] of parsedPdf.context.enumerateIndirectObjects()) {
+        if ((obj as any).getContents) {
+          try {
+            const decomp = zlib
+              .inflateSync(Buffer.from((obj as any).getContents()))
+              .toString();
+            const hexMatches = decomp.match(/<([0-9A-Fa-f]+)>/g) || [];
+            for (const h of hexMatches) {
+              allText +=
+                Buffer.from(h.slice(1, -1), "hex").toString("utf-8") + " ";
+            }
+          } catch {}
+        }
+      }
+
+      assert.ok(allText.includes("HIGH-RESOLUTION EVIDENCE VAULT ATTACHMENT"));
+      assert.ok(
+        allText.includes(
+          "4444444444444444444444444444444444444444444444444444444444444444",
+        ),
+      );
+    });
   });
 });
