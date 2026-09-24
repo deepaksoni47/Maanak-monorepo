@@ -39,6 +39,7 @@ import { OfficerGuidanceBanner } from "./OfficerGuidanceBanner";
 import { TestBatteryNavigator, FormId, STATUTORY_FORMS } from "./TestBatteryNavigator";
 import { Form2TempDriftCard } from "./Form2TempDriftCard";
 import { Form3EccentricityCard } from "./Form3EccentricityCard";
+import { Form4DiscriminationCard } from "./Form4DiscriminationCard";
 import { observationsApi, sessionsApi, instrumentsApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -894,6 +895,25 @@ export function BenchWorkbenchView() {
               }).catch(() => {});
             }}
           />
+        ) : activeForm === "form4" ? (
+          <Form4DiscriminationCard
+            maxCapacityKg={selectedInstrument.maxCapacityKg}
+            verificationIntervalKg={selectedInstrument.verificationIntervalKg}
+            scaleIntervalD={selectedInstrument.verificationIntervalKg}
+            accuracyClass={selectedInstrument.accuracyClass}
+            unit={selectedInstrument.verificationInterval?.split(" ")[1] || "kg"}
+            onSavePoint={(pt, res) => {
+              enqueueOfflineObservation({
+                sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
+                stepNumber: pt.pointIndex,
+                nominalLoad: `${pt.appliedLoad} ${pt.unit}`,
+                indication: `${pt.finalIndicationI2} ${pt.unit}`,
+                deltaL: `${pt.addedLoadDeltaL} ${pt.unit}`,
+                turningPointP: `${(pt.initialIndicationI1 + res.deltaI).toFixed(4)} ${pt.unit}`,
+                errorEc: `${res.deltaI.toFixed(4)} ${pt.unit}`,
+              }).catch(() => {});
+            }}
+          />
         ) : (
           <div
             id={`panel-${activeForm}`}
@@ -939,8 +959,6 @@ export function BenchWorkbenchView() {
                 <span>OIML Statutory Test Protocol & Objective</span>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                {activeForm === "form4" &&
-                  "OIML R 76-1 A.4.8: Discrimination testing at Zero, 1/2 Max, and Max. Extra load of 1.4d must cause an unambiguous change of indication."}
                 {activeForm === "form5" &&
                   "OIML R 76-1 A.4.10: Repeatability test comprising 10 successive applications of 1/2 Max and Max loads under identical bench conditions."}
                 {activeForm === "form6" &&

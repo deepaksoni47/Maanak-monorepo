@@ -15,6 +15,9 @@ import {
   computeEccentricityPositionResult,
   getTable6MpeForLoad,
   POSITION_DEFINITIONS,
+  Form4DiscriminationCard,
+  generateDefaultForm4Points,
+  computeDiscriminationResult,
 } from "./index";
 
 describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
@@ -432,4 +435,86 @@ describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
       assert.ok(html.includes("Save &amp; Advance") || html.includes("Save & Advance"));
     });
   });
+
+  describe("TASK-074: Form 4 Bench Card: Discrimination Test Engine (1.4d Test)", () => {
+    test("generates 3 statutory points (Min, 1/2 Max, Max) with 1.4d auxiliary load", () => {
+      const points = generateDefaultForm4Points(15.0, 0.005, "CLASS_III", "kg");
+      assert.equal(points.length, 3);
+
+      // Point 1: Min = 20 * d = 0.100 kg
+      assert.equal(points[0].appliedLoad, 0.1);
+      assert.equal(points[0].addedLoadDeltaL, 0.007); // 1.4 * 0.005
+      assert.equal(points[0].dVal, 0.005);
+
+      // Point 2: 1/2 Max = 7.500 kg
+      assert.equal(points[1].appliedLoad, 7.5);
+      assert.equal(points[1].addedLoadDeltaL, 0.007);
+
+      // Point 3: Max = 15.000 kg
+      assert.equal(points[2].appliedLoad, 15.0);
+      assert.equal(points[2].addedLoadDeltaL, 0.007);
+    });
+
+    test("computes discrimination step response compliant when deltaI >= 1.0d", () => {
+      const point = {
+        pointIndex: 1,
+        label: "Point 1: Min Load",
+        appliedLoad: 0.1,
+        dVal: 0.005,
+        initialIndicationI1: 0.1,
+        addedLoadDeltaL: 0.007,
+        finalIndicationI2: 0.105,
+        unit: "kg",
+      };
+
+      const result = computeDiscriminationResult(point);
+      assert.equal(result.deltaI, 0.005);
+      assert.equal(result.requiredMinDeltaI, 0.005);
+      assert.equal(result.isCompliant, true);
+      assert.equal(result.ratioToD, 1.0);
+    });
+
+    test("flags non-compliant when step response deltaI < 1.0d", () => {
+      const failingPoint = {
+        pointIndex: 3,
+        label: "Point 3: Max Load",
+        appliedLoad: 15.0,
+        dVal: 0.005,
+        initialIndicationI1: 15.0,
+        addedLoadDeltaL: 0.007,
+        finalIndicationI2: 15.0, // Indication remained unchanged despite +1.4d
+        unit: "kg",
+      };
+
+      const result = computeDiscriminationResult(failingPoint);
+      assert.equal(result.deltaI, 0);
+      assert.equal(result.requiredMinDeltaI, 0.005);
+      assert.equal(result.isCompliant, false);
+      assert.equal(result.ratioToD, 0);
+    });
+
+    test("renders Form4DiscriminationCard UI with prompts and interactive tabs", () => {
+      const html = renderToStaticMarkup(
+        <Form4DiscriminationCard
+          maxCapacityKg={15}
+          scaleIntervalD={0.005}
+          verificationIntervalKg={0.005}
+          accuracyClass="CLASS_III"
+          unit="kg"
+        />
+      );
+
+      assert.ok(html.includes("Form 4: Discrimination"));
+      assert.ok(html.includes("Clause A.4.8"));
+      assert.ok(html.includes("Clause 3.8.2.1"));
+      assert.ok(html.includes("Point 1: Min Load"));
+      assert.ok(html.includes("Point 2: 1/2 Max Load"));
+      assert.ok(html.includes("Point 3: Max Load"));
+      assert.ok(html.includes("Initial Base Indication"));
+      assert.ok(html.includes("Observed Final Indication"));
+      assert.ok(html.includes("1.4d"));
+      assert.ok(html.includes("PASS"));
+    });
+  });
 });
+
