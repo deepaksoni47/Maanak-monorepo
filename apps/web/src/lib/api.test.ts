@@ -41,7 +41,7 @@ describe("TASK-065: Unified Live Backend API Client", () => {
         assert.ok(Array.isArray(res.rulePacks));
       } catch (err: any) {
         // Tolerated if running in disconnected CI
-        if (err?.code !== "ECONNREFUSED") {
+        if (err?.code !== "ECONNREFUSED" && err?.cause?.code !== "ECONNREFUSED" && !err?.message?.includes("fetch failed")) {
           throw err;
         }
       }
@@ -59,7 +59,7 @@ describe("TASK-065: Unified Live Backend API Client", () => {
         assert.ok(res.turningPointP);
         assert.ok(res.rawErrorE);
       } catch (err: any) {
-        if (err?.code !== "ECONNREFUSED") {
+        if (err?.code !== "ECONNREFUSED" && err?.cause?.code !== "ECONNREFUSED" && !err?.message?.includes("fetch failed")) {
           throw err;
         }
       }

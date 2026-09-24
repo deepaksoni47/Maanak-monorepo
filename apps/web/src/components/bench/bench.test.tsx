@@ -7,6 +7,7 @@ import {
   ObservationData,
   VernierKeypad,
   BenchCardSkeleton,
+  TestBatteryNavigator,
 } from "./index";
 
 describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
@@ -202,6 +203,73 @@ describe("TASK-050: Mobile-First Observation Card & Vernier Keypad", () => {
       assert.ok(html.includes("Officer Field Guidance · Step #6"));
       assert.ok(html.includes("Place exactly 7.5000 kg of certified standard weights"));
       assert.ok(html.includes("Quick Auto-Fill Indication (7.5 kg)"));
+    });
+  });
+
+  describe("TASK-071: TestBatteryNavigator & Multi-Form Navigation", () => {
+    test("renders all 6 statutory test forms under OIML R-76 Annex A", () => {
+      const html = renderToStaticMarkup(
+        <TestBatteryNavigator
+          activeForm="form1"
+          onSelectForm={() => {}}
+          formStatuses={{
+            form1: { status: "PASS", progressPercent: 100, completedSteps: 10, totalSteps: 10 },
+            form2: { status: "PENDING", progressPercent: 0, completedSteps: 0, totalSteps: 5 },
+            form3: { status: "FAIL", progressPercent: 60, completedSteps: 3, totalSteps: 5 },
+          }}
+        />
+      );
+
+      // Verify accessible container
+      assert.ok(html.includes('role="tablist"'));
+      assert.ok(html.includes("OIML R-76 Statutory Test Battery Forms"));
+
+      // Verify all 6 statutory forms are present with their OIML clauses
+      assert.ok(html.includes("Form 1: Weighing"));
+      assert.ok(html.includes("OIML R 76-1 A.4.4.3"));
+
+      assert.ok(html.includes("Form 2: Temp Drift"));
+      assert.ok(html.includes("OIML R 76-1 A.4.4.2"));
+
+      assert.ok(html.includes("Form 3: Eccentricity"));
+      assert.ok(html.includes("OIML R 76-1 A.4.7"));
+
+      assert.ok(html.includes("Form 4: Discrimination"));
+      assert.ok(html.includes("OIML R 76-1 A.4.8"));
+
+      assert.ok(html.includes("Form 5: Repeatability"));
+      assert.ok(html.includes("OIML R 76-1 A.4.10"));
+
+      assert.ok(html.includes("Form 6: Creep &amp; Zero") || html.includes("Form 6: Creep & Zero"));
+      assert.ok(html.includes("OIML R 76-1 A.4.11"));
+
+      // Verify active tab attributes
+      assert.ok(html.includes('id="tab-form1"'));
+      assert.ok(html.includes('aria-selected="true"'));
+
+      // Verify status badges
+      assert.ok(html.includes("PASS"));
+      assert.ok(html.includes("FAIL"));
+
+      // Verify step indicators
+      assert.ok(html.includes("10/10"));
+      assert.ok(html.includes("3/5"));
+    });
+
+    test("sets aria-selected=false on inactive tabs", () => {
+      const html = renderToStaticMarkup(
+        <TestBatteryNavigator
+          activeForm="form3"
+          onSelectForm={() => {}}
+        />
+      );
+
+      assert.ok(html.includes('id="tab-form3"'));
+      assert.ok(html.includes('aria-selected="true"'));
+      assert.ok(html.includes('id="tab-form1"'));
+      assert.ok(html.includes('aria-selected="false"'));
+      assert.ok(html.includes('id="tab-form2"'));
+      assert.ok(html.includes('aria-selected="false"'));
     });
   });
 });

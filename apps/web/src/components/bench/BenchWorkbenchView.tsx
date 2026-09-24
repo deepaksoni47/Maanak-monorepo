@@ -36,6 +36,7 @@ import { enqueueOfflineObservation } from "@/lib/offline-sync";
 import { ObservationLedgerTable, LedgerEntry } from "./ObservationLedgerTable";
 import { ToleranceSafetyGauge } from "./ToleranceSafetyGauge";
 import { OfficerGuidanceBanner } from "./OfficerGuidanceBanner";
+import { TestBatteryNavigator, FormId, STATUTORY_FORMS } from "./TestBatteryNavigator";
 import { observationsApi, sessionsApi, instrumentsApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -205,23 +206,41 @@ function calculateWelmecHashSnippet(step: ObservationData, P: number, Ec: number
   return `0x${(hash >>> 0).toString(16).padStart(8, "0").slice(0, 8)}...`;
 }
 
-function useSafeBenchParams(): { instrumentId: string | null; sessionId: string | null } {
+function useSafeBenchParams(): {
+  instrumentId: string | null;
+  sessionId: string | null;
+  form: FormId | null;
+} {
   try {
     const searchParams = useSearchParams();
-    if (!searchParams) return { instrumentId: null, sessionId: null };
+    if (!searchParams) return { instrumentId: null, sessionId: null, form: null };
+    const rawForm = searchParams.get("form") as FormId | null;
+    const isValidForm =
+      rawForm && ["form1", "form2", "form3", "form4", "form5", "form6"].includes(rawForm);
     return {
       instrumentId: searchParams.get("instrumentId"),
       sessionId: searchParams.get("session") || searchParams.get("sessionId"),
+      form: isValidForm ? rawForm : null,
     };
   } catch {
-    return { instrumentId: null, sessionId: null };
+    return { instrumentId: null, sessionId: null, form: null };
   }
 }
 
 export function BenchWorkbenchView() {
   const { user } = useAuth();
-  const { instrumentId: urlInstId, sessionId: urlSessionId } = useSafeBenchParams();
+  const { instrumentId: urlInstId, sessionId: urlSessionId, form: urlForm } = useSafeBenchParams();
   const [activeSessionId, setActiveSessionId] = useState<string | null>(urlSessionId);
+  const [activeForm, setActiveForm] = useState<FormId>(urlForm || "form1");
+
+  const handleSelectForm = (formId: FormId) => {
+    setActiveForm(formId);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("form", formId);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
 
   const [instrumentsList, setInstrumentsList] = useState<InstrumentItem[]>(DEFAULT_INSTRUMENTS);
 
@@ -495,6 +514,10 @@ export function BenchWorkbenchView() {
       ? "5 g"
       : selectedInstrument.verificationInterval;
 
+  const selectedFormMeta =
+    STATUTORY_FORMS.find((f) => f.id === activeForm) || STATUTORY_FORMS[0];
+  const FormIcon = selectedFormMeta.icon;
+
   return (
     <Shell
       breadcrumbs={[
@@ -615,20 +638,41 @@ export function BenchWorkbenchView() {
         {/* Offline PWA Sync Status Banner */}
         <OfflineSyncBanner sessionId={`TS-${selectedInstrument.serialNumber}`} />
 
-        {/* Officer Guided Mode Banner (Plain-English Field Instructions) */}
-        <OfficerGuidanceBanner
-          stepNumber={activeObservation.stepNumber}
-          direction={activeObservation.direction || "ASCENDING"}
-          appliedLoad={activeObservation.appliedLoad}
-          unit={activeObservation.unit || "kg"}
-          eVal={activeObservation.eVal}
-          onQuickFill={() => {
-            handleObservationChange({
-              ...activeObservation,
-              indication: activeObservation.appliedLoad,
-            });
+        {/* Statutory Test Battery Multi-Form Navigator */}
+        <TestBatteryNavigator
+          activeForm={activeForm}
+          onSelectForm={handleSelectForm}
+          formStatuses={{
+            form1: {
+              status: activeResult.isPass ? "PASS" : "FAIL",
+              progressPercent: Math.round((Object.keys(savedSteps).length / steps.length) * 100),
+              completedSteps: Object.keys(savedSteps).length,
+              totalSteps: steps.length,
+            },
+            form2: { status: "PENDING", progressPercent: 0, completedSteps: 0, totalSteps: 5 },
+            form3: { status: "PENDING", progressPercent: 0, completedSteps: 0, totalSteps: 5 },
+            form4: { status: "PENDING", progressPercent: 0, completedSteps: 0, totalSteps: 3 },
+            form5: { status: "PENDING", progressPercent: 0, completedSteps: 0, totalSteps: 10 },
+            form6: { status: "PENDING", progressPercent: 0, completedSteps: 0, totalSteps: 6 },
           }}
         />
+
+        {activeForm === "form1" ? (
+          <>
+            {/* Officer Guided Mode Banner (Plain-English Field Instructions) */}
+            <OfficerGuidanceBanner
+              stepNumber={activeObservation.stepNumber}
+              direction={activeObservation.direction || "ASCENDING"}
+              appliedLoad={activeObservation.appliedLoad}
+              unit={activeObservation.unit || "kg"}
+              eVal={activeObservation.eVal}
+              onQuickFill={() => {
+                handleObservationChange({
+                  ...activeObservation,
+                  indication: activeObservation.appliedLoad,
+                });
+              }}
+            />
 
         {/* Dynamic MPE Tolerance & Safety Monitor Gauge */}
         <ToleranceSafetyGauge
@@ -812,6 +856,81 @@ export function BenchWorkbenchView() {
             if (idx !== -1) setCurrentStepIndex(idx);
           }}
         />
+          </>
+        ) : (
+          <div
+            id={`panel-${activeForm}`}
+            role="tabpanel"
+            aria-labelledby={`tab-${activeForm}`}
+            className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-6 animate-in fade-in duration-200"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-5">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <FormIcon size={24} weight="duotone" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-bold text-foreground">
+                      {selectedFormMeta.title}
+                    </h3>
+                    <Badge variant="pending" showIcon={false} className="py-0.5 px-2 text-[10px] font-mono">
+                      PENDING EXECUTION
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                    Statutory Rule Reference: <span className="font-semibold text-foreground">{selectedFormMeta.clause}</span>
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSelectForm("form1")}
+                leftIcon={<Scales size={15} />}
+                className="shrink-0 text-xs font-semibold"
+              >
+                Return to Form 1 (Weighing)
+              </Button>
+            </div>
+
+            {/* Statutory Clause Protocol Guidance */}
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs space-y-2">
+              <div className="flex items-center gap-2 font-bold text-primary">
+                <FileText size={16} />
+                <span>OIML Statutory Test Protocol & Objective</span>
+              </div>
+              <p className="text-muted-foreground leading-relaxed">
+                {activeForm === "form2" &&
+                  "OIML R 76-1 A.4.4.2 & A.5.3.1: Evaluate temperature effect on zero and no-load indication across reference temperature brackets (-10°C, 20°C, 40°C). Thermal drift must not exceed 1e per 5°C."}
+                {activeForm === "form3" &&
+                  "OIML R 76-1 A.4.7: Apply 1/3 Max load sequentially across 4 quadrants and center receptor position. Difference between any corner and center indication must not exceed 1 MPE."}
+                {activeForm === "form4" &&
+                  "OIML R 76-1 A.4.8: Discrimination testing at Zero, 1/2 Max, and Max. Extra load of 1.4d must cause an unambiguous change of indication."}
+                {activeForm === "form5" &&
+                  "OIML R 76-1 A.4.10: Repeatability test comprising 10 successive applications of 1/2 Max and Max loads under identical bench conditions."}
+                {activeForm === "form6" &&
+                  "OIML R 76-1 A.4.11: 30-minute timed load deformation test under Max load, followed by 30-second post-discharge zero return recovery evaluation."}
+              </p>
+            </div>
+
+            {/* Test Initialization Banner */}
+            <div className="border border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-3 bg-muted/20">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                <FormIcon size={24} weight="duotone" />
+              </div>
+              <div className="space-y-1 max-w-md">
+                <h4 className="text-sm font-bold text-foreground">
+                  Ready to Record {selectedFormMeta.shortTitle}
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Session <span className="font-mono font-semibold text-foreground">TS-{selectedInstrument.serialNumber}</span> is pre-configured with instrument parameters (Max {displayMax}, e = {displayE}).
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Edit Scale Metadata Modal */}
