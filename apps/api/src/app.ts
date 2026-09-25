@@ -64,11 +64,43 @@ export function createApp(options: AppOptions = {}): Express {
   );
 
   // 2. Cross-Origin Resource Sharing (CORS)
-  const allowedOrigins = options.corsOrigin || process.env.CORS_ORIGIN || "*";
+  const rawOrigins = options.corsOrigin || process.env.CORS_ORIGIN || process.env.CLIENT_URL || "*";
+  const parseOrigin = (s: string) => s.trim().replace(/\/+$/, "");
+
+  let allowedOriginsList: string[] = [];
+  let isWildcard = false;
+
+  if (Array.isArray(rawOrigins)) {
+    allowedOriginsList = rawOrigins.map(parseOrigin);
+    if (allowedOriginsList.includes("*")) isWildcard = true;
+  } else if (typeof rawOrigins === "string") {
+    if (rawOrigins.trim() === "*") {
+      isWildcard = true;
+    } else {
+      allowedOriginsList = rawOrigins.split(",").map(parseOrigin).filter(Boolean);
+    }
+  }
+
   app.use(
     cors({
-      origin: allowedOrigins === "*" ? "*" : allowedOrigins,
-      credentials: allowedOrigins !== "*",
+      origin: (requestOrigin, callback) => {
+        if (!requestOrigin || isWildcard) {
+          return callback(null, true);
+        }
+        const cleanOrigin = parseOrigin(requestOrigin);
+        if (allowedOriginsList.includes(cleanOrigin)) {
+          return callback(null, true);
+        }
+        // Allow LAN / localhost origins
+        const isLocalNetwork = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(
+          cleanOrigin,
+        );
+        if (isLocalNetwork) {
+          return callback(null, true);
+        }
+        return callback(null, false);
+      },
+      credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
       exposedHeaders: ["X-Request-Id"],
@@ -156,9 +188,9 @@ export function createApp(options: AppOptions = {}): Express {
   const configuredObservationsRouter =
     options.db || options.rulesRegistry
       ? createObservationsRouter({
-          db: options.db,
-          rulesRegistry: options.rulesRegistry,
-        })
+        db: options.db,
+        rulesRegistry: options.rulesRegistry,
+      })
       : observationsRouter;
   app.use("/api/v1/observations", configuredObservationsRouter);
 
@@ -166,9 +198,9 @@ export function createApp(options: AppOptions = {}): Express {
   const configuredReviewRouter =
     options.db || options.rulesRegistry
       ? createReviewRouter({
-          db: options.db,
-          rulesRegistry: options.rulesRegistry,
-        })
+        db: options.db,
+        rulesRegistry: options.rulesRegistry,
+      })
       : reviewRouter;
   app.use("/api/v1/review", configuredReviewRouter);
 
@@ -176,9 +208,9 @@ export function createApp(options: AppOptions = {}): Express {
   const configuredReportsRouter =
     options.db || options.storage
       ? createReportsRouter({
-          db: options.db,
-          storage: options.storage,
-        })
+        db: options.db,
+        storage: options.storage,
+      })
       : reportsRouter;
   app.use("/api/v1/reports", configuredReportsRouter);
 
@@ -192,9 +224,9 @@ export function createApp(options: AppOptions = {}): Express {
   const configuredSyncRouter =
     options.db || options.rulesRegistry
       ? createSyncRouter({
-          db: options.db,
-          rulesRegistry: options.rulesRegistry,
-        })
+        db: options.db,
+        rulesRegistry: options.rulesRegistry,
+      })
       : syncRouter;
   app.use("/api/v1/sync", configuredSyncRouter);
 

@@ -4,10 +4,27 @@
  */
 
 const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-const API_BASE_URL =
+export const API_BASE_URL =
   rawApiUrl.startsWith("http://") || rawApiUrl.startsWith("https://")
     ? rawApiUrl.replace(/\/+$/, "")
     : `https://${rawApiUrl.replace(/\/+$/, "")}`;
+
+export function getApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    const envUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
+      const trimmed = envUrl.replace(/\/+$/, "");
+      return trimmed.startsWith("http://") || trimmed.startsWith("https://")
+        ? trimmed
+        : `https://${trimmed}`;
+    }
+    const hostname = window.location.hostname;
+    if (hostname && hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return `${window.location.protocol}//${hostname}:4000`;
+    }
+  }
+  return API_BASE_URL;
+}
 
 export interface ApiResponse<T = any> {
   success?: boolean;
@@ -27,7 +44,8 @@ export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
   const token = getStoredToken();
 
   const headers: Record<string, string> = {
@@ -326,7 +344,7 @@ export const verifyApi = {
 
 export const evidenceApi = {
   upload: async (formData: FormData) => {
-    const url = `${API_BASE_URL}/api/v1/evidence/upload`;
+    const url = `${getApiBaseUrl()}/api/v1/evidence/upload`;
     const token = getStoredToken();
     const headers: Record<string, string> = {};
     if (token) {

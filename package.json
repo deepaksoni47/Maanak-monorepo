@@ -9,7 +9,9 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
+    "postinstall": "pnpm --filter @maanak/db run generate",
     "build": "turbo run build",
+    "start": "node scripts/start-render.mjs",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
@@ -26,5 +28,9 @@
     "tsx": "^4.23.15",
     "turbo": "^2.11.2",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@neon/config": "^1.7.3",
+    "@neon/env": "^1.4.4"
   }
 }
