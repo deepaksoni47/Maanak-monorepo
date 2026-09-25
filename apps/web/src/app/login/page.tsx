@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -32,6 +32,33 @@ export default function LoginPage() {
 
   const { user, login, register, switchRoleQuick, isLoading } = useAuth();
   const [mode, setMode] = useState<"SIGN_IN" | "REGISTER">("SIGN_IN");
+
+  const getRedirectTarget = () => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const callback = params.get("callbackUrl");
+      if (callback && callback.startsWith("/") && !callback.startsWith("//")) {
+        return callback;
+      }
+    }
+    return "/dashboard";
+  };
+
+  const navigateToDashboard = () => {
+    const target = getRedirectTarget();
+    if (typeof window !== "undefined") {
+      window.location.assign(target);
+    } else if (router) {
+      router.push(target);
+    }
+  };
+
+  // Automatically navigate away from login page if already authenticated
+  useEffect(() => {
+    if (user && !isLoading) {
+      navigateToDashboard();
+    }
+  }, [user, isLoading]);
 
   // Sign In State
   const [selectedRole, setSelectedRole] = useState<"INSPECTOR" | "REVIEWER" | "DIRECTOR" | "ADMIN">("INSPECTOR");
@@ -66,8 +93,7 @@ export default function LoginPage() {
     try {
       const ok = await login(email, password);
       if (ok) {
-        if (router) router.push("/dashboard");
-        else if (typeof window !== "undefined") window.location.href = "/dashboard";
+        navigateToDashboard();
       } else {
         setError("Invalid officer credentials. Please verify your email and password.");
       }
@@ -107,8 +133,7 @@ export default function LoginPage() {
       });
 
       if (ok) {
-        if (router) router.push("/dashboard");
-        else if (typeof window !== "undefined") window.location.href = "/dashboard";
+        navigateToDashboard();
       } else {
         setError("Failed to create officer account. Email might already be registered.");
       }
@@ -125,8 +150,7 @@ export default function LoginPage() {
     try {
       const ok = await switchRoleQuick(role);
       if (ok) {
-        if (router) router.push("/dashboard");
-        else if (typeof window !== "undefined") window.location.href = "/dashboard";
+        navigateToDashboard();
       } else {
         setError("Quick login failed.");
       }

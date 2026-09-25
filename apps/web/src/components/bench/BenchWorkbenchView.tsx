@@ -18,7 +18,6 @@ import {
   ShieldCheck,
   FileText,
   ArrowsClockwise,
-  Table,
   X,
   Buildings,
   Hash,
@@ -924,112 +923,50 @@ export function BenchWorkbenchView({
           </div>
         </div>
 
-        {/* Observation Interaction Area (Active Observation Card + Live Ledger) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7">
+        {/* Observation Interaction Area (Active Observation Card + Metrological Guidance) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="lg:col-span-8">
             <ObservationCard
               observation={activeObservation}
               onChange={handleObservationChange}
             />
           </div>
 
-          <div className="lg:col-span-5 space-y-4">
-            {/* Live Progress Summary Table */}
-            <Card className="rounded-sm border border-border overflow-hidden">
-              <CardHeader className="p-4 bg-muted/20 border-b border-border/70 flex flex-row items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Table size={18} className="text-primary" />
-                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Active Run Summary
-                  </CardTitle>
+          <div className="lg:col-span-4 space-y-4">
+            {/* Metrological Guidance Card */}
+            <div className="rounded-sm border border-border/80 bg-muted/20 p-4 space-y-3 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-bold text-foreground">
+                  <FileText size={16} className="text-primary" />
+                  <span>OIML R-76 Clause A.4.4.3</span>
                 </div>
                 <Badge
                   variant={activeResult.isPass ? "pass" : "fail"}
                   showIcon={false}
-                  className="font-mono text-xs"
+                  className="font-mono text-[11px]"
                 >
-                  RUN STATUS: {activeResult.isPass ? "PASS" : "OVER MPE"}
+                  STEP: {activeResult.isPass ? "PASS" : "OVER MPE"}
                 </Badge>
-              </CardHeader>
-
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-muted/40 text-muted-foreground border-b border-border/60">
-                      <tr>
-                        <th scope="col" className="py-2.5 px-3 font-semibold">Step</th>
-                        <th scope="col" className="py-2.5 px-2 font-semibold">Load (L)</th>
-                        <th scope="col" className="py-2.5 px-2 font-semibold">Turning (P)</th>
-                        <th scope="col" className="py-2.5 px-2 font-semibold">Error (Ec)</th>
-                        <th scope="col" className="py-2.5 px-3 text-right font-semibold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/60">
-                      {steps.map((s, idx) => {
-                        const r = computeStepResult(s);
-                        const isCurrent = idx === currentStepIndex;
-
-                        return (
-                          <tr
-                            key={s.stepNumber}
-                            onClick={() => setCurrentStepIndex(idx)}
-                            className={`cursor-pointer transition-colors ${
-                              isCurrent
-                                ? "bg-primary/10 font-semibold"
-                                : "hover:bg-accent/40"
-                            }`}
-                          >
-                            <td className="py-2.5 px-3 whitespace-nowrap">
-                              <span className="font-mono">#{s.stepNumber}</span>
-                              {s.direction === "DESCENDING" && (
-                                <span className="text-[10px] text-muted-foreground ml-1">▼</span>
-                              )}
-                            </td>
-                            <td className="py-2.5 px-2 font-mono whitespace-nowrap">
-                              {s.appliedLoad.toFixed(3)} kg
-                            </td>
-                            <td className="py-2.5 px-2 font-mono whitespace-nowrap">
-                              {r.P.toFixed(4)} kg
-                            </td>
-                            <td
-                              className={`py-2.5 px-2 font-mono whitespace-nowrap font-bold ${
-                                r.isPass
-                                  ? "text-emerald-600 dark:text-emerald-400"
-                                  : "text-destructive"
-                              }`}
-                            >
-                              {(r.Ec * 1000).toFixed(1)} g
-                            </td>
-                            <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                              <Badge
-                                variant={r.isPass ? "pass" : "fail"}
-                                showIcon={false}
-                                className="py-0 px-2 text-[10px] font-mono"
-                              >
-                                {r.isPass ? "PASS" : "FAIL"}
-                              </Badge>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Metrological Guidance Card */}
-            <div className="rounded-sm border border-border/80 bg-muted/20 p-4 space-y-2 text-xs">
-              <div className="flex items-center gap-1.5 font-bold text-foreground">
-                <FileText size={16} className="text-primary" />
-                <span>OIML R-76 Clause A.4.4.3 Turning Point Formula:</span>
               </div>
-              <p className="text-[11px] text-muted-foreground font-mono">
-                P = I + 0.5e - ΔL = {activeObservation.indication.toFixed(4)} + {(0.5 * activeObservation.eVal).toFixed(4)} - {activeObservation.deltaL.toFixed(4)} = {activeResult.P.toFixed(4)} kg
-              </p>
-              <p className="text-[11px] text-muted-foreground font-mono">
-                Ec = (P - L) - E₀ = {activeResult.E >= 0 ? `+${(activeResult.E * 1000).toFixed(1)}` : (activeResult.E * 1000).toFixed(1)} g
-              </p>
+
+              <div className="space-y-2 text-[11px] font-mono">
+                <div className="p-3 rounded-sm bg-card border border-border/70 space-y-1">
+                  <p className="text-xs font-semibold text-foreground font-sans">Turning Point Formula:</p>
+                  <p className="text-primary font-bold">P = I + 0.5e - ΔL</p>
+                  <p className="text-muted-foreground text-[10px]">
+                    = {activeObservation.indication.toFixed(4)} + {(0.5 * activeObservation.eVal).toFixed(4)} - {activeObservation.deltaL.toFixed(4)}
+                  </p>
+                  <p className="font-bold text-foreground">= {activeResult.P.toFixed(4)} kg</p>
+                </div>
+
+                <div className="p-3 rounded-sm bg-card border border-border/70 space-y-1">
+                  <p className="text-xs font-semibold text-foreground font-sans">Corrected Error (Ec):</p>
+                  <p className="text-primary font-bold">Ec = (P - L) - E₀</p>
+                  <p className="font-bold text-foreground">
+                    = {activeResult.E >= 0 ? `+${(activeResult.E * 1000).toFixed(1)}` : (activeResult.E * 1000).toFixed(1)} g
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
