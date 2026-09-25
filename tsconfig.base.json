@@ -14,8 +14,7 @@
     "sourceMap": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
-    "composite": false,
-    "incremental": true
+    "composite": false
   },
   "exclude": ["node_modules", "dist", ".next", "coverage"]
 }

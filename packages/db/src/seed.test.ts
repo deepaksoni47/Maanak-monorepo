@@ -79,13 +79,17 @@ describe('TASK-027: Database Seed Data Specification & Integrity', () => {
   });
 
   describe('Users (Inspector, Reviewer, Director, Admin)', () => {
-    it('seeds exactly 4 users matching RRSL personas with @rrsl.gov.in emails', () => {
-      assert.equal(usersSeed.length, 4);
+    it('seeds users matching MAANAK and RRSL personas with valid emails and roles', () => {
+      assert.equal(usersSeed.length, 8);
       const expectedUsers = [
-        { username: 'admin', role: 'ADMIN', email: 'admin@rrsl.gov.in' },
-        { username: 'director', role: 'DIRECTOR', email: 'director@rrsl.gov.in' },
-        { username: 'reviewer', role: 'REVIEWER', email: 'reviewer@rrsl.gov.in' },
-        { username: 'inspector', role: 'INSPECTOR', email: 'inspector@rrsl.gov.in' },
+        { username: 'admin', role: 'ADMIN', email: 'admin@maanak.gov.in' },
+        { username: 'director', role: 'DIRECTOR', email: 'director@maanak.gov.in' },
+        { username: 'reviewer', role: 'REVIEWER', email: 'reviewer@maanak.gov.in' },
+        { username: 'inspector', role: 'INSPECTOR', email: 'inspector@maanak.gov.in' },
+        { username: 'admin_rrsl', role: 'ADMIN', email: 'admin@rrsl.gov.in' },
+        { username: 'director_rrsl', role: 'DIRECTOR', email: 'director@rrsl.gov.in' },
+        { username: 'reviewer_rrsl', role: 'REVIEWER', email: 'reviewer@rrsl.gov.in' },
+        { username: 'inspector_rrsl', role: 'INSPECTOR', email: 'inspector@rrsl.gov.in' },
       ];
 
       for (const expected of expectedUsers) {

@@ -9,7 +9,7 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
-    "postinstall": "pnpm --filter @maanak/db run generate",
+    "postinstall": "pnpm --filter @maanak/db run generate && pnpm --filter @maanak/types run build",
     "build": "turbo run build",
     "start": "node scripts/start-render.mjs",
     "dev": "turbo run dev",
