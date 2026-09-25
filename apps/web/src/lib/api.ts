@@ -20,7 +20,9 @@ export function getApiBaseUrl(): string {
     }
     const hostname = window.location.hostname;
     if (hostname && hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return `${window.location.protocol}//${hostname}:4000`;
+      // In production (behind reverse proxy like Render), use the origin directly
+      // without appending an internal port — the proxy handles routing.
+      return window.location.origin;
     }
   }
   return API_BASE_URL;
