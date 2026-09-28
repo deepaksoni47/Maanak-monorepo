@@ -4,6 +4,7 @@ import type {
   DigitalSignatureMetadata,
 } from "@maanak/types";
 import { generateVerificationQrPng } from "@maanak/crypto-provenance";
+import { getNationalEmblemBytes } from "./assets/emblem.js";
 
 export interface EvidenceAttachment {
   type:
@@ -245,14 +246,15 @@ const PAGE_HEIGHT = 841.89;
 const MARGIN = 40;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
-// Color palette
-const COLOR_PRIMARY = rgb(0.09, 0.28, 0.58); // Deep Navy (#174794)
-const COLOR_DARK = rgb(0.12, 0.16, 0.24); // Slate 900
-const COLOR_MUTED = rgb(0.4, 0.45, 0.55); // Slate 500
-const COLOR_LIGHT_BG = rgb(0.96, 0.97, 0.99); // Slate 50
-const COLOR_BORDER = rgb(0.85, 0.88, 0.92); // Slate 200
-const COLOR_PASS = rgb(0.05, 0.6, 0.35); // Emerald 600
-const COLOR_FAIL = rgb(0.86, 0.15, 0.15); // Red 600
+// Color palette (Clean, authoritative government test certificate palette - NO deep blue)
+const COLOR_PRIMARY = rgb(0.12, 0.16, 0.24); // Slate 900 / Govt Charcoal (#1e293b)
+const COLOR_DARK = rgb(0.08, 0.1, 0.14); // Jet Black / Dark Charcoal (#141924)
+const COLOR_MUTED = rgb(0.38, 0.43, 0.5); // Slate 500
+const COLOR_LIGHT_BG = rgb(0.97, 0.98, 0.995); // Slate 50
+const COLOR_BORDER = rgb(0.82, 0.85, 0.89); // Slate 200
+const COLOR_TABLE_HEADER = rgb(0.92, 0.94, 0.97); // Government subtle light grey header tint
+const COLOR_PASS = rgb(0.04, 0.48, 0.22); // Emerald 700
+const COLOR_FAIL = rgb(0.82, 0.12, 0.12); // Red 700
 
 /**
  * Sanitizes strings for standard PDF fonts (WinAnsi encoding).
@@ -302,6 +304,10 @@ export async function compileOimlPdfReport(
   );
   const qrImage = await pdfDoc.embedPng(qrBuffer);
 
+  // Embed National Emblem of India PNG
+  const emblemBytes = getNationalEmblemBytes();
+  const emblemImage = await pdfDoc.embedPng(emblemBytes);
+
   const hasModularForms7To9 = Boolean(
     reportData.results.form7WarmUp ||
     reportData.results.form8SpanStability ||
@@ -336,52 +342,106 @@ export async function compileOimlPdfReport(
   patchPage(page1);
   renderPageFramework(page1, 1, totalPages, reportData, fontRegular, fontBold);
 
-  let y = PAGE_HEIGHT - 65;
-
-  // Government & Laboratory Header
-  page1.drawText("GOVERNMENT OF INDIA — MINISTRY OF CONSUMER AFFAIRS", {
+  // Official Government Header (Pristine White Background - NO deep blue box)
+  // Left: National Emblem PNG (Ashok Stambh)
+  const emblemWidth = 36;
+  const emblemHeight = 52;
+  page1.drawImage(emblemImage, {
     x: MARGIN,
-    y,
-    size: 9,
+    y: PAGE_HEIGHT - 90,
+    width: emblemWidth,
+    height: emblemHeight,
+  });
+
+  // Center / Adjacent Institutional Text
+  const textLeftX = MARGIN + emblemWidth + 10;
+  page1.drawText("GOVERNMENT OF INDIA • MINISTRY OF CONSUMER AFFAIRS, FOOD & PUBLIC DISTRIBUTION", {
+    x: textLeftX,
+    y: PAGE_HEIGHT - 47,
+    size: 7.5,
     font: fontBold,
+    color: COLOR_DARK,
+  });
+
+  page1.drawText(reportData.laboratory.name.toUpperCase(), {
+    x: textLeftX,
+    y: PAGE_HEIGHT - 61,
+    size: 11.5,
+    font: fontBold,
+    color: COLOR_PRIMARY,
+  });
+
+  page1.drawText(
+    `${reportData.laboratory.address ?? "Legal Metrology Standards Laboratory"} | Accreditation: ${reportData.laboratory.accreditationNumber ?? "NABL Metrology Accredited"}`,
+    { x: textLeftX, y: PAGE_HEIGHT - 73, size: 7.5, font: fontRegular, color: COLOR_MUTED },
+  );
+
+  page1.drawText(
+    "DIRECTORATE OF LEGAL METROLOGY • STATUTORY METROLOGICAL VERIFICATION UNDER OIML R 76",
+    { x: textLeftX, y: PAGE_HEIGHT - 84, size: 7, font: fontBold, color: COLOR_MUTED },
+  );
+
+  // Right: Public Verification QR Code on Header
+  const qrHeaderSize = 52;
+  const qrHeaderX = MARGIN + CONTENT_WIDTH - qrHeaderSize;
+  const qrHeaderY = PAGE_HEIGHT - 90;
+  page1.drawImage(qrImage, {
+    x: qrHeaderX,
+    y: qrHeaderY,
+    width: qrHeaderSize,
+    height: qrHeaderSize,
+  });
+
+  const scanHdr = "SCAN TO VERIFY";
+  const scanHdrWidth = fontBold.widthOfTextAtSize(scanHdr, 6);
+  page1.drawText(scanHdr, {
+    x: qrHeaderX + (qrHeaderSize - scanHdrWidth) / 2,
+    y: qrHeaderY - 8,
+    size: 6,
+    font: fontBold,
+    color: COLOR_PRIMARY,
+  });
+
+  const portalHdr = "Public Portal";
+  const portalHdrWidth = fontRegular.widthOfTextAtSize(portalHdr, 5.5);
+  page1.drawText(portalHdr, {
+    x: qrHeaderX + (qrHeaderSize - portalHdrWidth) / 2,
+    y: qrHeaderY - 15,
+    size: 5.5,
+    font: fontRegular,
     color: COLOR_MUTED,
   });
-  y -= 14;
-  page1.drawText(reportData.laboratory.name.toUpperCase(), {
+
+  // Double horizontal dividing rule
+  const headerBottomY = PAGE_HEIGHT - 110;
+  page1.drawLine({
+    start: { x: MARGIN, y: headerBottomY },
+    end: { x: MARGIN + CONTENT_WIDTH, y: headerBottomY },
+    thickness: 1.2,
+    color: COLOR_PRIMARY,
+  });
+  page1.drawLine({
+    start: { x: MARGIN, y: headerBottomY - 2 },
+    end: { x: MARGIN + CONTENT_WIDTH, y: headerBottomY - 2 },
+    thickness: 0.5,
+    color: COLOR_BORDER,
+  });
+
+  let y = headerBottomY - 18;
+
+  // Report Title Box
+  page1.drawText("OIML R 76-2 TEST CERTIFICATE", {
     x: MARGIN,
     y,
     size: 13,
     font: fontBold,
     color: COLOR_PRIMARY,
   });
-  y -= 12;
-  page1.drawText(
-    `${reportData.laboratory.address ?? "Legal Metrology Standards Laboratory"} | Accreditation: ${reportData.laboratory.accreditationNumber ?? "NABL Metrology Accredited"}`,
-    { x: MARGIN, y, size: 8, font: fontRegular, color: COLOR_MUTED },
-  );
-
-  y -= 20;
-  page1.drawLine({
-    start: { x: MARGIN, y },
-    end: { x: MARGIN + CONTENT_WIDTH, y },
-    thickness: 1.5,
-    color: COLOR_PRIMARY,
-  });
-
-  // Report Title Box
-  y -= 22;
-  page1.drawText("OIML R 76-2 TEST CERTIFICATE", {
-    x: MARGIN,
-    y,
-    size: 15,
-    font: fontBold,
-    color: COLOR_DARK,
-  });
-  y -= 12;
+  y -= 11;
   page1.drawText("NON-AUTOMATIC WEIGHING INSTRUMENT METROLOGICAL EVALUATION", {
     x: MARGIN,
     y,
-    size: 8.5,
+    size: 8,
     font: fontBold,
     color: COLOR_MUTED,
   });
@@ -1339,13 +1399,15 @@ function renderForm1Table(
 
   let currentY = startY;
 
-  // Header background
+  // Header background (Clean government subtle light grey tint - NO deep blue)
   page.drawRectangle({
     x: startX,
     y: currentY - 14,
     width: CONTENT_WIDTH,
     height: 18,
-    color: COLOR_PRIMARY,
+    color: COLOR_TABLE_HEADER,
+    borderColor: COLOR_BORDER,
+    borderWidth: 0.8,
   });
 
   let curX = startX + 4;
@@ -1355,7 +1417,7 @@ function renderForm1Table(
       y: currentY - 10,
       size: 7.5,
       font: fontBold,
-      color: rgb(1, 1, 1),
+      color: COLOR_DARK,
     });
     curX += colWidths[idx];
   });

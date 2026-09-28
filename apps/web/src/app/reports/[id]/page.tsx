@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import React from "react";
 import { ReportDetailView } from "@/components/reports/ReportDetailView";
 
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }

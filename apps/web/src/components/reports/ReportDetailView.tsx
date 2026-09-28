@@ -414,6 +414,11 @@ export function ReportDetailView({
         <Card className="p-6 sm:p-8 bg-card border border-neutral-300 dark:border-neutral-700 shadow-md space-y-6">
           {/* Institutional Header Strip */}
           <div className="border-b border-neutral-300 dark:border-neutral-700 pb-6 text-center space-y-2">
+            <img
+              src="/national-emblem.png"
+              alt="State Emblem of India"
+              className="h-16 w-auto mx-auto object-contain mb-2"
+            />
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
               Government of India • Ministry of Consumer Affairs, Food &amp; Public Distribution
             </div>

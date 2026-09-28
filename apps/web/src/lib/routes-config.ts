@@ -31,6 +31,7 @@ export const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
   { pathPattern: "/login", exact: false, requiresAuth: false },
   { pathPattern: "/access-denied", exact: false, requiresAuth: false },
   { pathPattern: "/verify", exact: false, requiresAuth: false },
+  { pathPattern: /^\/reports\/[^/]+$/, exact: false, requiresAuth: false },
   { pathPattern: "/manifest.webmanifest", exact: true, requiresAuth: false },
 
   // Role-restricted routes

@@ -50,3 +50,5 @@ Thumbs.db
 !/storage/signed_reports/.gitkeep
 uploads/
 **/uploads/
+reports_storage/
+**/reports_storage/
