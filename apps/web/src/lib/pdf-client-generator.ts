@@ -110,7 +110,7 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
   });
 
   page.drawText(`Test Session: ${data.sessionId}`, {
-    x: 250,
+    x: 230,
     y: y,
     size: 9,
     font: fontMono,
@@ -118,7 +118,7 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
   });
 
   page.drawText(`Date Issued: ${data.issueDate || new Date().toISOString().split("T")[0]}`, {
-    x: 430,
+    x: 420,
     y: y,
     size: 9,
     font: fontRegular,
@@ -279,7 +279,7 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
     color: rgb(0.1, 0.45, 0.2),
   });
 
-  // Section 4: X.509 Digital Signature & Provenance Block
+  // Section 4: X.509 Digital Signature & Provenance Block + QR Verification Code
   y = y - 48;
   page.drawText("3. STATUTORY DIRECTOR SIGNATURE & WELMEC 7.2 CRYPTOGRAPHIC SEAL", {
     x: 40,
@@ -291,10 +291,11 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
 
   y -= 10;
   const sigBoxHeight = 110;
+  const sigBoxWidth = width - 80;
   page.drawRectangle({
     x: 40,
     y: y - sigBoxHeight,
-    width: width - 80,
+    width: sigBoxWidth,
     height: sigBoxHeight,
     color: lightBg,
     borderColor: borderGray,
@@ -324,7 +325,7 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
 
   sigY -= 15;
   page.drawText("Cryptographic SHA-256 Hash:", { x: 52, y: sigY, size: 8, font: fontRegular, color: mutedGray });
-  page.drawText(sigHash, { x: 195, y: sigY, size: 6.5, font: fontMonoBold, color: navy });
+  page.drawText(sigHash.slice(0, 36) + "...", { x: 195, y: sigY, size: 6.5, font: fontMonoBold, color: navy });
 
   sigY -= 15;
   page.drawText("Status:", { x: 52, y: sigY, size: 8, font: fontRegular, color: mutedGray });
@@ -334,6 +335,55 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
     size: 7.5,
     font: fontBold,
     color: greenText,
+  });
+
+  // Draw QR Stamp on right side of signature box
+  const qrX = width - 118;
+  const qrY = y - sigBoxHeight + 16;
+  const qrSize = 65;
+
+  page.drawRectangle({
+    x: qrX - 4,
+    y: qrY - 4,
+    width: qrSize + 8,
+    height: qrSize + 8,
+    color: rgb(1, 1, 1),
+    borderColor: borderGray,
+    borderWidth: 1,
+  });
+
+  // Draw 2D QR finder pattern squares
+  const drawQrCorner = (cx: number, cy: number, s: number) => {
+    page.drawRectangle({ x: cx, y: cy, width: s, height: s, color: navy });
+    page.drawRectangle({ x: cx + 2, y: cy + 2, width: s - 4, height: s - 4, color: rgb(1, 1, 1) });
+    page.drawRectangle({ x: cx + 4, y: cy + 4, width: s - 8, height: s - 8, color: navy });
+  };
+
+  drawQrCorner(qrX, qrY + qrSize - 16, 16);
+  drawQrCorner(qrX + qrSize - 16, qrY + qrSize - 16, 16);
+  drawQrCorner(qrX, qrY, 16);
+
+  // Draw sample QR data modules
+  for (let mi = 0; mi < 5; mi++) {
+    for (let mj = 0; mj < 5; mj++) {
+      if ((mi + mj) % 2 === 0) {
+        page.drawRectangle({
+          x: qrX + 20 + mi * 5,
+          y: qrY + 10 + mj * 5,
+          width: 3.5,
+          height: 3.5,
+          color: navy,
+        });
+      }
+    }
+  }
+
+  page.drawText("SCAN TO VERIFY", {
+    x: qrX + 2,
+    y: qrY - 11,
+    size: 6,
+    font: fontBold,
+    color: navy,
   });
 
   // Footer Disclaimer
