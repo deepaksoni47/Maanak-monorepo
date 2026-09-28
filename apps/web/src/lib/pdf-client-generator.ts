@@ -1,4 +1,5 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { getQrModuleMatrix } from "./qr-code-utils";
 
 export interface ClientPdfReportData {
   reportNumber: string;
@@ -279,7 +280,7 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
     color: rgb(0.1, 0.45, 0.2),
   });
 
-  // Section 4: X.509 Digital Signature & Provenance Block + QR Verification Code
+  // Section 4: X.509 Digital Signature & Provenance Block + Genuine Scannable QR Verification Code
   y = y - 48;
   page.drawText("3. STATUTORY DIRECTOR SIGNATURE & WELMEC 7.2 CRYPTOGRAPHIC SEAL", {
     x: 40,
@@ -305,7 +306,7 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
   const signerName = data.signature?.signedBy || "Dr. Rajesh Sharma";
   const signerTitle = data.signature?.signatoryTitle || "Director (Legal Metrology), RRSL Ahmedabad";
   const signTime = data.signature?.timestampUtc || new Date().toISOString();
-  const sigHash = data.signature?.signatureHash || "9f8a2c14e6b7d3058a74e9c1f6d3a82e5b4c7d0182f6e9a3c5b8d7e14a2f09c6";
+  const sigHash = data.signature?.signatureHash || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
   let sigY = y - 18;
   page.drawText("Director & Authorized Signatory:", { x: 52, y: sigY, size: 8, font: fontRegular, color: mutedGray });
@@ -325,7 +326,7 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
 
   sigY -= 15;
   page.drawText("Cryptographic SHA-256 Hash:", { x: 52, y: sigY, size: 8, font: fontRegular, color: mutedGray });
-  page.drawText(sigHash.slice(0, 36) + "...", { x: 195, y: sigY, size: 6.5, font: fontMonoBold, color: navy });
+  page.drawText(sigHash.slice(0, 32) + "...", { x: 195, y: sigY, size: 6.5, font: fontMonoBold, color: navy });
 
   sigY -= 15;
   page.drawText("Status:", { x: 52, y: sigY, size: 8, font: fontRegular, color: mutedGray });
@@ -337,54 +338,57 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
     color: greenText,
   });
 
-  // Draw QR Stamp on right side of signature box
-  const qrX = width - 118;
-  const qrY = y - sigBoxHeight + 16;
-  const qrSize = 65;
+  // Render 100% genuine ISO/IEC 18004 QR code for smartphone camera scanning
+  const hostDomain = "https://maanak-monorepo-web.vercel.app";
+  const verifyPortalUrl = `${hostDomain}/verify/${sigHash}`;
+  try {
+    const { modules, size: qrModuleCount } = getQrModuleMatrix(verifyPortalUrl, "M");
 
-  page.drawRectangle({
-    x: qrX - 4,
-    y: qrY - 4,
-    width: qrSize + 8,
-    height: qrSize + 8,
-    color: rgb(1, 1, 1),
-    borderColor: borderGray,
-    borderWidth: 1,
-  });
+    const qrX = width - 126;
+    const qrY = y - sigBoxHeight + 14;
+    const qrTargetSize = 74;
+    const marginModules = 2;
+    const totalModules = qrModuleCount + marginModules * 2;
+    const cellPt = qrTargetSize / totalModules;
 
-  // Draw 2D QR finder pattern squares
-  const drawQrCorner = (cx: number, cy: number, s: number) => {
-    page.drawRectangle({ x: cx, y: cy, width: s, height: s, color: navy });
-    page.drawRectangle({ x: cx + 2, y: cy + 2, width: s - 4, height: s - 4, color: rgb(1, 1, 1) });
-    page.drawRectangle({ x: cx + 4, y: cy + 4, width: s - 8, height: s - 8, color: navy });
-  };
+    // Draw white background container with quiet zone
+    page.drawRectangle({
+      x: qrX - 2,
+      y: qrY - 2,
+      width: qrTargetSize + 4,
+      height: qrTargetSize + 4,
+      color: rgb(1, 1, 1),
+      borderColor: borderGray,
+      borderWidth: 0.5,
+    });
 
-  drawQrCorner(qrX, qrY + qrSize - 16, 16);
-  drawQrCorner(qrX + qrSize - 16, qrY + qrSize - 16, 16);
-  drawQrCorner(qrX, qrY, 16);
-
-  // Draw sample QR data modules
-  for (let mi = 0; mi < 5; mi++) {
-    for (let mj = 0; mj < 5; mj++) {
-      if ((mi + mj) % 2 === 0) {
-        page.drawRectangle({
-          x: qrX + 20 + mi * 5,
-          y: qrY + 10 + mj * 5,
-          width: 3.5,
-          height: 3.5,
-          color: navy,
-        });
+    // Draw dark modules as crisp vector rectangles
+    for (let r = 0; r < qrModuleCount; r++) {
+      for (let c = 0; c < qrModuleCount; c++) {
+        if (modules[r][c]) {
+          const modX = qrX + (c + marginModules) * cellPt;
+          const modY = qrY + qrTargetSize - (r + marginModules + 1) * cellPt;
+          page.drawRectangle({
+            x: modX,
+            y: modY,
+            width: cellPt + 0.05,
+            height: cellPt + 0.05,
+            color: navy,
+          });
+        }
       }
     }
-  }
 
-  page.drawText("SCAN TO VERIFY", {
-    x: qrX + 2,
-    y: qrY - 11,
-    size: 6,
-    font: fontBold,
-    color: navy,
-  });
+    page.drawText("SCAN TO VERIFY", {
+      x: qrX + 8,
+      y: qrY - 10,
+      size: 6.5,
+      font: fontBold,
+      color: navy,
+    });
+  } catch {
+    // Graceful fallback if QR matrix fails
+  }
 
   // Footer Disclaimer
   page.drawText("This certificate is statutorily generated and cryptographically signed under the Legal Metrology Act, 2009 & OIML R 76-2.", {
@@ -395,10 +399,10 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
     color: mutedGray,
   });
 
-  page.drawText("Public verification portal: https://verify.maanak.gov.in", {
-    x: 390,
+  page.drawText(`Public verification portal: ${verifyPortalUrl}`, {
+    x: 270,
     y: 35,
-    size: 7,
+    size: 6.8,
     font: fontMono,
     color: navy,
   });

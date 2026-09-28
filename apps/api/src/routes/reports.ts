@@ -60,7 +60,7 @@ function formatReportForJson(report: any) {
 export async function buildReportData(
   sessionId: string,
   database: PrismaClient = defaultPrisma,
-  verifyBaseUrl: string = process.env.VERIFY_BASE_URL || "https://verify.maanak.gov.in",
+  verifyBaseUrl: string = process.env.VERIFY_BASE_URL || "https://maanak-monorepo-web.vercel.app",
 ): Promise<{
   session: any;
   reportData: OimlReportData;

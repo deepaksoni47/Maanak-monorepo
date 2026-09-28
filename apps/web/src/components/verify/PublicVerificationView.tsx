@@ -26,7 +26,7 @@ import { Shell } from "@/components/layout/Shell";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { generateQrSvgString } from "@/lib/qr-code-utils";
+import { generateQrSvgString, generateQrDataUrl } from "@/lib/qr-code-utils";
 
 export interface PublicVerificationViewProps {
   hash: string;
@@ -36,6 +36,7 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
   const [copied, setCopied] = useState<boolean>(false);
   const [inputHash, setInputHash] = useState<string>("");
   const [showLedgerGraph, setShowLedgerGraph] = useState<boolean>(false);
+  const [qrSvgMarkup, setQrSvgMarkup] = useState<string>("");
   const [liveVerification, setLiveVerification] = useState<{
     loaded: boolean;
     authentic: boolean;
@@ -53,6 +54,30 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
     verificationIntervalE?: string;
     totalNodes?: number;
   } | null>(null);
+
+  const currentVerifyUrl =
+    typeof window !== "undefined" && window.location.origin
+      ? `${window.location.origin}/verify/${hash}`
+      : `https://maanak-monorepo-web.vercel.app/verify/${hash}`;
+
+  // Generate authentic ISO/IEC 18004 QR Code SVG
+  useEffect(() => {
+    let isMounted = true;
+    generateQrSvgString(currentVerifyUrl, {
+      size: 160,
+      darkColor: "#091E42",
+      lightColor: "#FFFFFF",
+      margin: 2,
+    })
+      .then((svg) => {
+        if (isMounted) setQrSvgMarkup(svg);
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentVerifyUrl]);
 
   useEffect(() => {
     let isMounted = true;
@@ -132,17 +157,6 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
       setTimeout(() => setCopied(false), 2000);
     }
   };
-
-  const currentVerifyUrl =
-    typeof window !== "undefined"
-      ? window.location.href
-      : `https://verify.maanak.gov.in/verify/${hash}`;
-
-  const qrSvgMarkup = generateQrSvgString(currentVerifyUrl, {
-    size: 160,
-    darkColor: "#091E42",
-    lightColor: "#FFFFFF",
-  });
 
   const sessionRef = liveVerification?.sessionNumber || "TS-2026-0142";
   const reportRef = liveVerification?.reportNumber || "RRSL-OIML-2026-0089";
@@ -260,10 +274,16 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
               {/* QR Code Container */}
               <div className="flex flex-col items-center justify-center p-3.5 bg-white rounded-2xl border border-border shadow-xs shrink-0 max-w-[190px] mx-auto">
-                <div
-                  className="w-36 h-36 flex items-center justify-center"
-                  dangerouslySetInnerHTML={{ __html: qrSvgMarkup }}
-                />
+                <div className="w-36 h-36 flex items-center justify-center">
+                  {qrSvgMarkup ? (
+                    <div
+                      className="w-full h-full flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
+                      dangerouslySetInnerHTML={{ __html: qrSvgMarkup }}
+                    />
+                  ) : (
+                    <div className="w-32 h-32 bg-muted/40 animate-pulse rounded-lg" />
+                  )}
+                </div>
                 <span className="text-[10px] font-bold text-slate-900 tracking-wider mt-1.5">
                   SCAN TO VERIFY
                 </span>
