@@ -269,6 +269,15 @@ export const rulesApi = {
   list: () => apiRequest("/api/v1/rules"),
   getActive: () => apiRequest("/api/v1/rules/active"),
   getById: (id: string) => apiRequest(`/api/v1/rules/${id}`),
+  activate: (id: string) =>
+    apiRequest(`/api/v1/rules/${id}/activate`, {
+      method: "POST",
+    }),
+  upload: (rulePackData: any) =>
+    apiRequest("/api/v1/rules/upload", {
+      method: "POST",
+      body: JSON.stringify(rulePackData),
+    }),
 };
 
 export const reviewApi = {

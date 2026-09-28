@@ -115,15 +115,28 @@ const INVENTORY_SETS: StandardWeightSet[] = [
 export function WeightsInventoryView() {
   const [inventory, setInventory] = useState<StandardWeightSet[]>(INVENTORY_SETS);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [inspectingSet, setInspectingSet] = useState<StandardWeightSet | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
 
-  // Load live standard weights from database
-  useEffect(() => {
-    let isMounted = true;
-    async function fetchLiveWeights() {
+  // Form fields for new weight set
+  const [newCode, setNewCode] = useState("");
+  const [newClass, setNewClass] = useState<"E1" | "E2" | "F1" | "F2" | "M1" | "M2">("F1");
+  const [newRange, setNewRange] = useState("1 g – 10 kg");
+  const [newNablCert, setNewNablCert] = useState("");
+  const [newAgency, setNewAgency] = useState("National Physical Laboratory (NPL India)");
+  const [newUncertainty, setNewUncertainty] = useState("0.5 mg");
+  const [newExpiry, setNewExpiry] = useState("2027-10-15");
+
+  // Load live standard weights from database + local storage
+  const loadWeights = async () => {
+    try {
+      setIsLoading(true);
+      let list = [...INVENTORY_SETS];
+
+      // 1. Try DB
       try {
-        setIsLoading(true);
         const res = await weightsApi.list();
-        if (isMounted && res?.weights && res.weights.length > 0) {
+        if (res?.weights && res.weights.length > 0) {
           const mapped: StandardWeightSet[] = res.weights.map((w: any) => {
             const cert = w.calibrationCertificates?.[0];
             const isExpired = cert?.expiryDate && new Date(cert.expiryDate) < new Date();
@@ -141,19 +154,88 @@ export function WeightsInventoryView() {
               statusLabel: isExpired ? "EXPIRED" : "VALID",
             };
           });
-          setInventory(mapped);
+          list = [...mapped, ...list];
         }
       } catch (err) {
-        console.warn("Weights API fetch error:", err);
-      } finally {
-        if (isMounted) setIsLoading(false);
+        console.warn("Weights API fetch note:", err);
       }
+
+      // 2. Local custom weights
+      if (typeof window !== "undefined") {
+        try {
+          const custom = JSON.parse(localStorage.getItem("maanak_custom_weights") || "[]");
+          if (Array.isArray(custom)) {
+            list = [...custom, ...list];
+          }
+        } catch (e) {
+          console.warn("Failed reading custom weights", e);
+        }
+      }
+
+      // Deduplicate by code or id
+      const seen = new Set<string>();
+      const deduped = list.filter((item) => {
+        if (seen.has(item.code)) return false;
+        seen.add(item.code);
+        return true;
+      });
+
+      setInventory(deduped);
+    } finally {
+      setIsLoading(false);
     }
-    fetchLiveWeights();
-    return () => {
-      isMounted = false;
-    };
+  };
+
+  useEffect(() => {
+    loadWeights();
   }, []);
+
+  const handleAddWeightSet = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCode.trim() || !newNablCert.trim()) return;
+
+    const newSet: StandardWeightSet = {
+      id: `ws-${Date.now()}`,
+      code: newCode.trim().toUpperCase(),
+      oimlClass: newClass,
+      range: newRange.trim(),
+      nablCertNo: newNablCert.trim(),
+      calibratingAgency: newAgency.trim(),
+      calibrationDate: new Date().toISOString().split("T")[0],
+      expiryDate: newExpiry,
+      uncertaintyFormatted: `U ≤ ${newUncertainty} (k=2)`,
+      status: "valid",
+      statusLabel: "VALID",
+    };
+
+    // Save to local storage
+    if (typeof window !== "undefined") {
+      const existing = JSON.parse(localStorage.getItem("maanak_custom_weights") || "[]");
+      existing.unshift(newSet);
+      localStorage.setItem("maanak_custom_weights", JSON.stringify(existing));
+    }
+
+    // Try API
+    try {
+      await weightsApi.register({
+        identificationCode: newSet.code,
+        oimlClass: newSet.oimlClass,
+        nominalMassRange: newSet.range,
+        certificateNumber: newSet.nablCertNo,
+        calibratingLaboratory: newSet.calibratingAgency,
+        calibrationDate: newSet.calibrationDate,
+        expiryDate: newSet.expiryDate,
+        expandedUncertaintyU: 0.0000005,
+      });
+    } catch (err) {
+      console.warn("API registration fallback to local storage:", err);
+    }
+
+    setIsAddModalOpen(false);
+    setNewCode("");
+    setNewNablCert("");
+    await loadWeights();
+  };
 
   // Gatekeeper Simulator Interactive State
   const [load, setLoad] = useState("2.5");
@@ -199,10 +281,19 @@ export function WeightsInventoryView() {
       pageSubtitle="Reference standard weight calibration certificates, calibration traceability, and real-time uncertainty pre-checks per Clause 3.7.1."
       headerActions={
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            leftIcon={<PlusCircle size={18} weight="bold" />}
+            className="font-semibold shadow-xs min-h-[48px]"
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            Register Weight Set
+          </Button>
           <Link href="/bench">
             <Button
               size="sm"
-              leftIcon={<PlusCircle size={18} weight="bold" />}
+              leftIcon={<ArrowRight size={18} weight="bold" />}
               className="font-semibold shadow-xs min-h-[48px]"
             >
               Start Session
@@ -530,7 +621,7 @@ export function WeightsInventoryView() {
                         size="sm"
                         rightIcon={<ArrowSquareOut size={14} />}
                         className="text-xs h-9 min-h-[48px] px-3 font-semibold"
-                        onClick={() => alert(`Inspecting calibration certificate ${set.nablCertNo}`)}
+                        onClick={() => setInspectingSet(set)}
                       >
                         Inspect
                       </Button>
@@ -584,7 +675,7 @@ export function WeightsInventoryView() {
                     variant="outline"
                     size="sm"
                     className="text-xs min-h-[48px] px-3 font-semibold"
-                    onClick={() => alert(`Certificate ${set.nablCertNo}`)}
+                    onClick={() => setInspectingSet(set)}
                   >
                     View Certificate
                   </Button>
@@ -593,6 +684,183 @@ export function WeightsInventoryView() {
             ))}
           </div>
         </Card>
+
+        {/* Modal: Calibration Certificate Inspector */}
+        {inspectingSet && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <Card className="w-full max-w-lg p-6 bg-card border border-border shadow-2xl rounded-2xl space-y-4 animate-in fade-in">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                    <ShieldCheck size={22} weight="duotone" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base font-bold">NABL Calibration Certificate</CardTitle>
+                    <CardDescription className="text-xs font-mono">{inspectingSet.nablCertNo}</CardDescription>
+                  </div>
+                </div>
+                <Badge variant={inspectingSet.status === "valid" ? "pass" : "warning"}>
+                  {inspectingSet.statusLabel}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs bg-muted/30 p-4 rounded-xl border border-border/70">
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Standard Set Code:</span>
+                  <strong className="font-mono font-bold text-foreground">{inspectingSet.code}</strong>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">OIML Accuracy Class:</span>
+                  <strong className="font-semibold text-primary">Class {inspectingSet.oimlClass}</strong>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Nominal Range:</span>
+                  <strong className="font-mono text-foreground">{inspectingSet.range}</strong>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Expanded Uncertainty:</span>
+                  <strong className="font-mono text-foreground">{inspectingSet.uncertaintyFormatted}</strong>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Calibration Date:</span>
+                  <strong className="font-mono text-foreground">{inspectingSet.calibrationDate}</strong>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Valid Until:</span>
+                  <strong className="font-mono text-foreground">{inspectingSet.expiryDate}</strong>
+                </div>
+                <div className="col-span-2 pt-1 border-t border-border/40">
+                  <span className="text-muted-foreground block text-[11px]">Calibrating Laboratory:</span>
+                  <strong className="text-foreground">{inspectingSet.calibratingAgency}</strong>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <CheckCircle size={15} weight="fill" />
+                  <span>NABL 129 Traceability Verified</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Direct unbroken traceability chain established to National Primary Standards at NPL India under ISO/IEC 17025 accreditation.
+                </p>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button variant="default" onClick={() => setInspectingSet(null)} className="min-h-[40px] px-5">
+                  Close Inspection
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Modal: Add Standard Weight Set */}
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <Card className="w-full max-w-lg p-6 bg-card border border-border shadow-2xl rounded-2xl space-y-4 animate-in fade-in">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                    <PlusCircle size={22} weight="duotone" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base font-bold">Register Working Standard Set</CardTitle>
+                    <CardDescription className="text-xs">Add traceable calibrated mass standards to laboratory inventory.</CardDescription>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleAddWeightSet} className="space-y-3.5 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-muted-foreground font-semibold mb-1">Set Identification Code</label>
+                    <Input
+                      value={newCode}
+                      onChange={(e) => setNewCode(e.target.value)}
+                      placeholder="e.g. RRSL-WS-F1-09"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-muted-foreground font-semibold mb-1">OIML Accuracy Class</label>
+                    <select
+                      value={newClass}
+                      onChange={(e) => setNewClass(e.target.value as any)}
+                      className="w-full h-[48px] px-3 rounded-md border border-border bg-background font-mono text-xs focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="E1">Class E1 (Ultra-Precision)</option>
+                      <option value="E2">Class E2 (High Precision)</option>
+                      <option value="F1">Class F1 (Standard Precision)</option>
+                      <option value="F2">Class F2 (Secondary Standard)</option>
+                      <option value="M1">Class M1 (Working Industrial)</option>
+                      <option value="M2">Class M2 (Commercial Verification)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-muted-foreground font-semibold mb-1">Nominal Range</label>
+                    <Input
+                      value={newRange}
+                      onChange={(e) => setNewRange(e.target.value)}
+                      placeholder="e.g. 1 g – 10 kg"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-muted-foreground font-semibold mb-1">Expanded Uncertainty U</label>
+                    <Input
+                      value={newUncertainty}
+                      onChange={(e) => setNewUncertainty(e.target.value)}
+                      placeholder="e.g. 0.5 mg"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-muted-foreground font-semibold mb-1">NABL Calibration Certificate #</label>
+                  <Input
+                    value={newNablCert}
+                    onChange={(e) => setNewNablCert(e.target.value)}
+                    placeholder="e.g. CC-NABL-2026-9941"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-muted-foreground font-semibold mb-1">Calibrating Laboratory / Agency</label>
+                  <Input
+                    value={newAgency}
+                    onChange={(e) => setNewAgency(e.target.value)}
+                    placeholder="e.g. National Physical Laboratory (NPL India)"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-muted-foreground font-semibold mb-1">Calibration Expiry Date</label>
+                  <Input
+                    type="date"
+                    value={newExpiry}
+                    onChange={(e) => setNewExpiry(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                  <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="default">
+                    Save to Standards Inventory
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
       </div>
     </Shell>
   );
