@@ -31,7 +31,7 @@ COPY --from=builder /app/packages/crypto-provenance/dist ./packages/crypto-prove
 COPY --from=builder /app/packages/report-generator/dist ./packages/report-generator/dist
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 EXPOSE 4000
 

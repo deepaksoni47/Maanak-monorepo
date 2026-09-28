@@ -27,38 +27,57 @@ export function InstrumentsListView() {
     async function loadInstruments() {
       try {
         setIsLoading(true);
-        const res = await instrumentsApi.list();
-        if (isMounted && res && res.instruments && res.instruments.length > 0) {
-          const mapped: InstrumentItem[] = res.instruments.map((inst: any) => {
-            const classCode = inst.accuracyClass?.code || "III";
-            const classNormalized = classCode.startsWith("CLASS_") ? classCode : `CLASS_${classCode}`;
-            const maxCap = Number(inst.maxCapacity) || 15;
-            const eVal = Number(inst.verificationScaleIntervalE) || 0.005;
-            const nDiv = inst.scaleDivisionCountN || Math.round(maxCap / eVal);
+        const map = new Map<string, InstrumentItem>();
 
-            return {
-              id: inst.id,
-              model: inst.modelName,
-              manufacturer: inst.manufacturer?.companyName || "Domestic Manufacturer",
-              serialNumber: inst.physicalUnits?.[0]?.serialNumber || `SN-${inst.modelName.replace(/\s+/g, "")}-001`,
-              tacNumber: inst.patternDesignation || `IND-OIML-${inst.id.slice(0, 6).toUpperCase()}`,
-              accuracyClass: classNormalized as any,
-              maxCapacity: `${inst.maxCapacity} ${inst.unitOfMeasure || "kg"}`,
-              verificationInterval: `${inst.verificationScaleIntervalE} ${inst.unitOfMeasure || "kg"}`,
-              minCapacity: inst.minCapacity ? `${inst.minCapacity} ${inst.unitOfMeasure || "kg"}` : undefined,
-              ratioN: nDiv,
-              status: "VERIFIED",
-              createdAt: inst.createdAt || new Date().toISOString(),
-            };
-          });
-          setInstruments(mapped);
-        } else if (isMounted) {
-          setInstruments(getStoredInstruments());
+        // 1. Locally stored newly registered instruments
+        const local = getStoredInstruments();
+        for (const item of local) {
+          if (item?.id) map.set(item.id, item);
         }
-      } catch (err) {
-        console.error("Failed to load live instruments from DB:", err);
+
+        // 2. Remote live API instruments from PostgreSQL
+        try {
+          const res = await instrumentsApi.list();
+          if (res && res.instruments && Array.isArray(res.instruments)) {
+            for (const inst of res.instruments) {
+              const classCode = inst.accuracyClass?.code || "III";
+              const classNormalized = classCode.startsWith("CLASS_") ? classCode : `CLASS_${classCode}`;
+              const maxCap = Number(inst.maxCapacity) || 15;
+              const eVal = Number(inst.verificationScaleIntervalE) || 0.005;
+              const nDiv = inst.scaleDivisionCountN || Math.round(maxCap / eVal);
+
+              map.set(inst.id, {
+                id: inst.id,
+                model: inst.modelName,
+                manufacturer: inst.manufacturer?.companyName || "Domestic Manufacturer",
+                serialNumber: inst.physicalUnits?.[0]?.serialNumber || `SN-${inst.modelName.replace(/\s+/g, "")}-001`,
+                tacNumber: inst.patternDesignation || `IND-OIML-${inst.id.slice(0, 6).toUpperCase()}`,
+                accuracyClass: classNormalized as any,
+                maxCapacity: `${inst.maxCapacity} ${inst.unitOfMeasure || "kg"}`,
+                maxCapacityKg: maxCap,
+                verificationInterval: `${inst.verificationScaleIntervalE} ${inst.unitOfMeasure || "kg"}`,
+                verificationIntervalKg: eVal,
+                minCapacity: inst.minCapacity ? `${inst.minCapacity} ${inst.unitOfMeasure || "kg"}` : undefined,
+                minCapacityKg: Number(inst.minCapacity) || 0.1,
+                ratioN: nDiv,
+                status: "VERIFIED",
+                createdAt: inst.createdAt || new Date().toISOString(),
+              });
+            }
+          }
+        } catch (err) {
+          console.warn("Live DB instrument list notice:", err);
+        }
+
+        // 3. Ensure DEFAULT_INSTRUMENTS fallback
+        for (const def of DEFAULT_INSTRUMENTS) {
+          if (!map.has(def.id)) {
+            map.set(def.id, def);
+          }
+        }
+
         if (isMounted) {
-          setInstruments(getStoredInstruments());
+          setInstruments(Array.from(map.values()));
         }
       } finally {
         if (isMounted) setIsLoading(false);

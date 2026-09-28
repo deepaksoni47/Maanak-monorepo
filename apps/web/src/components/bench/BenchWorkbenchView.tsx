@@ -23,6 +23,7 @@ import {
   Hash,
   PencilSimple,
   Plus,
+  MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { Shell } from "@/components/layout/Shell";
 import { Badge } from "@/components/ui/Badge";
@@ -37,7 +38,10 @@ import {
   logOfflineObservation,
   getCachedInstruments,
   cacheInstruments,
+  cacheSession,
+  type CachedSession,
 } from "@/lib/offline-db";
+import { type FlaggedAuditItem } from "@/components/review/DerivationTreeModal";
 import { ObservationLedgerTable, LedgerEntry } from "./ObservationLedgerTable";
 import { ToleranceSafetyGauge } from "./ToleranceSafetyGauge";
 import { OfficerGuidanceBanner } from "./OfficerGuidanceBanner";
@@ -300,7 +304,95 @@ export function BenchWorkbenchView({
     }
   };
 
-  const [instrumentsList, setInstrumentsList] = useState<InstrumentItem[]>(DEFAULT_INSTRUMENTS);
+  const [instrumentsList, setInstrumentsList] = useState<InstrumentItem[]>(() => {
+    return getStoredInstruments();
+  });
+  const [instrumentSearch, setInstrumentSearch] = useState<string>("");
+  const [instrumentClassFilter, setInstrumentClassFilter] = useState<string>("ALL");
+
+  // Helper to load all instruments across localStorage, IndexedDB, and live API
+  const loadAllUnifiedInstruments = async (): Promise<InstrumentItem[]> => {
+    const map = new Map<string, InstrumentItem>();
+
+    // 1. Locally registered instruments (from localStorage / intake)
+    const localStored = getStoredInstruments();
+    for (const item of localStored) {
+      if (item?.id) map.set(item.id, item);
+    }
+
+    // 2. IndexedDB cached instruments
+    try {
+      const cached = await getCachedInstruments();
+      for (const c of cached) {
+        if (c?.id && !map.has(c.id)) {
+          map.set(c.id, {
+            id: c.id,
+            model: c.model,
+            manufacturer: c.manufacturer,
+            serialNumber: c.serialNumber,
+            tacNumber: "IND-OIML-OFFLINE",
+            accuracyClass: (c.accuracyClass.startsWith("CLASS_") ? c.accuracyClass : `CLASS_${c.accuracyClass}`) as any,
+            maxCapacity: `${c.maxCapacity} ${c.unit || "kg"}`,
+            verificationInterval: `${c.verificationScaleIntervalE} ${c.unit || "kg"}`,
+            maxCapacityKg: Number(c.maxCapacity) || 15,
+            verificationIntervalKg: Number(c.verificationScaleIntervalE) || 0.005,
+            status: "VERIFIED",
+            createdAt: new Date().toISOString(),
+          });
+        }
+      }
+    } catch (err) {}
+
+    // 3. Remote live API instruments from PostgreSQL
+    try {
+      const instRes = await instrumentsApi.list();
+      if (instRes?.instruments && Array.isArray(instRes.instruments)) {
+        for (const inst of instRes.instruments) {
+          const item: InstrumentItem = {
+            id: inst.id,
+            model: inst.modelName,
+            manufacturer: inst.manufacturer?.companyName || "Domestic Manufacturer",
+            serialNumber: inst.physicalUnits?.[0]?.serialNumber || `SN-${inst.modelName.replace(/\s+/g, "")}-001`,
+            tacNumber: inst.patternDesignation || `IND-OIML-${inst.id.slice(0, 6).toUpperCase()}`,
+            accuracyClass: ("CLASS_" + (inst.accuracyClass?.code || "III")) as any,
+            maxCapacity: `${inst.maxCapacity} ${inst.unitOfMeasure || "kg"}`,
+            verificationInterval: `${inst.verificationScaleIntervalE} ${inst.unitOfMeasure || "kg"}`,
+            maxCapacityKg: Number(inst.maxCapacity) || 15,
+            verificationIntervalKg: Number(inst.verificationScaleIntervalE) || 0.005,
+            status: "VERIFIED",
+            createdAt: inst.createdAt,
+          };
+          map.set(inst.id, item);
+        }
+      }
+    } catch (err) {}
+
+    // 4. Fallback defaults
+    for (const def of DEFAULT_INSTRUMENTS) {
+      if (!map.has(def.id)) {
+        map.set(def.id, def);
+      }
+    }
+
+    const all = Array.from(map.values());
+    try {
+      cacheInstruments(
+        all.map((m) => ({
+          id: m.id,
+          serialNumber: m.serialNumber,
+          model: m.model,
+          manufacturer: m.manufacturer,
+          accuracyClass: m.accuracyClass,
+          maxCapacity: m.maxCapacityKg,
+          minCapacity: m.minCapacityKg || 0.1,
+          verificationScaleIntervalE: m.verificationIntervalKg,
+          unit: "kg",
+        }))
+      ).catch(() => {});
+    } catch {}
+
+    return all;
+  };
 
   // Initialize selected instrument
   const initialInstrument =
@@ -316,43 +408,14 @@ export function BenchWorkbenchView({
     let isMounted = true;
 
     async function initBenchData() {
-      // 1. Fetch live instruments list from API (with fallback to IndexedDB maanak_offline_db)
+      // 1. Fetch unified instruments list from all sources
       try {
-        const instRes = await instrumentsApi.list();
-        if (isMounted && instRes?.instruments?.length > 0) {
-          const mapped: InstrumentItem[] = instRes.instruments.map((inst: any) => ({
-            id: inst.id,
-            model: inst.modelName,
-            manufacturer: inst.manufacturer?.companyName || "Domestic Manufacturer",
-            serialNumber: inst.physicalUnits?.[0]?.serialNumber || `SN-${inst.modelName.replace(/\s+/g, "")}-001`,
-            tacNumber: inst.patternDesignation || `IND-OIML-${inst.id.slice(0, 6).toUpperCase()}`,
-            accuracyClass: ("CLASS_" + (inst.accuracyClass?.code || "III")) as any,
-            maxCapacity: `${inst.maxCapacity} ${inst.unitOfMeasure || "kg"}`,
-            verificationInterval: `${inst.verificationScaleIntervalE} ${inst.unitOfMeasure || "kg"}`,
-            maxCapacityKg: Number(inst.maxCapacity) || 15,
-            verificationIntervalKg: Number(inst.verificationScaleIntervalE) || 0.005,
-            status: "VERIFIED",
-            createdAt: inst.createdAt,
-          }));
-          setInstrumentsList(mapped);
-
-          // Keep maanak_offline_db fresh with pre-cached models
-          cacheInstruments(
-            mapped.map((m) => ({
-              id: m.id,
-              serialNumber: m.serialNumber,
-              model: m.model,
-              manufacturer: m.manufacturer,
-              accuracyClass: m.accuracyClass,
-              maxCapacity: m.maxCapacityKg,
-              minCapacity: 0.1,
-              verificationScaleIntervalE: m.verificationIntervalKg,
-              unit: "kg",
-            }))
-          ).catch(() => {});
+        const unified = await loadAllUnifiedInstruments();
+        if (isMounted && unified.length > 0) {
+          setInstrumentsList(unified);
 
           if (urlInstId) {
-            const found = mapped.find((m) => m.id === urlInstId);
+            const found = unified.find((m) => m.id === urlInstId);
             if (found) {
               setSelectedInstrument(found);
               setSteps(generateStepsForInstrument(found));
@@ -360,29 +423,7 @@ export function BenchWorkbenchView({
           }
         }
       } catch (err) {
-        console.error("Network unavailable; loading instruments from maanak_offline_db:", err);
-        try {
-          const cached = await getCachedInstruments();
-          if (isMounted && cached.length > 0) {
-            const mapped: InstrumentItem[] = cached.map((c) => ({
-              id: c.id,
-              model: c.model,
-              manufacturer: c.manufacturer,
-              serialNumber: c.serialNumber,
-              tacNumber: "IND-OIML-OFFLINE",
-              accuracyClass: (c.accuracyClass.startsWith("CLASS_") ? c.accuracyClass : `CLASS_${c.accuracyClass}`) as any,
-              maxCapacity: `${c.maxCapacity} ${c.unit}`,
-              verificationInterval: `${c.verificationScaleIntervalE} ${c.unit}`,
-              maxCapacityKg: Number(c.maxCapacity) || 15,
-              verificationIntervalKg: Number(c.verificationScaleIntervalE) || 0.005,
-              status: "VERIFIED",
-              createdAt: new Date().toISOString(),
-            }));
-            setInstrumentsList(mapped);
-          }
-        } catch {
-          // Keep DEFAULT_INSTRUMENTS
-        }
+        console.warn("Unified instruments initialization notice:", err);
       }
 
       // 2. If session is specified in URL, load live session details & raw observations from PostgreSQL
@@ -446,11 +487,37 @@ export function BenchWorkbenchView({
     };
   }, [urlInstId, urlSessionId]);
 
+  const handleOpenInstrumentSwitcher = async () => {
+    const all = await loadAllUnifiedInstruments();
+    setInstrumentsList(all);
+    setInstrumentSearch("");
+    setInstrumentClassFilter("ALL");
+    setIsInstrumentSelectorOpen(true);
+  };
+
   // Bench step navigation: ALWAYS start at Step #1 (Zero Load E0)
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [savedSteps, setSavedSteps] = useState<Record<number, boolean>>({});
   const [isInstrumentSelectorOpen, setIsInstrumentSelectorOpen] = useState<boolean>(false);
   const [isCompletedModalOpen, setIsCompletedModalOpen] = useState<boolean>(false);
+
+  // === Progress tracking state for Forms 2–6 ===
+  // Each entry tracks completedSteps, totalSteps, and whether the form is fully done
+  const [form2Progress, setForm2Progress] = useState<{ completedSteps: number; totalSteps: number; completed: boolean; allPass: boolean }>({
+    completedSteps: 0, totalSteps: 4, completed: false, allPass: true,
+  });
+  const [form3Progress, setForm3Progress] = useState<{ completedSteps: number; totalSteps: number; completed: boolean; allPass: boolean }>({
+    completedSteps: 0, totalSteps: 5, completed: false, allPass: true,
+  });
+  const [form4Progress, setForm4Progress] = useState<{ completedSteps: number; totalSteps: number; completed: boolean; allPass: boolean }>({
+    completedSteps: 0, totalSteps: 3, completed: false, allPass: true,
+  });
+  const [form5Progress, setForm5Progress] = useState<{ completedSteps: number; totalSteps: number; completed: boolean; allPass: boolean }>({
+    completedSteps: 0, totalSteps: 2, completed: false, allPass: true, // 2 series: half-max + full-max
+  });
+  const [form6Progress, setForm6Progress] = useState<{ completedSteps: number; totalSteps: number; completed: boolean; allPass: boolean }>({
+    completedSteps: 0, totalSteps: 1, completed: false, allPass: true, // Single save action
+  });
 
   // Edit Scale Metadata state
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
@@ -464,6 +531,12 @@ export function BenchWorkbenchView({
     setSteps(generateStepsForInstrument(inst));
     setCurrentStepIndex(0); // Reset to Step #1
     setSavedSteps({});
+    // Reset Forms 2–6 progress when switching instruments
+    setForm2Progress({ completedSteps: 0, totalSteps: 4, completed: false, allPass: true });
+    setForm3Progress({ completedSteps: 0, totalSteps: 5, completed: false, allPass: true });
+    setForm4Progress({ completedSteps: 0, totalSteps: 3, completed: false, allPass: true });
+    setForm5Progress({ completedSteps: 0, totalSteps: 2, completed: false, allPass: true });
+    setForm6Progress({ completedSteps: 0, totalSteps: 1, completed: false, allPass: true });
     setIsInstrumentSelectorOpen(false);
 
     if (typeof window !== "undefined") {
@@ -641,6 +714,120 @@ export function BenchWorkbenchView({
       setCurrentStepIndex(currentStepIndex + 1);
     } else {
       setIsCompletedModalOpen(true);
+      submitSessionForReview();
+    }
+  };
+
+  const submitSessionForReview = async () => {
+    const lastObs = steps[steps.length - 1] || activeObservation;
+    const lastRes = computeStepResult(lastObs);
+    const sessionNum = `TS-${new Date().getFullYear()}-${selectedInstrument.serialNumber.replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "0142"}`;
+    const effectiveSessionId =
+      activeSessionId || `session-${Date.now()}-${selectedInstrument.serialNumber.replace(/\s+/g, "")}`;
+
+    const isOverallPass = steps.every((s) => computeStepResult(s).isPass);
+
+    const auditItem: FlaggedAuditItem = {
+      id: effectiveSessionId,
+      sessionNumber: sessionNum,
+      model: selectedInstrument.model,
+      accuracyClass: `Class ${selectedInstrument.accuracyClass.replace("CLASS_", "")}`,
+      inspector: `${user?.fullName || "Testing Officer"} (Insp-${user?.username || "01"})`,
+      stepNumber: steps.length,
+      nominalLoad: `${lastObs.appliedLoad} ${lastObs.unit || "kg"}`,
+      indication: `${lastObs.indication} ${lastObs.unit || "kg"}`,
+      deltaL: `${lastObs.deltaL} ${lastObs.unit || "kg"}`,
+      eVal: `${lastObs.eVal} ${lastObs.unit || "kg"}`,
+      turningPointP: `${lastRes.P.toFixed(4)} ${lastObs.unit || "kg"}`,
+      errorEc: `${(lastRes.Ec >= 0 ? "+" : "") + lastRes.Ec.toFixed(4)} ${lastObs.unit || "kg"}`,
+      mpeLimit: `±${lastObs.mpeLimit.toFixed(4)} ${lastObs.unit || "kg"}`,
+      anomalyCode: isOverallPass ? "OIML-AUDIT-SUBMITTED" : "OIML-ERR-MPE-EXCEEDED",
+      anomalyTitle: isOverallPass
+        ? "Weighing Performance Verification Audit Pending"
+        : "Clause 3.5.1: Maximum Permissible Error Exceeded",
+      anomalyDescription: isOverallPass
+        ? "Testing complete at bench. Awaiting ISO/IEC 17025 derivation step sign-off and anomaly screening."
+        : `Calculated corrected error Ec (${(lastRes.Ec >= 0 ? "+" : "") + lastRes.Ec.toFixed(4)} ${lastObs.unit || "kg"}) exceeds the OIML Table 6 MPE limit (±${lastObs.mpeLimit.toFixed(4)} ${lastObs.unit || "kg"}).`,
+      severity: isOverallPass ? "warning" : "critical",
+      ruleCitation: "OIML R-76-1:2006 Cl. 3.5.1, Table 6",
+    };
+
+    // 1. Store in localStorage for instant cross-tab and cross-page synchronization
+    if (typeof window !== "undefined") {
+      try {
+        const existing: FlaggedAuditItem[] = JSON.parse(
+          localStorage.getItem("maanak_audit_sessions") || "[]"
+        );
+        const updated = [
+          auditItem,
+          ...existing.filter(
+            (item) => item.sessionNumber !== sessionNum && item.id !== effectiveSessionId
+          ),
+        ];
+        localStorage.setItem("maanak_audit_sessions", JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent("maanak_session_submitted", { detail: auditItem }));
+      } catch (e) {
+        console.error("Local audit session store error:", e);
+      }
+    }
+
+    // 2. Cache in IndexedDB maanak_offline_db
+    try {
+      const now = new Date().toISOString();
+      await cacheSession({
+        id: effectiveSessionId,
+        sessionNumber: sessionNum,
+        status: "UNDER_REVIEW",
+        instrumentId: selectedInstrument.id,
+        instrument: {
+          id: selectedInstrument.id,
+          serialNumber: selectedInstrument.serialNumber,
+          model: selectedInstrument.model,
+          manufacturer: selectedInstrument.manufacturer,
+          accuracyClass: selectedInstrument.accuracyClass,
+          maxCapacity: selectedInstrument.maxCapacityKg,
+          verificationScaleIntervalE: selectedInstrument.verificationIntervalKg,
+          unit: "kg",
+        },
+        officerName: user?.fullName || "Testing Officer",
+        createdAt: now,
+        updatedAt: now,
+        isOfflineCreated: true,
+        rawObservations: steps.map((s) => ({
+          sequenceNumber: s.stepNumber,
+          targetLoadL: s.appliedLoad,
+          displayedIndicationI: s.indication,
+          changeoverWeightDl: s.deltaL,
+          turningPointP: computeStepResult(s).P,
+          errorEc: computeStepResult(s).Ec,
+        })),
+      });
+    } catch (e) {
+      console.warn("IndexedDB cacheSession note:", e);
+    }
+
+    // 3. If online & activeSessionId exists in PostgreSQL, transition status live
+    if (activeSessionId) {
+      try {
+        await sessionsApi.updateStatus(
+          activeSessionId,
+          "OBSERVATION_COMPLETE",
+          "All Form 1 observation steps completed by testing officer."
+        );
+        await sessionsApi.updateStatus(
+          activeSessionId,
+          "UNDER_REVIEW",
+          "Submitted for Senior Reviewer anomaly audit."
+        );
+      } catch (err) {
+        sessionsApi
+          .updateStatus(
+            activeSessionId,
+            "UNDER_REVIEW",
+            "All observation steps completed. Submitted for Senior Reviewer audit."
+          )
+          .catch(() => {});
+      }
     }
   };
 
@@ -734,7 +921,7 @@ export function BenchWorkbenchView({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsInstrumentSelectorOpen(true)}
+                    onClick={handleOpenInstrumentSwitcher}
                     className="h-7 text-xs font-semibold px-2.5 rounded-lg border-primary/30 text-primary hover:bg-primary/10"
                     leftIcon={<ArrowsClockwise size={13} />}
                   >
@@ -828,11 +1015,36 @@ export function BenchWorkbenchView({
               completedSteps: Object.keys(savedSteps).length,
               totalSteps: steps.length,
             },
-            form2: { status: "PENDING", progressPercent: 0, completedSteps: 0, totalSteps: 5 },
-            form3: { status: "PENDING", progressPercent: 0, completedSteps: 0, totalSteps: 5 },
-            form4: { status: "PENDING", progressPercent: 0, completedSteps: 0, totalSteps: 3 },
-            form5: { status: "PENDING", progressPercent: 0, completedSteps: 0, totalSteps: 10 },
-            form6: { status: "PENDING", progressPercent: 0, completedSteps: 0, totalSteps: 6 },
+            form2: {
+              status: form2Progress.completed ? (form2Progress.allPass ? "PASS" : "FAIL") : "PENDING",
+              progressPercent: form2Progress.totalSteps > 0 ? Math.round((form2Progress.completedSteps / form2Progress.totalSteps) * 100) : 0,
+              completedSteps: form2Progress.completedSteps,
+              totalSteps: form2Progress.totalSteps,
+            },
+            form3: {
+              status: form3Progress.completed ? (form3Progress.allPass ? "PASS" : "FAIL") : "PENDING",
+              progressPercent: form3Progress.totalSteps > 0 ? Math.round((form3Progress.completedSteps / form3Progress.totalSteps) * 100) : 0,
+              completedSteps: form3Progress.completedSteps,
+              totalSteps: form3Progress.totalSteps,
+            },
+            form4: {
+              status: form4Progress.completed ? (form4Progress.allPass ? "PASS" : "FAIL") : "PENDING",
+              progressPercent: form4Progress.totalSteps > 0 ? Math.round((form4Progress.completedSteps / form4Progress.totalSteps) * 100) : 0,
+              completedSteps: form4Progress.completedSteps,
+              totalSteps: form4Progress.totalSteps,
+            },
+            form5: {
+              status: form5Progress.completed ? (form5Progress.allPass ? "PASS" : "FAIL") : "PENDING",
+              progressPercent: form5Progress.totalSteps > 0 ? Math.round((form5Progress.completedSteps / form5Progress.totalSteps) * 100) : 0,
+              completedSteps: form5Progress.completedSteps,
+              totalSteps: form5Progress.totalSteps,
+            },
+            form6: {
+              status: form6Progress.completed ? (form6Progress.allPass ? "PASS" : "FAIL") : "PENDING",
+              progressPercent: form6Progress.totalSteps > 0 ? Math.round((form6Progress.completedSteps / form6Progress.totalSteps) * 100) : 0,
+              completedSteps: form6Progress.completedSteps,
+              totalSteps: form6Progress.totalSteps,
+            },
           }}
         />
 
@@ -987,6 +1199,11 @@ export function BenchWorkbenchView({
             unit={selectedInstrument.verificationInterval?.split(" ")[1] || "kg"}
             accuracyClass={selectedInstrument.accuracyClass}
             onSaveStep={(st, res) => {
+              setForm2Progress((prev) => ({
+                ...prev,
+                completedSteps: Math.min(prev.completedSteps + 1, prev.totalSteps),
+                allPass: prev.allPass && res.isOverallPass,
+              }));
               enqueueOfflineObservation({
                 sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
                 stepNumber: st.stepIndex,
@@ -997,6 +1214,16 @@ export function BenchWorkbenchView({
                 errorEc: `${res.E0.toFixed(4)} ${st.unit}`,
               }).catch(() => {});
             }}
+            onCompleteSeries={(allSteps, allResults) => {
+              const allPass = allResults.every((r) => r.isOverallPass);
+              setForm2Progress({
+                completedSteps: allSteps.length,
+                totalSteps: allSteps.length,
+                completed: true,
+                allPass,
+              });
+              submitSessionForReview();
+            }}
           />
         ) : activeForm === "form3" ? (
           <Form3EccentricityCard
@@ -1005,6 +1232,11 @@ export function BenchWorkbenchView({
             accuracyClass={selectedInstrument.accuracyClass}
             unit={selectedInstrument.verificationInterval?.split(" ")[1] || "kg"}
             onSavePosition={(pos, res) => {
+              setForm3Progress((prev) => ({
+                ...prev,
+                completedSteps: Math.min(prev.completedSteps + 1, prev.totalSteps),
+                allPass: prev.allPass && res.isCompliant,
+              }));
               enqueueOfflineObservation({
                 sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
                 stepNumber: pos.positionNumber,
@@ -1015,6 +1247,16 @@ export function BenchWorkbenchView({
                 errorEc: `${res.Ec.toFixed(4)} ${pos.unit}`,
               }).catch(() => {});
             }}
+            onCompleteSeries={(allPositions, allResults) => {
+              const allPass = allResults.every((r) => r.isCompliant);
+              setForm3Progress({
+                completedSteps: allPositions.length,
+                totalSteps: allPositions.length,
+                completed: true,
+                allPass,
+              });
+              submitSessionForReview();
+            }}
           />
         ) : activeForm === "form4" ? (
           <Form4DiscriminationCard
@@ -1024,6 +1266,11 @@ export function BenchWorkbenchView({
             accuracyClass={selectedInstrument.accuracyClass}
             unit={selectedInstrument.verificationInterval?.split(" ")[1] || "kg"}
             onSavePoint={(pt, res) => {
+              setForm4Progress((prev) => ({
+                ...prev,
+                completedSteps: Math.min(prev.completedSteps + 1, prev.totalSteps),
+                allPass: prev.allPass && res.isCompliant,
+              }));
               enqueueOfflineObservation({
                 sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
                 stepNumber: pt.pointIndex,
@@ -1034,6 +1281,16 @@ export function BenchWorkbenchView({
                 errorEc: `${res.deltaI.toFixed(4)} ${pt.unit}`,
               }).catch(() => {});
             }}
+            onCompleteSeries={(allPoints, allResults) => {
+              const allPass = allResults.every((r) => r.isCompliant);
+              setForm4Progress({
+                completedSteps: allPoints.length,
+                totalSteps: allPoints.length,
+                completed: true,
+                allPass,
+              });
+              submitSessionForReview();
+            }}
           />
         ) : activeForm === "form5" ? (
           <Form5RepeatabilityCard
@@ -1042,6 +1299,11 @@ export function BenchWorkbenchView({
             accuracyClass={selectedInstrument.accuracyClass}
             unit={selectedInstrument.verificationInterval?.split(" ")[1] || "kg"}
             onSaveSeries={(series, res) => {
+              setForm5Progress((prev) => ({
+                ...prev,
+                completedSteps: Math.min(prev.completedSteps + 1, prev.totalSteps),
+                allPass: prev.allPass && res.isSeriesCompliant,
+              }));
               enqueueOfflineObservation({
                 sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
                 stepNumber: series.seriesId === "series_half_max" ? 1 : 2,
@@ -1052,6 +1314,17 @@ export function BenchWorkbenchView({
                 errorEc: `${res.spreadDeltaE} ${series.unit}`,
               }).catch(() => {});
             }}
+            onCompleteForm={(allSeries) => {
+              const halfPass = allSeries.series_half_max?.result.isSeriesCompliant ?? true;
+              const fullPass = allSeries.series_full_max?.result.isSeriesCompliant ?? true;
+              setForm5Progress({
+                completedSteps: 2,
+                totalSteps: 2,
+                completed: true,
+                allPass: halfPass && fullPass,
+              });
+              submitSessionForReview();
+            }}
           />
         ) : activeForm === "form6" ? (
           <Form6CreepCard
@@ -1060,6 +1333,13 @@ export function BenchWorkbenchView({
             accuracyClass={selectedInstrument.accuracyClass}
             unit={selectedInstrument.verificationInterval?.split(" ")[1] || "kg"}
             onSaveForm6={(steps, zeroRet, res) => {
+              setForm6Progress({
+                completedSteps: 1,
+                totalSteps: 1,
+                completed: true,
+                allPass: res.isOverallCompliant,
+              });
+              submitSessionForReview();
               enqueueOfflineObservation({
                 sessionId: activeSessionId || `TS-${selectedInstrument.serialNumber}`,
                 stepNumber: 30,
@@ -1261,58 +1541,152 @@ export function BenchWorkbenchView({
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
-              {instrumentsList.map((inst) => {
-                const isCurrent = inst.id === selectedInstrument.id;
-                return (
-                  <div
-                    key={inst.id}
-                    onClick={() => handleSelectInstrument(inst)}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                      isCurrent
-                        ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                        : "border-border hover:border-primary/50 hover:bg-muted/30"
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-bold text-foreground">{inst.model}</span>
-                        <Badge
-                          variant={inst.accuracyClass === "CLASS_I" ? "outline" : "pass"}
-                          showIcon={false}
-                          className="text-[10px] font-mono py-0.5 px-2"
-                        >
-                          {inst.accuracyClass.replace("_", " ")}
-                        </Badge>
-                        {isCurrent && (
-                          <Badge variant="neutral" showIcon={false} className="text-[10px] font-bold bg-primary text-primary-foreground">
-                            Active Scale
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                        <span>{inst.manufacturer}</span>
-                        <span>·</span>
-                        <span className="font-mono font-semibold text-foreground">SN: {inst.serialNumber}</span>
-                        <span>·</span>
-                        <span className="font-mono">TAC: {inst.tacNumber}</span>
-                      </div>
-                      <div className="text-xs font-mono font-semibold text-foreground/90">
-                        Max Capacity: {inst.maxCapacity} | Scale Interval (e): {inst.verificationInterval}
-                      </div>
-                    </div>
-
-                    <Button
+            {/* Search & Class Filter Header */}
+            <div className="space-y-2.5">
+              <div className="flex flex-col sm:flex-row gap-2 items-center justify-between">
+                <div className="relative flex-1 w-full">
+                  <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search all available & newly registered scales..."
+                    value={instrumentSearch}
+                    onChange={(e) => setInstrumentSearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-muted/30 border border-border/70 rounded-xl text-xs placeholder:text-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-primary min-h-[40px]"
+                  />
+                </div>
+                <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+                  {["ALL", "CLASS_I", "CLASS_II", "CLASS_III", "CLASS_IIII"].map((cls) => (
+                    <button
+                      key={cls}
                       type="button"
-                      size="sm"
-                      variant={isCurrent ? "default" : "outline"}
-                      className="text-xs font-bold shrink-0 self-start sm:self-auto"
+                      onClick={() => setInstrumentClassFilter(cls)}
+                      className={`px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                        instrumentClassFilter === cls
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "bg-muted/40 text-muted-foreground hover:bg-muted"
+                      }`}
                     >
-                      {isCurrent ? "Currently Active" : "Select & Load Schedule"}
-                    </Button>
-                  </div>
-                );
-              })}
+                      {cls === "ALL" ? "All Classes" : cls.replace("_", " ")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1 font-mono">
+                <span>
+                  Showing{" "}
+                  <strong className="text-foreground">
+                    {
+                      instrumentsList.filter((inst) => {
+                        const q = instrumentSearch.toLowerCase().trim();
+                        const matchesSearch =
+                          !q ||
+                          inst.model.toLowerCase().includes(q) ||
+                          inst.serialNumber.toLowerCase().includes(q) ||
+                          inst.manufacturer.toLowerCase().includes(q) ||
+                          (inst.tacNumber && inst.tacNumber.toLowerCase().includes(q));
+                        const matchesClass =
+                          instrumentClassFilter === "ALL" || inst.accuracyClass === instrumentClassFilter;
+                        return matchesSearch && matchesClass;
+                      }).length
+                    }
+                  </strong>{" "}
+                  of {instrumentsList.length} total scales
+                </span>
+                {instrumentsList.some(
+                  (i) => i.id.startsWith("inst-") && !["inst-001", "inst-002", "inst-003", "inst-004"].includes(i.id)
+                ) && (
+                  <span className="text-emerald-500 font-semibold">
+                    ● Dynamic &amp; newly added scales active
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 max-h-[50vh] overflow-y-auto pr-1">
+              {instrumentsList
+                .filter((inst) => {
+                  const q = instrumentSearch.toLowerCase().trim();
+                  const matchesSearch =
+                    !q ||
+                    inst.model.toLowerCase().includes(q) ||
+                    inst.serialNumber.toLowerCase().includes(q) ||
+                    inst.manufacturer.toLowerCase().includes(q) ||
+                    (inst.tacNumber && inst.tacNumber.toLowerCase().includes(q));
+                  const matchesClass =
+                    instrumentClassFilter === "ALL" || inst.accuracyClass === instrumentClassFilter;
+                  return matchesSearch && matchesClass;
+                })
+                .map((inst) => {
+                  const isCurrent = inst.id === selectedInstrument.id;
+                  const isNewlyAdded =
+                    inst.id.startsWith("inst-") &&
+                    !["inst-001", "inst-002", "inst-003", "inst-004"].includes(inst.id);
+
+                  return (
+                    <div
+                      key={inst.id}
+                      onClick={() => handleSelectInstrument(inst)}
+                      className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                        isCurrent
+                          ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                          : "border-border hover:border-primary/50 hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-bold text-foreground">{inst.model}</span>
+                          <Badge
+                            variant={inst.accuracyClass === "CLASS_I" ? "outline" : "pass"}
+                            showIcon={false}
+                            className="text-[10px] font-mono py-0.5 px-2"
+                          >
+                            {inst.accuracyClass.replace("_", " ")}
+                          </Badge>
+                          {isNewlyAdded && (
+                            <Badge
+                              variant="outline"
+                              showIcon={false}
+                              className="text-[10px] font-mono border-emerald-500/40 text-emerald-600 dark:text-emerald-400 py-0.5 px-2"
+                            >
+                              Newly Registered
+                            </Badge>
+                          )}
+                          {isCurrent && (
+                            <Badge
+                              variant="neutral"
+                              showIcon={false}
+                              className="text-[10px] font-bold bg-primary text-primary-foreground"
+                            >
+                              Active Scale
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                          <span>{inst.manufacturer}</span>
+                          <span>·</span>
+                          <span className="font-mono font-semibold text-foreground">
+                            SN: {inst.serialNumber}
+                          </span>
+                          <span>·</span>
+                          <span className="font-mono">TAC: {inst.tacNumber}</span>
+                        </div>
+                        <div className="text-xs font-mono font-semibold text-foreground/90">
+                          Max Capacity: {inst.maxCapacity} | Scale Interval (e):{" "}
+                          {inst.verificationInterval}
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isCurrent ? "default" : "outline"}
+                        className="text-xs font-bold shrink-0 self-start sm:self-auto min-h-[36px]"
+                      >
+                        {isCurrent ? "Currently Active" : "Select & Load Schedule"}
+                      </Button>
+                    </div>
+                  );
+                })}
             </div>
 
             <div className="pt-3 flex items-center justify-between border-t border-border/60">
@@ -1362,7 +1736,11 @@ export function BenchWorkbenchView({
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
               <Link href="/review" className="w-full">
-                <Button className="w-full text-xs font-bold" rightIcon={<ArrowRight size={14} />}>
+                <Button
+                  className="w-full text-xs font-bold"
+                  rightIcon={<ArrowRight size={14} />}
+                  onClick={() => submitSessionForReview()}
+                >
                   Proceed to Audit Review
                 </Button>
               </Link>

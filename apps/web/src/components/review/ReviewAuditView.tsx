@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { reviewApi, sessionsApi } from "@/lib/api";
+import { getCachedSessions, getCachedSession, cacheSession } from "@/lib/offline-db";
 import {
   ShieldWarning,
   GitFork,
@@ -112,8 +113,45 @@ const INITIAL_AUDIT_ITEMS: FlaggedAuditItem[] = [
   },
 ];
 
+const REVIEWED_SESSIONS_STORAGE_KEY = "maanak_reviewed_sessions";
+const AUDIT_DECISIONS_STORAGE_KEY = "maanak_audit_decisions";
+
+function getReviewedSessionIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(REVIEWED_SESSIONS_STORAGE_KEY);
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw));
+  } catch {
+    return new Set();
+  }
+}
+
+function getStoredDecisions(): Array<{
+  sessionNumber: string;
+  id: string;
+  action: string;
+  timestamp: string;
+  comments?: string;
+  model?: string;
+}> {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(AUDIT_DECISIONS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function ReviewAuditView() {
-  const [items, setItems] = useState<FlaggedAuditItem[]>(INITIAL_AUDIT_ITEMS);
+  const [items, setItems] = useState<FlaggedAuditItem[]>(() => {
+    const reviewed = getReviewedSessionIds();
+    return INITIAL_AUDIT_ITEMS.filter(
+      (i) => !reviewed.has(i.id) && !reviewed.has(i.sessionNumber)
+    );
+  });
+  const [decisionsCount, setDecisionsCount] = useState<number>(0);
   const [selectedItem, setSelectedItem] = useState<FlaggedAuditItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterSeverity, setFilterSeverity] = useState<string>("all");
@@ -124,14 +162,31 @@ export function ReviewAuditView() {
     type: "success" | "warning" | "error";
   } | null>(null);
 
-  // Hydrate live sessions awaiting review from PostgreSQL database
+  // Initialize decisions count on mount
+  useEffect(() => {
+    setDecisionsCount(getStoredDecisions().filter((d) => d.action === "APPROVED").length);
+  }, []);
+
+  // Hydrate live sessions awaiting review from PostgreSQL database, IndexedDB, and localStorage
   useEffect(() => {
     let isMounted = true;
     async function loadReviewSessions() {
       try {
-        const res = await sessionsApi.list({ status: "UNDER_REVIEW" });
-        if (isMounted && res?.sessions && res.sessions.length > 0) {
-          const liveItems: FlaggedAuditItem[] = res.sessions.map((s: any) => {
+        const reviewed = getReviewedSessionIds();
+
+        // 1. Fetch sessions in both UNDER_REVIEW and OBSERVATION_COMPLETE statuses from API
+        const [reviewRes, completeRes] = await Promise.all([
+          sessionsApi.list({ status: "UNDER_REVIEW" }).catch(() => ({ sessions: [] })),
+          sessionsApi.list({ status: "OBSERVATION_COMPLETE" }).catch(() => ({ sessions: [] })),
+        ]);
+        const allApiSessions = [
+          ...(reviewRes?.sessions || []),
+          ...(completeRes?.sessions || []),
+        ];
+
+        const apiItems: FlaggedAuditItem[] = allApiSessions
+          .filter((s: any) => !reviewed.has(s.id) && !reviewed.has(s.sessionNumber))
+          .map((s: any) => {
             const model = s.instrumentUnit?.instrumentModel;
             const officer = s.testingOfficer?.fullName || "Testing Officer";
             const lastObs = s.rawObservations?.[s.rawObservations.length - 1];
@@ -157,20 +212,106 @@ export function ReviewAuditView() {
               ruleCitation: "OIML R-76-1:2006 Cl. 3.5.1",
             };
           });
-          setItems((prev) => [
-            ...liveItems,
-            ...prev.filter(
-              (p) => !liveItems.some((l) => l.sessionNumber === p.sessionNumber)
-            ),
-          ]);
+
+        // 2. Fetch offline/edge sessions from IndexedDB maanak_offline_db
+        let offlineItems: FlaggedAuditItem[] = [];
+        try {
+          const cached = await getCachedSessions();
+          const underReviewCached = cached.filter(
+            (c) =>
+              (c.status === "UNDER_REVIEW" || c.status === "OBSERVATION_COMPLETE") &&
+              !reviewed.has(c.id) &&
+              !reviewed.has(c.sessionNumber)
+          );
+          offlineItems = underReviewCached.map((c: any) => {
+            const lastObs =
+              c.observations?.[c.observations.length - 1] ||
+              c.rawObservations?.[c.rawObservations.length - 1];
+            return {
+              id: c.id,
+              sessionNumber: c.sessionNumber || `OFFLINE-${c.id.slice(0, 8)}`,
+              model: c.instrument?.model || "NAWI Verification Scale",
+              accuracyClass: `Class ${c.instrument?.accuracyClass?.replace("CLASS_", "") || "III"}`,
+              inspector: c.officerName || "Testing Officer (Inspector)",
+              stepNumber: lastObs?.sequenceNumber || lastObs?.stepNumber || 10,
+              nominalLoad: `${lastObs?.targetLoadL || lastObs?.appliedLoad || 15} kg`,
+              indication: `${lastObs?.displayedIndicationI || lastObs?.indication || 15} kg`,
+              deltaL: `${lastObs?.changeoverWeightDl || lastObs?.deltaL || 0.002} kg`,
+              eVal: `${c.instrument?.verificationScaleIntervalE || 0.005} kg`,
+              turningPointP: `${lastObs?.turningPointP || 15.0005} kg`,
+              errorEc: `${lastObs?.errorEc || 0.0005} kg`,
+              mpeLimit: "±0.0050 kg",
+              anomalyCode: "OIML-AUDIT-SUBMITTED",
+              anomalyTitle: "Weighing Performance Verification Audit Pending",
+              anomalyDescription: "Testing completed by inspector at bench. Awaiting senior reviewer sign-off.",
+              severity: "warning",
+              ruleCitation: "OIML R-76-1:2006 Cl. 3.5.1",
+            };
+          });
+        } catch (err) {
+          console.warn("IndexedDB review session load note:", err);
+        }
+
+        // 3. Fetch from localStorage fast cache (maanak_audit_sessions)
+        let localItems: FlaggedAuditItem[] = [];
+        if (typeof window !== "undefined") {
+          try {
+            const raw = JSON.parse(localStorage.getItem("maanak_audit_sessions") || "[]");
+            localItems = raw.filter(
+              (i: FlaggedAuditItem) => !reviewed.has(i.id) && !reviewed.has(i.sessionNumber)
+            );
+          } catch (e) {}
+        }
+
+        // 4. Initial audit items filtered
+        const validInitial = INITIAL_AUDIT_ITEMS.filter(
+          (i) => !reviewed.has(i.id) && !reviewed.has(i.sessionNumber)
+        );
+
+        // Combine all dynamic items (local first, then offline, then API)
+        const dynamicItems = [...localItems, ...offlineItems, ...apiItems];
+
+        if (isMounted) {
+          setItems(() => {
+            const map = new Map<string, FlaggedAuditItem>();
+            // Prepend new submitted items
+            for (const item of dynamicItems) {
+              if (!reviewed.has(item.id) && !reviewed.has(item.sessionNumber)) {
+                map.set(item.sessionNumber, item);
+              }
+            }
+            // Keep existing predefined items if not superseded and not reviewed
+            for (const item of validInitial) {
+              if (!map.has(item.sessionNumber) && !reviewed.has(item.id) && !reviewed.has(item.sessionNumber)) {
+                map.set(item.sessionNumber, item);
+              }
+            }
+            return Array.from(map.values());
+          });
         }
       } catch (err) {
         console.warn("Live review sessions load note:", err);
       }
     }
+
     loadReviewSessions();
+
+    const handleSubmissionEvent = () => {
+      loadReviewSessions();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("maanak_session_submitted", handleSubmissionEvent);
+      window.addEventListener("maanak_session_reviewed", handleSubmissionEvent);
+      window.addEventListener("storage", handleSubmissionEvent);
+    }
+
     return () => {
       isMounted = false;
+      if (typeof window !== "undefined") {
+        window.removeEventListener("maanak_session_submitted", handleSubmissionEvent);
+        window.removeEventListener("maanak_session_reviewed", handleSubmissionEvent);
+        window.removeEventListener("storage", handleSubmissionEvent);
+      }
     };
   }, []);
 
@@ -208,7 +349,7 @@ export function ReviewAuditView() {
     let type: "success" | "warning" | "error" = "success";
 
     if (action === "APPROVED") {
-      msg = `Session ${selectedItem.sessionNumber} approved by Senior Reviewer.`;
+      msg = `Session ${selectedItem.sessionNumber} approved and signed off by Senior Reviewer.`;
       type = "success";
     } else if (action === "FLAGGED_FOR_CORRECTION") {
       msg = options?.comments || `Session ${selectedItem.sessionNumber} flagged for correction and re-test requested.`;
@@ -218,7 +359,7 @@ export function ReviewAuditView() {
       type = "error";
     }
 
-    // Persist reviewer decision live to backend API & PostgreSQL
+    // 1. Persist reviewer decision live to backend API & PostgreSQL
     try {
       await reviewApi.submitDecision({
         testSessionId: selectedItem.id,
@@ -231,9 +372,68 @@ export function ReviewAuditView() {
       console.warn("Live review decision submission note:", err);
     }
 
+    // 2. Persist to localStorage reviewed sessions & decisions lists
+    if (typeof window !== "undefined") {
+      try {
+        // Track reviewed ID and session number
+        const currentReviewed = Array.from(getReviewedSessionIds());
+        if (!currentReviewed.includes(selectedItem.id)) currentReviewed.push(selectedItem.id);
+        if (!currentReviewed.includes(selectedItem.sessionNumber)) currentReviewed.push(selectedItem.sessionNumber);
+        localStorage.setItem(REVIEWED_SESSIONS_STORAGE_KEY, JSON.stringify(currentReviewed));
+
+        // Save detailed decision record
+        const decisions = getStoredDecisions();
+        const newDecision = {
+          id: selectedItem.id,
+          sessionNumber: selectedItem.sessionNumber,
+          model: selectedItem.model,
+          inspector: selectedItem.inspector,
+          action,
+          comments: msg,
+          timestamp: new Date().toISOString(),
+        };
+        const updatedDecisions = [
+          newDecision,
+          ...decisions.filter((d) => d.sessionNumber !== selectedItem.sessionNumber),
+        ];
+        localStorage.setItem(AUDIT_DECISIONS_STORAGE_KEY, JSON.stringify(updatedDecisions));
+
+        // Update active audit sessions
+        const existing: FlaggedAuditItem[] = JSON.parse(
+          localStorage.getItem("maanak_audit_sessions") || "[]"
+        );
+        const updated = existing.filter(
+          (i) => i.id !== selectedItem.id && i.sessionNumber !== selectedItem.sessionNumber
+        );
+        localStorage.setItem("maanak_audit_sessions", JSON.stringify(updated));
+
+        // Update approved counter in state
+        setDecisionsCount(updatedDecisions.filter((d) => d.action === "APPROVED").length);
+
+        // Notify other windows/tabs
+        window.dispatchEvent(new CustomEvent("maanak_session_reviewed", { detail: newDecision }));
+      } catch (e) {
+        console.warn("Storage update note:", e);
+      }
+    }
+
+    // 3. Update IndexedDB
+    try {
+      const dbSess = await getCachedSession(selectedItem.id);
+      if (dbSess) {
+        await cacheSession({
+          ...dbSess,
+          status: action === "APPROVED" ? "APPROVED_LOCKED" : "RETURNED_TO_OFFICER",
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    } catch (e) {}
+
     setDecisionFeedback({ id: selectedItem.id, message: msg, type });
     // Remove from pending audit queue
-    setItems((prev) => prev.filter((i) => i.id !== selectedItem.id));
+    setItems((prev) =>
+      prev.filter((i) => i.id !== selectedItem.id && i.sessionNumber !== selectedItem.sessionNumber)
+    );
     setIsModalOpen(false);
   };
 
@@ -338,7 +538,7 @@ export function ReviewAuditView() {
                 Reviewed Today
               </p>
               <p className="text-2xl font-bold tracking-tight text-foreground">
-                8 <span className="text-sm font-normal text-muted-foreground">approved</span>
+                {8 + decisionsCount} <span className="text-sm font-normal text-muted-foreground">approved</span>
               </p>
             </div>
           </Card>
