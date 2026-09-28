@@ -1538,10 +1538,34 @@ export function createReportsRouter(
           return;
         }
 
-        const reportData = await storage.getReport(
+        let reportData = await storage.getReport(
           report.testSessionId,
           "pdf",
         );
+        if (!reportData) {
+          const built = await buildReportData(report.testSessionId, db);
+          if (built) {
+            const compiled = await compileOimlPdfReport(built.reportData);
+            const checksum = createHash("sha256").update(compiled.pdfBuffer).digest("hex");
+            await storage.saveReport(
+              report.testSessionId,
+              "pdf",
+              compiled.pdfBuffer,
+              {
+                reportNumber: built.reportData.reportNumber,
+                format: "PDF",
+                fileSizeBytes: compiled.pdfBuffer.length,
+                sha256Checksum: checksum,
+              },
+            );
+            reportData = {
+              buffer: compiled.pdfBuffer,
+              metadata: {
+                sha256Checksum: checksum,
+              } as any,
+            };
+          }
+        }
         if (!reportData) {
           res.status(404).json({
             error: "NOT_FOUND",
