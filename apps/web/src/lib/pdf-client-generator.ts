@@ -1,6 +1,7 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import QRCode from "qrcode";
 import { getNationalEmblemBytes } from "./emblem";
+export { getQrModuleMatrix } from "./qr-code-utils";
 
 export interface ClientPdfReportData {
   reportNumber: string;
@@ -55,8 +56,9 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
   const emblemImage = await pdfDoc.embedPng(emblemBytes);
 
   // 2. Generate and embed Public Verification QR code
-  const verifyBaseUrl = process.env.NEXT_PUBLIC_VERIFY_URL || "https://verify.maanak.gov.in";
-  const verifyUrl = `${verifyBaseUrl.replace(/\/+$/, "")}/verify/${data.sessionId.trim()}`;
+  const verifyIdentifier = data.signature?.signatureHash || data.sessionId.trim();
+  const verifyBaseUrl = process.env.NEXT_PUBLIC_VERIFY_URL || "https://maanak-monorepo-web.vercel.app";
+  const verifyUrl = `${verifyBaseUrl.replace(/\/+$/, "")}/verify/${verifyIdentifier}`;
   const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
     margin: 1,
     width: 140,
@@ -428,7 +430,7 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
   const signerName = data.signature?.signedBy || "Dr. Rajesh Sharma";
   const signerTitle = data.signature?.signatoryTitle || "Director (Legal Metrology), RRSL Ahmedabad";
   const signTime = data.signature?.timestampUtc || new Date().toISOString();
-  const sigHash = data.signature?.signatureHash || "9f8a2c14e6b7d3058a74e9c1f6d3a82e5b4c7d0182f6e9a3c5b8d7e14a2f09c6";
+  const sigHash = data.signature?.signatureHash || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
   let sigY = y - 16;
   page.drawText("Director & Authorized Signatory:", { x: 52, y: sigY, size: 7.5, font: fontRegular, color: mutedGray });
