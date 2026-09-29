@@ -5,6 +5,7 @@ import type {
 } from "@maanak/types";
 import { generateVerificationQrPng } from "@maanak/crypto-provenance";
 import { getNationalEmblemBytes } from "./assets/emblem.js";
+import { getMaanakWatermarkBytes } from "./assets/watermark.js";
 
 export interface EvidenceAttachment {
   type:
@@ -246,15 +247,13 @@ const PAGE_HEIGHT = 841.89;
 const MARGIN = 40;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
-// Color palette (Clean, authoritative government test certificate palette - NO deep blue)
-const COLOR_PRIMARY = rgb(0.12, 0.16, 0.24); // Slate 900 / Govt Charcoal (#1e293b)
-const COLOR_DARK = rgb(0.08, 0.1, 0.14); // Jet Black / Dark Charcoal (#141924)
-const COLOR_MUTED = rgb(0.38, 0.43, 0.5); // Slate 500
-const COLOR_LIGHT_BG = rgb(0.97, 0.98, 0.995); // Slate 50
-const COLOR_BORDER = rgb(0.82, 0.85, 0.89); // Slate 200
-const COLOR_TABLE_HEADER = rgb(0.92, 0.94, 0.97); // Government subtle light grey header tint
-const COLOR_PASS = rgb(0.04, 0.48, 0.22); // Emerald 700
-const COLOR_FAIL = rgb(0.82, 0.12, 0.12); // Red 700
+// Strict Government Certificate Palette: Pure Black & White with Green/Red for Pass/Fail
+const COLOR_PRIMARY = rgb(0, 0, 0); // Pure Black
+const COLOR_DARK = rgb(0, 0, 0); // Pure Black
+const COLOR_MUTED = rgb(0.15, 0.15, 0.15); // Dark Charcoal
+const COLOR_BORDER = rgb(0, 0, 0); // Crisp Black Table & Container Borders
+const COLOR_PASS = rgb(0.04, 0.5, 0.18); // Pass Green
+const COLOR_FAIL = rgb(0.8, 0.05, 0.05); // Fail Red
 
 /**
  * Sanitizes strings for standard PDF fonts (WinAnsi encoding).
@@ -308,6 +307,17 @@ export async function compileOimlPdfReport(
   const emblemBytes = getNationalEmblemBytes();
   const emblemImage = await pdfDoc.embedPng(emblemBytes);
 
+  // Embed MAANAK Background Copyright Watermark PNG
+  const watermarkBytes = getMaanakWatermarkBytes();
+  let watermarkImage: any = null;
+  if (watermarkBytes) {
+    try {
+      watermarkImage = await pdfDoc.embedPng(watermarkBytes);
+    } catch (e) {
+      console.warn("Could not embed watermark image in backend PDF:", e);
+    }
+  }
+
   const hasModularForms7To9 = Boolean(
     reportData.results.form7WarmUp ||
     reportData.results.form8SpanStability ||
@@ -340,7 +350,7 @@ export async function compileOimlPdfReport(
   // -------------------------------------------------------------
   const page1 = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   patchPage(page1);
-  renderPageFramework(page1, 1, totalPages, reportData, fontRegular, fontBold);
+  renderPageFramework(page1, 1, totalPages, reportData, fontRegular, fontBold, watermarkImage);
 
   // Official Government Header (Pristine White Background - NO deep blue box)
   // Left: National Emblem PNG (Ashok Stambh)
@@ -558,14 +568,13 @@ export async function compileOimlPdfReport(
     ? "CONFORMS — METROLOGICAL PASS"
     : "DOES NOT CONFORM — FAIL";
 
-  // Draw Verdict Box
+  // Draw Verdict Box: Crisp Black Border, NO background color
   const verdictBoxWidth = CONTENT_WIDTH - 140;
   page1.drawRectangle({
     x: MARGIN,
     y: y - 80,
     width: verdictBoxWidth,
     height: 85,
-    color: COLOR_LIGHT_BG,
     borderColor: COLOR_BORDER,
     borderWidth: 1,
   });
@@ -575,7 +584,8 @@ export async function compileOimlPdfReport(
     y: y - 28,
     width: verdictBoxWidth - 24,
     height: 24,
-    color: verdictBg,
+    borderColor: isPass ? COLOR_PASS : COLOR_FAIL,
+    borderWidth: 1,
   });
 
   page1.drawText(verdictText, {
@@ -583,8 +593,9 @@ export async function compileOimlPdfReport(
     y: y - 21,
     size: 11,
     font: fontBold,
-    color: rgb(1, 1, 1),
+    color: isPass ? COLOR_PASS : COLOR_FAIL,
   });
+
 
   page1.drawText(
     "All mandatory test clauses (Forms 1–6) evaluated in strict compliance with OIML R 76-1.",
@@ -663,7 +674,7 @@ export async function compileOimlPdfReport(
   // -------------------------------------------------------------
   const page2 = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   patchPage(page2);
-  renderPageFramework(page2, 2, totalPages, reportData, fontRegular, fontBold);
+  renderPageFramework(page2, 2, totalPages, reportData, fontRegular, fontBold, watermarkImage);
 
   y = PAGE_HEIGHT - 65;
   renderSectionHeader(
@@ -697,7 +708,7 @@ export async function compileOimlPdfReport(
   // -------------------------------------------------------------
   const page3 = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   patchPage(page3);
-  renderPageFramework(page3, 3, totalPages, reportData, fontRegular, fontBold);
+  renderPageFramework(page3, 3, totalPages, reportData, fontRegular, fontBold, watermarkImage);
 
   y = PAGE_HEIGHT - 65;
   renderSectionHeader(
@@ -751,7 +762,7 @@ export async function compileOimlPdfReport(
   // -------------------------------------------------------------
   const page4 = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   patchPage(page4);
-  renderPageFramework(page4, 4, totalPages, reportData, fontRegular, fontBold);
+  renderPageFramework(page4, 4, totalPages, reportData, fontRegular, fontBold, watermarkImage);
 
   y = PAGE_HEIGHT - 65;
   renderSectionHeader(
@@ -806,7 +817,7 @@ export async function compileOimlPdfReport(
   // -------------------------------------------------------------
   const page5 = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   patchPage(page5);
-  renderPageFramework(page5, 5, totalPages, reportData, fontRegular, fontBold);
+  renderPageFramework(page5, 5, totalPages, reportData, fontRegular, fontBold, watermarkImage);
 
   y = PAGE_HEIGHT - 65;
   renderSectionHeader(
@@ -847,7 +858,6 @@ export async function compileOimlPdfReport(
     y: y - 75,
     width: CONTENT_WIDTH,
     height: 75,
-    color: COLOR_LIGHT_BG,
     borderColor: COLOR_BORDER,
     borderWidth: 1,
   });
@@ -905,7 +915,6 @@ export async function compileOimlPdfReport(
     y: y - 80,
     width: CONTENT_WIDTH,
     height: 80,
-    color: COLOR_LIGHT_BG,
     borderColor: COLOR_PRIMARY,
     borderWidth: 1.5,
   });
@@ -969,14 +978,7 @@ export async function compileOimlPdfReport(
   if (hasModularForms7To9) {
     const pageModular = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
     patchPage(pageModular);
-    renderPageFramework(
-      pageModular,
-      nextPageIndex++,
-      totalPages,
-      reportData,
-      fontRegular,
-      fontBold,
-    );
+    renderPageFramework(pageModular, nextPageIndex++, totalPages, reportData, fontRegular, fontBold, watermarkImage);
 
     let modY = PAGE_HEIGHT - 65;
     renderSectionHeader(
@@ -1057,14 +1059,7 @@ export async function compileOimlPdfReport(
   if (hasDisturbanceForms10To14) {
     const pageDisturb = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
     patchPage(pageDisturb);
-    renderPageFramework(
-      pageDisturb,
-      nextPageIndex++,
-      totalPages,
-      reportData,
-      fontRegular,
-      fontBold,
-    );
+    renderPageFramework(pageDisturb, nextPageIndex++, totalPages, reportData, fontRegular, fontBold, watermarkImage);
 
     let distY = PAGE_HEIGHT - 65;
     renderSectionHeader(
@@ -1121,14 +1116,7 @@ export async function compileOimlPdfReport(
   if (hasAdministrativeForms15To17) {
     const pageAdmin = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
     patchPage(pageAdmin);
-    renderPageFramework(
-      pageAdmin,
-      nextPageIndex++,
-      totalPages,
-      reportData,
-      fontRegular,
-      fontBold,
-    );
+    renderPageFramework(pageAdmin, nextPageIndex++, totalPages, reportData, fontRegular, fontBold, watermarkImage);
 
     let adminY = PAGE_HEIGHT - 65;
     renderSectionHeader(
@@ -1191,14 +1179,7 @@ export async function compileOimlPdfReport(
       const annexPageNum = nextPageIndex++;
       const annexPage = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
       patchPage(annexPage);
-      renderPageFramework(
-        annexPage,
-        annexPageNum,
-        totalPages,
-        reportData,
-        fontRegular,
-        fontBold,
-      );
+      renderPageFramework(annexPage, annexPageNum, totalPages, reportData, fontRegular, fontBold, watermarkImage);
 
       let annexY = PAGE_HEIGHT - 65;
       const annexTitle =
@@ -1261,7 +1242,20 @@ function renderPageFramework(
   data: OimlReportData,
   fontRegular: PDFFont,
   fontBold: PDFFont,
+  watermarkImage?: any,
 ): void {
+  // Centered background copyright watermark with low opacity
+  if (watermarkImage) {
+    const wmWidth = 340;
+    const wmHeight = 324;
+    page.drawImage(watermarkImage, {
+      x: (PAGE_WIDTH - wmWidth) / 2,
+      y: (PAGE_HEIGHT - wmHeight) / 2,
+      width: wmWidth,
+      height: wmHeight,
+      opacity: 0.08,
+    });
+  }
   // Running top header line
   page.drawLine({
     start: { x: MARGIN, y: PAGE_HEIGHT - 35 },
@@ -1405,7 +1399,6 @@ function renderForm1Table(
     y: currentY - 14,
     width: CONTENT_WIDTH,
     height: 18,
-    color: COLOR_TABLE_HEADER,
     borderColor: COLOR_BORDER,
     borderWidth: 0.8,
   });
@@ -1435,7 +1428,8 @@ function renderForm1Table(
       y: currentY - 12,
       width: CONTENT_WIDTH,
       height: 15,
-      color: isEven ? COLOR_LIGHT_BG : rgb(1, 1, 1),
+      borderColor: COLOR_BORDER,
+      borderWidth: 0.5,
     });
 
     const rowCells = [
@@ -1848,7 +1842,6 @@ function renderChecklistTable(
     y: curY - rowHeight,
     width: CONTENT_WIDTH,
     height: rowHeight,
-    color: COLOR_LIGHT_BG,
     borderColor: COLOR_BORDER,
     borderWidth: 0.5,
   });
@@ -1932,7 +1925,6 @@ function renderForm15Section(
     y: curY - 16,
     width: CONTENT_WIDTH,
     height: 16,
-    color: COLOR_LIGHT_BG,
     borderColor: COLOR_BORDER,
     borderWidth: 0.5,
   });
@@ -2049,7 +2041,6 @@ function renderForm17Section(
     y: curY - 16,
     width: CONTENT_WIDTH,
     height: 16,
-    color: COLOR_LIGHT_BG,
     borderColor: COLOR_BORDER,
     borderWidth: 0.5,
   });
@@ -2124,7 +2115,6 @@ async function renderEvidenceAttachmentCard(
     y: y - headerHeight,
     width,
     height: headerHeight,
-    color: COLOR_LIGHT_BG,
     borderColor: COLOR_BORDER,
     borderWidth: 1,
   });
@@ -2172,7 +2162,6 @@ async function renderEvidenceAttachmentCard(
     y: imgBoxY,
     width: imgBoxWidth,
     height: imgBoxHeight,
-    color: COLOR_LIGHT_BG,
     borderColor: COLOR_BORDER,
     borderWidth: 1,
   });
@@ -2320,7 +2309,6 @@ async function renderEvidenceAttachmentCard(
     y: footerY,
     width,
     height: footerHeight,
-    color: COLOR_LIGHT_BG,
     borderColor: COLOR_BORDER,
     borderWidth: 1,
   });
