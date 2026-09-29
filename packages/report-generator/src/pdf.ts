@@ -363,33 +363,42 @@ export async function compileOimlPdfReport(
     height: emblemHeight,
   });
 
-  // Center / Adjacent Institutional Text
-  const textLeftX = MARGIN + emblemWidth + 10;
-  page1.drawText("GOVERNMENT OF INDIA • MINISTRY OF CONSUMER AFFAIRS, FOOD & PUBLIC DISTRIBUTION", {
-    x: textLeftX,
+  // Center / Institutional Text (Centered across page width)
+  const h1 = "GOVERNMENT OF INDIA • MINISTRY OF CONSUMER AFFAIRS, FOOD & PUBLIC DISTRIBUTION";
+  page1.drawText(h1, {
+    x: (PAGE_WIDTH - fontBold.widthOfTextAtSize(safeAscii(h1), 7.5)) / 2,
     y: PAGE_HEIGHT - 47,
     size: 7.5,
     font: fontBold,
     color: COLOR_DARK,
   });
 
-  page1.drawText(reportData.laboratory.name.toUpperCase(), {
-    x: textLeftX,
+  const h2 = reportData.laboratory.name.toUpperCase();
+  page1.drawText(h2, {
+    x: (PAGE_WIDTH - fontBold.widthOfTextAtSize(safeAscii(h2), 11)) / 2,
     y: PAGE_HEIGHT - 61,
-    size: 11.5,
+    size: 11,
     font: fontBold,
     color: COLOR_PRIMARY,
   });
 
-  page1.drawText(
-    `${reportData.laboratory.address ?? "Legal Metrology Standards Laboratory"} | Accreditation: ${reportData.laboratory.accreditationNumber ?? "NABL Metrology Accredited"}`,
-    { x: textLeftX, y: PAGE_HEIGHT - 73, size: 7.5, font: fontRegular, color: COLOR_MUTED },
-  );
+  const h3 = `${reportData.laboratory.address ?? "Legal Metrology Standards Laboratory"} | Accreditation: ${reportData.laboratory.accreditationNumber ?? "NABL Metrology Accredited"}`;
+  page1.drawText(h3, {
+    x: (PAGE_WIDTH - fontRegular.widthOfTextAtSize(safeAscii(h3), 7.5)) / 2,
+    y: PAGE_HEIGHT - 73,
+    size: 7.5,
+    font: fontRegular,
+    color: COLOR_MUTED,
+  });
 
-  page1.drawText(
-    "DIRECTORATE OF LEGAL METROLOGY • STATUTORY METROLOGICAL VERIFICATION UNDER OIML R 76",
-    { x: textLeftX, y: PAGE_HEIGHT - 84, size: 7, font: fontBold, color: COLOR_MUTED },
-  );
+  const h4 = "DIRECTORATE OF LEGAL METROLOGY • STATUTORY METROLOGICAL VERIFICATION UNDER OIML R 76";
+  page1.drawText(h4, {
+    x: (PAGE_WIDTH - fontBold.widthOfTextAtSize(safeAscii(h4), 7)) / 2,
+    y: PAGE_HEIGHT - 84,
+    size: 7,
+    font: fontBold,
+    color: COLOR_MUTED,
+  });
 
   // Right: Public Verification QR Code on Header
   const qrHeaderSize = 52;
@@ -439,17 +448,19 @@ export async function compileOimlPdfReport(
 
   let y = headerBottomY - 18;
 
-  // Report Title Box
-  page1.drawText("OIML R 76-2 TEST CERTIFICATE", {
-    x: MARGIN,
+  // Report Title Box (Centered)
+  const repTitle = "OIML R 76-2 TEST CERTIFICATE";
+  page1.drawText(repTitle, {
+    x: (PAGE_WIDTH - fontBold.widthOfTextAtSize(safeAscii(repTitle), 13)) / 2,
     y,
     size: 13,
     font: fontBold,
     color: COLOR_PRIMARY,
   });
   y -= 11;
-  page1.drawText("NON-AUTOMATIC WEIGHING INSTRUMENT METROLOGICAL EVALUATION", {
-    x: MARGIN,
+  const repSubtitle = "NON-AUTOMATIC WEIGHING INSTRUMENT METROLOGICAL EVALUATION";
+  page1.drawText(repSubtitle, {
+    x: (PAGE_WIDTH - fontBold.widthOfTextAtSize(safeAscii(repSubtitle), 8)) / 2,
     y,
     size: 8,
     font: fontBold,

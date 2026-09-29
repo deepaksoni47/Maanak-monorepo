@@ -143,33 +143,36 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
     height: emblemHeight,
   });
 
-  const textLeftX = 86;
-  page.drawText("GOVERNMENT OF INDIA • MINISTRY OF CONSUMER AFFAIRS, FOOD & PUBLIC DISTRIBUTION", {
-    x: textLeftX,
+  const h1 = "GOVERNMENT OF INDIA • MINISTRY OF CONSUMER AFFAIRS, FOOD & PUBLIC DISTRIBUTION";
+  page.drawText(h1, {
+    x: (width - fontBold.widthOfTextAtSize(h1, 7.5)) / 2,
     y: height - 47,
     size: 7.5,
     font: fontBold,
     color: black,
   });
 
-  page.drawText("REGIONAL REFERENCE STANDARD LABORATORY (RRSL), AHMEDABAD", {
-    x: textLeftX,
+  const h2 = "REGIONAL REFERENCE STANDARD LABORATORY (RRSL), AHMEDABAD";
+  page.drawText(h2, {
+    x: (width - fontBold.widthOfTextAtSize(h2, 11)) / 2,
     y: height - 61,
-    size: 11.5,
+    size: 11,
     font: fontBold,
     color: black,
   });
 
-  page.drawText("DIRECTORATE OF LEGAL METROLOGY • NABL ACCREDITED LAB (ISO/IEC 17025:2017)", {
-    x: textLeftX,
+  const h3 = "DIRECTORATE OF LEGAL METROLOGY • NABL ACCREDITED LAB (ISO/IEC 17025:2017)";
+  page.drawText(h3, {
+    x: (width - fontRegular.widthOfTextAtSize(h3, 7.5)) / 2,
     y: height - 73,
     size: 7.5,
     font: fontRegular,
     color: black,
   });
 
-  page.drawText("OIML Issuing Authority: OIML-IA-IN-01 • Statutory Legal Metrology Verification Certificate", {
-    x: textLeftX,
+  const h4 = "OIML Issuing Authority: OIML-IA-IN-01 • Statutory Legal Metrology Verification Certificate";
+  page.drawText(h4, {
+    x: (width - fontRegular.widthOfTextAtSize(h4, 7)) / 2,
     y: height - 84,
     size: 7,
     font: fontRegular,
@@ -226,16 +229,18 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
   // D. Certificate Title & Identifier Metadata
   // ---------------------------------------------------------------------------
   let y = height - 128;
-  page.drawText("OIML R 76-2 STATUTORY TEST CERTIFICATE", {
-    x: 40,
+  const certTitle = "OIML R 76-2 STATUTORY TEST CERTIFICATE";
+  page.drawText(certTitle, {
+    x: (width - fontBold.widthOfTextAtSize(certTitle, 11)) / 2,
     y: y,
     size: 11,
     font: fontBold,
     color: black,
   });
 
-  page.drawText("NON-AUTOMATIC WEIGHING INSTRUMENT (NAWI) METROLOGICAL EVALUATION", {
-    x: 40,
+  const certSubtitle = "NON-AUTOMATIC WEIGHING INSTRUMENT (NAWI) METROLOGICAL EVALUATION";
+  page.drawText(certSubtitle, {
+    x: (width - fontRegular.widthOfTextAtSize(certSubtitle, 7.5)) / 2,
     y: y - 11,
     size: 7.5,
     font: fontRegular,
