@@ -26,10 +26,11 @@ export async function getMaanakWatermarkBytes(): Promise<Uint8Array | null> {
 
   // 2. Node.js environment: load from filesystem
   try {
-    if (typeof process !== "undefined" && process.cwd) {
-      // Dynamic import to avoid bundling issues in pure client builds
-      const fs = await import("fs");
-      const path = await import("path");
+    if (typeof window === "undefined" && typeof process !== "undefined" && process.cwd) {
+      const fsModule = "fs";
+      const pathModule = "path";
+      const fs = await import(/* webpackIgnore: true */ fsModule);
+      const path = await import(/* webpackIgnore: true */ pathModule);
       const candidates = [
         path.join(process.cwd(), "apps/web/public/images/maanak-backgorund-copyright.png"),
         path.join(process.cwd(), "public/images/maanak-backgorund-copyright.png"),

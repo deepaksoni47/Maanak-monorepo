@@ -76,21 +76,23 @@ export const RULE_PACKS: RulePack[] = [
 
 export function RulePacksView() {
   const [rulePacks, setRulePacks] = useState<RulePack[]>(RULE_PACKS);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
     async function loadRulePacks() {
       try {
+        setIsLoading(true);
         const res = await rulesApi.list();
-        if (isMounted && res?.rulePacks && res.rulePacks.length > 0) {
+        if (isMounted && res?.rulePacks && Array.isArray(res.rulePacks)) {
           const mapped: RulePack[] = res.rulePacks.map((p: any) => ({
             id: p.id,
-            name: p.name || p.standard || "OIML R-76 Statutory Rule Pack",
+            name: p.title || p.name || p.standard || "OIML R-76 Statutory Rule Pack",
             statutoryReference: p.standard || "OIML R-76 Non-Automatic Weighing Instruments",
             version: p.version || "1.0",
-            jurisdiction: p.jurisdiction || "Republic of India",
+            jurisdiction: p.issuingBody || p.jurisdiction || "Republic of India",
             status: p.isActive ? "ACTIVE" : "SUPERSEDED",
-            rulesCount: Object.keys(p.rules || {}).length || 48,
+            rulesCount: typeof p.rules === "object" && p.rules ? Object.keys(p.rules).length : 48,
             description: p.description || "Audited statutory rules engine executing formal OIML R-76 definitions.",
             clauses: [
               "Clause 3.1: Principles of Classification (Table 3)",
@@ -105,6 +107,8 @@ export function RulePacksView() {
         }
       } catch (err) {
         console.warn("Rules API load note:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     }
     loadRulePacks();
@@ -160,8 +164,21 @@ export function RulePacksView() {
         </div>
 
         {/* Rule Packs List */}
-        <div className="grid grid-cols-1 gap-6">
-          {rulePacks.map((rp) => (
+        {isLoading ? (
+          <div className="p-12 text-center text-muted-foreground bg-card rounded-2xl border border-neutral-300 dark:border-neutral-700">
+            <span className="text-xs">Loading statutory standards-as-code rule packs...</span>
+          </div>
+        ) : rulePacks.length === 0 ? (
+          <div className="p-12 text-center text-muted-foreground bg-card rounded-2xl border border-neutral-300 dark:border-neutral-700">
+            <Gear size={36} weight="duotone" className="mx-auto mb-2 text-muted-foreground/60" />
+            <h4 className="text-base font-bold text-foreground">No Rule Packs Found</h4>
+            <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+              No statutory rule packs are currently registered in the engine registry.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6">
+            {rulePacks.map((rp) => (
             <Card key={rp.id} className="rounded-sm border border-border overflow-hidden shadow-xs">
               <CardHeader className="p-5 sm:p-6 bg-muted/20 border-b border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
@@ -211,6 +228,7 @@ export function RulePacksView() {
             </Card>
           ))}
         </div>
+      )}
       </div>
     </Shell>
   );

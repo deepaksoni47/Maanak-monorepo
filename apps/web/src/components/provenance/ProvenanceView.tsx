@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { sessionsApi } from "@/lib/api";
+import { sessionsApi, provenanceApi } from "@/lib/api";
 import { Shell } from "@/components/layout/Shell";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -19,60 +19,27 @@ export interface LedgerBlock {
   details: string;
 }
 
-export const LEDGER_BLOCKS: LedgerBlock[] = [
-  {
-    blockNumber: 104,
-    timestamp: "2026-09-22 18:45:10 IST",
-    eventType: "DIRECTOR_PKI_SEAL",
-    sessionId: "TS-2026-0142",
-    officer: "Dr. A. Sharma (Director)",
-    currentHash: "0x8fa37b12d94e7732a10b8cf634720984e1b8c45e6d78a9c1e0f3b4a58b8f7",
-    previousHash: "0x4a58b8f72a91283d5a84e2098d63a89047bf1b2c45e6d78a9c1e0f3b4a58b8f7",
-    status: "SEALED",
-    details: "X.509 RSA-4096 digital signature applied. Statutory Certificate #CERT-2026-0142 released to public registry.",
-  },
-  {
-    blockNumber: 103,
-    timestamp: "2026-09-22 18:30:22 IST",
-    eventType: "REVIEWER_AUDIT_APPROVAL",
-    sessionId: "TS-2026-0142",
-    officer: "Er. P. K. Gupta (Senior Reviewer)",
-    currentHash: "0x4a58b8f72a91283d5a84e2098d63a89047bf1b2c45e6d78a9c1e0f3b4a58b8f7",
-    previousHash: "0x33e8a1d7f023ab9154ec47189028912e8fa37b12d94e7732a10b8cf6347209",
-    status: "VERIFIED",
-    details: "All 10 load steps verified within Table 6 limits. Vector error curve compliant with zero hysteresis drift.",
-  },
-  {
-    blockNumber: 102,
-    timestamp: "2026-09-22 17:55:04 IST",
-    eventType: "OBSERVATION_BATTERY_COMPLETED",
-    sessionId: "TS-2026-0142",
-    officer: "Er. R. Verma (Field LMO)",
-    currentHash: "0x33e8a1d7f023ab9154ec47189028912e8fa37b12d94e7732a10b8cf6347209",
-    previousHash: "0x11ac55e8a1d7f023ab9154ec47189028912e8fa37b12d94e7732a10b8cf634",
-    status: "VERIFIED",
-    details: "10/10 test steps recorded per Clause A.4.4.1. Max error Ec = +1.0 g at 15.0 kg (MPE limit ±7.5 g).",
-  },
-  {
-    blockNumber: 101,
-    timestamp: "2026-09-22 17:15:40 IST",
-    eventType: "STANDARD_WEIGHTS_GATEKEEPER_PASSED",
-    sessionId: "TS-2026-0142",
-    officer: "Er. R. Verma (Field LMO)",
-    currentHash: "0x11ac55e8a1d7f023ab9154ec47189028912e8fa37b12d94e7732a10b8cf634",
-    previousHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-    status: "VERIFIED",
-    details: "Set #S-M1-2026 validated against NABL 129 criterion: U(0.0008 kg) <= 1/3 * MPE(0.0025 kg). Gatekeeper cleared.",
-  },
-];
-
 export function ProvenanceView() {
-  const [blocks, setBlocks] = useState<LedgerBlock[]>(LEDGER_BLOCKS);
+  const [blocks, setBlocks] = useState<LedgerBlock[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     let isMounted = true;
     async function loadProvenanceEvents() {
       try {
+        setIsLoading(true);
+        // 1. Try real provenance ledger endpoint
+        try {
+          const res = await provenanceApi.getLedger();
+          if (isMounted && res?.blocks && res.blocks.length > 0) {
+            setBlocks(res.blocks);
+            return;
+          }
+        } catch (apiErr) {
+          console.warn("Direct ledger endpoint note:", apiErr);
+        }
+
+        // 2. Derive from live sessions if ledger is empty
         const res = await sessionsApi.list();
         if (isMounted && res?.sessions && res.sessions.length > 0) {
           const liveBlocks: LedgerBlock[] = res.sessions.slice(0, 10).map((s: any, idx: number) => {
@@ -80,13 +47,13 @@ export function ProvenanceView() {
             const model = s.instrumentUnit?.instrumentModel?.modelName || "NAWI Scale";
             return {
               blockNumber: 100 + (res.sessions.length - idx),
-              timestamp: s.createdAt ? new Date(s.createdAt).toLocaleString("en-IN") : "2026-09-22 18:00:00 IST",
-              eventType: s.status === "COMPLETED" ? "DIRECTOR_PKI_SEAL" : s.status === "UNDER_REVIEW" ? "REVIEWER_AUDIT_APPROVAL" : "OBSERVATION_BATTERY_RECORDED",
+              timestamp: s.createdAt ? new Date(s.createdAt).toLocaleString("en-IN") : new Date().toLocaleString("en-IN"),
+              eventType: s.status === "COMPLETED" || s.status === "APPROVED_LOCKED" ? "DIRECTOR_PKI_SEAL" : s.status === "UNDER_REVIEW" ? "REVIEWER_AUDIT_APPROVAL" : "OBSERVATION_BATTERY_RECORDED",
               sessionId: s.sessionNumber,
               officer,
               currentHash: `0x${(s.id.replace(/-/g, "") + "8fa37b12d94e7732a10b8c").slice(0, 64)}`,
               previousHash: idx < res.sessions.length - 1 ? `0x${(res.sessions[idx + 1].id.replace(/-/g, "") + "000000000000000000").slice(0, 64)}` : "0x0000000000000000000000000000000000000000000000000000000000000000",
-              status: s.status === "COMPLETED" ? "SEALED" : "VERIFIED",
+              status: s.status === "COMPLETED" || s.status === "APPROVED_LOCKED" ? "SEALED" : "VERIFIED",
               details: `Session ${s.sessionNumber} (${model}): Metrological state transition to ${s.status}. WELMEC 7.2 hash chain verified.`,
             };
           });
@@ -94,6 +61,8 @@ export function ProvenanceView() {
         }
       } catch (err) {
         console.warn("Live provenance load note:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     }
     loadProvenanceEvents();
@@ -151,8 +120,21 @@ export function ProvenanceView() {
         {/* Ledger Blocks List */}
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-foreground">Chronological Cryptographic Event Blocks</h3>
-          <div className="grid grid-cols-1 gap-4">
-            {blocks.map((block) => (
+          {isLoading ? (
+            <div className="p-12 text-center text-muted-foreground bg-card rounded-2xl border border-neutral-300 dark:border-neutral-700">
+              <span className="text-xs">Loading cryptographic provenance ledger...</span>
+            </div>
+          ) : blocks.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground bg-card rounded-2xl border border-neutral-300 dark:border-neutral-700">
+              <LockKey size={36} weight="duotone" className="mx-auto mb-2 text-muted-foreground/60" />
+              <h4 className="text-base font-bold text-foreground">No Provenance Ledger Events Yet</h4>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                Cryptographic blocks will appear here as observations and calibration certifications are recorded in accordance with WELMEC 7.2.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {blocks.map((block) => (
               <Card key={block.blockNumber} className="rounded-sm border border-border overflow-hidden shadow-xs">
                 <CardHeader className="p-4 sm:p-5 bg-muted/20 border-b border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -200,7 +182,8 @@ export function ProvenanceView() {
               </Card>
             ))}
           </div>
-        </div>
+        )}
+      </div>
       </div>
     </Shell>
   );

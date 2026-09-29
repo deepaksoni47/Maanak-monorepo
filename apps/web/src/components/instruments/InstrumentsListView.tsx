@@ -69,13 +69,6 @@ export function InstrumentsListView() {
           console.warn("Live DB instrument list notice:", err);
         }
 
-        // 3. Ensure DEFAULT_INSTRUMENTS fallback
-        for (const def of DEFAULT_INSTRUMENTS) {
-          if (!map.has(def.id)) {
-            map.set(def.id, def);
-          }
-        }
-
         if (isMounted) {
           setInstruments(Array.from(map.values()));
         }
@@ -157,6 +150,17 @@ export function InstrumentsListView() {
           <div className="p-12 flex flex-col items-center justify-center gap-3 text-muted-foreground">
             <CircleNotch size={32} className="animate-spin text-primary" />
             <p className="text-xs font-medium">Fetching instrument models from PostgreSQL...</p>
+          </div>
+        ) : instruments.length === 0 ? (
+          <div className="p-12 text-center text-muted-foreground bg-card rounded-2xl border border-neutral-300 dark:border-neutral-700">
+            <Scales size={36} weight="duotone" className="mx-auto mb-2 text-muted-foreground/60" />
+            <h3 className="text-base font-bold text-foreground">No Registered Instruments Found</h3>
+            <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+              No instrument models registered in the database yet. Perform new intake to register standard NAWI equipment.
+            </p>
+            <Link href="/instruments/new" className="inline-block mt-4">
+              <Button leftIcon={<Plus size={16} />}>Intake New Instrument</Button>
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">

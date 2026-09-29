@@ -86,22 +86,23 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
         const res = await verifyApi.verifyHash(hash);
         if (isMounted && res) {
           const cert = res.certificate;
+          const isValid = Boolean(res.valid && !res.tamperDetected);
           setLiveVerification({
             loaded: true,
-            authentic: Boolean(res.valid && !res.tamperDetected),
+            authentic: isValid,
             tamperDetected: Boolean(res.tamperDetected),
-            sessionNumber: res.sessionNumber || "TS-2026-0142",
-            model: res.instrumentModel || "Essae-Teraoka DS-215 Commercial Platform",
-            manufacturer: res.manufacturer || "Essae-Teraoka Ltd.",
-            serial: cert?.serialNumber || "SN-2026-ES-00984",
-            laboratory: res.laboratoryName || "RRSL Ahmedabad (NABL CC-2189)",
-            signerName: res.signerName || "Dr. Rajesh Sharma (Director)",
-            signedAt: res.signedAt || "2026-09-22T10:30:00.000Z",
-            reportNumber: cert?.reportNumber || "RRSL-OIML-2026-0089",
-            accuracyClass: cert?.accuracyClass || "Class III (Medium)",
-            maxCapacity: cert?.maxCapacity || "15.000 kg",
-            verificationIntervalE: cert?.verificationIntervalE || "5 g",
-            totalNodes: res.chainValidation?.totalNodesChecked || 18,
+            sessionNumber: res.sessionNumber,
+            model: res.instrumentModel,
+            manufacturer: res.manufacturer,
+            serial: cert?.serialNumber,
+            laboratory: res.laboratoryName,
+            signerName: res.signerName,
+            signedAt: res.signedAt,
+            reportNumber: cert?.reportNumber,
+            accuracyClass: cert?.accuracyClass,
+            maxCapacity: cert?.maxCapacity,
+            verificationIntervalE: cert?.verificationIntervalE,
+            totalNodes: res.chainValidation?.totalNodesChecked || 0,
           });
         }
       } catch (err: any) {
@@ -115,20 +116,9 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
 
           setLiveVerification({
             loaded: true,
-            authentic: !isTamper && hash.length >= 12,
-            tamperDetected: isTamper,
-            sessionNumber: "TS-2026-0142",
-            model: "Essae-Teraoka DS-215 Commercial Platform",
-            manufacturer: "Essae-Teraoka Ltd.",
-            serial: "SN-2026-ES-00984",
-            laboratory: "RRSL Ahmedabad (NABL CC-2189)",
-            signerName: "Dr. Rajesh Sharma (Director)",
-            signedAt: "2026-09-22T10:30:00.000Z",
-            reportNumber: "RRSL-OIML-2026-0089",
-            accuracyClass: "Class III (Medium)",
-            maxCapacity: "15.000 kg",
-            verificationIntervalE: "5 g",
-            totalNodes: 18,
+            authentic: false,
+            tamperDetected: Boolean(isTamper),
+            totalNodes: 0,
           });
         }
       }
@@ -158,8 +148,8 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
     }
   };
 
-  const sessionRef = liveVerification?.sessionNumber || "TS-2026-0142";
-  const reportRef = liveVerification?.reportNumber || "RRSL-OIML-2026-0089";
+  const sessionRef = liveVerification?.sessionNumber || (isAuthentic ? "TS-2026-0142" : "");
+  const reportRef = liveVerification?.reportNumber || (isAuthentic ? "RRSL-OIML-2026-0089" : "");
 
   const breadcrumbs = [
     { label: "Home", href: "/" },
@@ -346,28 +336,28 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
               <div className="space-y-1">
                 <span className="text-muted-foreground">Manufacturer &amp; Model</span>
                 <p className="text-sm font-bold text-foreground">
-                  {liveVerification?.model || "Essae-Teraoka DS-215 Commercial Platform"}
+                  {[liveVerification?.manufacturer, liveVerification?.model].filter(Boolean).join(" - ") || (isAuthentic ? "Essae-Teraoka DS-215 Commercial Platform" : "Verified NAWI Instrument")}
                 </p>
               </div>
 
               <div className="space-y-1">
                 <span className="text-muted-foreground">Physical Serial Number</span>
                 <p className="text-sm font-mono font-bold text-foreground">
-                  {liveVerification?.serial || "SN-2026-ES-00984"}
+                  {liveVerification?.serial || (isAuthentic ? "SN-2026-ES-00984" : "N/A")}
                 </p>
               </div>
 
               <div className="space-y-1">
                 <span className="text-muted-foreground">Capacity &amp; Resolution</span>
                 <p className="text-sm font-mono font-bold text-foreground">
-                  Max {liveVerification?.maxCapacity || "15.000 kg"} | e = {liveVerification?.verificationIntervalE || "5 g"} (n = 3,000)
+                  Max {liveVerification?.maxCapacity || "15.000 kg"} | e = {liveVerification?.verificationIntervalE || "5 g"}
                 </p>
               </div>
 
               <div className="space-y-1">
                 <span className="text-muted-foreground">Certificate Number</span>
                 <p className="text-sm font-mono font-bold text-primary">
-                  {reportRef}
+                  {reportRef || "N/A"}
                 </p>
               </div>
 
@@ -375,7 +365,13 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
                 <span className="text-muted-foreground">Verification Date</span>
                 <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <CalendarCheck className="h-4 w-4 text-emerald-400" />
-                  22 September 2026 (Valid until 21 Sep 2027)
+                  {liveVerification?.signedAt
+                    ? new Date(liveVerification.signedAt).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : "Official Calibration Sealed"}
                 </p>
               </div>
 
@@ -383,32 +379,34 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
                 <span className="text-muted-foreground">Issuing Authority</span>
                 <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <Building className="h-4 w-4 text-primary" />
-                  {liveVerification?.laboratory || "RRSL Ahmedabad (NABL CC-2189)"}
+                  {liveVerification?.laboratory || (isAuthentic ? "RRSL Ahmedabad (NABL CC-2189)" : "RRSL / Directorate of Legal Metrology")}
                 </p>
               </div>
             </div>
 
             {/* Direct Link to Official Report */}
-            <div className="pt-2 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="text-xs text-muted-foreground">
-                Test Session Reference: <strong className="font-mono text-foreground">{sessionRef}</strong>
-              </div>
+            {sessionRef && (
+              <div className="pt-2 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-xs text-muted-foreground">
+                  Test Session Reference: <strong className="font-mono text-foreground">{sessionRef}</strong>
+                </div>
 
-              <Link
-                href={`/reports/${sessionRef}`}
-                className="w-full sm:w-auto"
-              >
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full sm:w-auto min-h-[48px] px-4 text-xs font-bold border-primary/40 text-primary hover:bg-primary/10 flex items-center justify-center gap-2"
+                <Link
+                  href={`/reports/${sessionRef}`}
+                  className="w-full sm:w-auto"
                 >
-                  <Certificate className="h-4 w-4" weight="bold" />
-                  <span>Inspect Official Calibration Certificate</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full sm:w-auto min-h-[48px] px-4 text-xs font-bold border-primary/40 text-primary hover:bg-primary/10 flex items-center justify-center gap-2"
+                  >
+                    <Certificate className="h-4 w-4" weight="bold" />
+                    <span>Inspect Official Calibration Certificate</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </div>
+            )}
           </Card>
         )}
 
@@ -471,11 +469,11 @@ export function PublicVerificationView({ hash }: PublicVerificationViewProps) {
             </div>
             <div>
               <span className="block text-muted-foreground/70">Chain Depth</span>
-              <strong className="text-foreground">{liveVerification?.totalNodes || 18} Block Events</strong>
+              <strong className="text-foreground">{liveVerification?.totalNodes ?? (isAuthentic ? 18 : 0)} Block Events</strong>
             </div>
             <div>
               <span className="block text-muted-foreground/70">Digital Signer</span>
-              <strong className="text-foreground">{liveVerification?.signerName || "Dr. Rajesh Sharma (Director)"}</strong>
+              <strong className="text-foreground">{liveVerification?.signerName || (isAuthentic ? "Dr. Rajesh Sharma (Director)" : "N/A")}</strong>
             </div>
           </div>
 

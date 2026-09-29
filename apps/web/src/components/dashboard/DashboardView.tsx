@@ -21,7 +21,7 @@ import { Shell } from "@/components/layout/Shell";
 import { Badge, BadgeVariant } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
-import { sessionsApi, weightsApi } from "@/lib/api";
+import { sessionsApi, weightsApi, dashboardApi } from "@/lib/api";
 import { useFacility, ALL_FACILITIES_ID } from "@/lib/facility-context";
 
 export interface FormattedSession {
@@ -320,14 +320,17 @@ export function DashboardView() {
   const [sessions, setSessions] = useState<FormattedSession[]>(RECENT_SESSIONS);
   const [hasLiveSessions, setHasLiveSessions] = useState(false);
   const [hasLiveWeights, setHasLiveWeights] = useState(false);
-  const [liveActiveCount, setLiveActiveCount] = useState<number>(14);
-  const [livePendingCount, setLivePendingCount] = useState<number>(3);
-  const [liveApprovedCount, setLiveApprovedCount] = useState<number>(8);
-  const [liveComplianceRate, setLiveComplianceRate] = useState<string>("94.2%");
-  const [liveWeightsBadge, setLiveWeightsBadge] = useState<string>("ALL 24 SETS VALID");
+  const [liveActiveCount, setLiveActiveCount] = useState<number>(0);
+  const [livePendingCount, setLivePendingCount] = useState<number>(0);
+  const [liveApprovedCount, setLiveApprovedCount] = useState<number>(0);
+  const [liveComplianceRate, setLiveComplianceRate] = useState<string>("100.0%");
+  const [liveWeightsBadge, setLiveWeightsBadge] = useState<string>("ALL STANDARDS VALID");
+  const [liveWeightsDetail, setLiveWeightsDetail] = useState<string>("");
+  const [liveActiveSubtitle, setLiveActiveSubtitle] = useState<string>("");
+  const [liveJurisdictionNote, setLiveJurisdictionNote] = useState<string>("");
 
   const facilityMetrics =
-    FACILITY_METRICS_MAP[currentFacility.id] || FACILITY_METRICS_MAP["rrsl-fbd"];
+    FACILITY_METRICS_MAP[currentFacility.id] || FACILITY_METRICS_MAP["ALL"];
 
   const activeCount = hasLiveSessions ? liveActiveCount : facilityMetrics.activeCount;
   const pendingCount = hasLiveSessions ? livePendingCount : facilityMetrics.pendingCount;
@@ -340,13 +343,28 @@ export function DashboardView() {
 
     async function loadDashboardData() {
       try {
-        const [sessionsRes, weightsRes] = await Promise.allSettled([
+        const [metricsRes, sessionsRes, weightsRes] = await Promise.allSettled([
+          dashboardApi.getMetrics(currentFacility.id),
           sessionsApi.list(),
           weightsApi.list(),
         ]);
 
         if (isMounted) {
-          if (sessionsRes.status === "fulfilled" && sessionsRes.value?.sessions && sessionsRes.value.sessions.length > 0) {
+          if (metricsRes.status === "fulfilled" && metricsRes.value?.metrics) {
+            const m = metricsRes.value.metrics;
+            setLiveActiveCount(m.activeCount);
+            setLivePendingCount(m.pendingCount);
+            setLiveApprovedCount(m.approvedCount);
+            setLiveComplianceRate(m.complianceRate);
+            setLiveWeightsBadge(m.weightsValidBadge);
+            setLiveWeightsDetail(m.weightsDetail);
+            setLiveActiveSubtitle(m.activeSubtitle);
+            setLiveJurisdictionNote(m.jurisdictionNote);
+            setHasLiveSessions(true);
+            setHasLiveWeights(true);
+          }
+
+          if (sessionsRes.status === "fulfilled" && sessionsRes.value?.sessions) {
             const rawSessions: any[] = sessionsRes.value.sessions;
 
             const mapped: FormattedSession[] = rawSessions.map((s) => {
@@ -381,21 +399,23 @@ export function DashboardView() {
             setSessions(mapped);
             setHasLiveSessions(true);
 
-            const active = rawSessions.filter(
-              (s) => s.status === "IN_PROGRESS" || s.status === "DRAFT",
-            ).length;
-            const pending = rawSessions.filter((s) => s.status === "REVIEW_PENDING").length;
-            const approved = rawSessions.filter(
-              (s) => s.status === "COMPLETED" || s.status === "CERTIFIED",
-            ).length;
+            if (!metricsRes || metricsRes.status !== "fulfilled") {
+              const active = rawSessions.filter(
+                (s) => s.status === "IN_PROGRESS" || s.status === "DRAFT",
+              ).length;
+              const pending = rawSessions.filter((s) => s.status === "REVIEW_PENDING").length;
+              const approved = rawSessions.filter(
+                (s) => s.status === "COMPLETED" || s.status === "CERTIFIED",
+              ).length;
 
-            setLiveActiveCount(active);
-            setLivePendingCount(pending);
-            setLiveApprovedCount(approved);
+              setLiveActiveCount(active);
+              setLivePendingCount(pending);
+              setLiveApprovedCount(approved);
 
-            const totalEvaluated = approved + rawSessions.filter((s) => s.status === "FAILED").length;
-            if (totalEvaluated > 0) {
-              setLiveComplianceRate(`${((approved / totalEvaluated) * 100).toFixed(1)}%`);
+              const totalEvaluated = approved + rawSessions.filter((s) => s.status === "FAILED").length;
+              if (totalEvaluated > 0) {
+                setLiveComplianceRate(`${((approved / totalEvaluated) * 100).toFixed(1)}%`);
+              }
             }
           }
 
@@ -413,7 +433,7 @@ export function DashboardView() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [currentFacility.id]);
 
   // Filter sessions based on facility selection
   const displayedSessions = isAllFacilities
@@ -421,14 +441,13 @@ export function DashboardView() {
     : sessions.filter((s) => {
         const code = (s.facilityCode || "").toUpperCase();
         const facCode = currentFacility.code.toUpperCase();
-        const facId = currentFacility.id.toLowerCase();
         return (
           code === facCode ||
           code.includes(facCode) ||
           (s.facilityName && s.facilityName.toLowerCase().includes(currentFacility.city.toLowerCase()))
         );
       });
-  const effectiveSessions = displayedSessions.length > 0 ? displayedSessions : sessions.slice(0, 4);
+  const effectiveSessions = displayedSessions;
 
   return (
     <Shell
@@ -675,123 +694,149 @@ export function DashboardView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700">
-                {effectiveSessions.map((session) => (
-                  <tr
-                    key={session.id}
-                    className="hover:bg-accent/40 transition-colors group"
-                  >
-                    <td className="py-4 px-5 font-mono font-semibold text-foreground whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span>{session.sessionNumber}</span>
-                        {session.facilityCode && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full border border-neutral-300 dark:border-neutral-700 bg-transparent text-primary font-bold">
-                            {session.facilityCode}
-                          </span>
-                        )}
+                {effectiveSessions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Scales size={32} weight="duotone" className="text-muted-foreground/60" />
+                        <div className="text-sm font-semibold">No active testing sessions in this facility</div>
+                        <div className="text-xs text-muted-foreground">Start a new verification session in the bench to begin observation recording.</div>
+                        <Link href="/bench" className="mt-2">
+                          <Button size="sm" leftIcon={<PlusCircle size={16} />}>Start First Session</Button>
+                        </Link>
                       </div>
-                      <div className="text-[10px] text-muted-foreground font-sans font-normal">
-                        {session.updatedAt}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="font-semibold text-foreground">{session.model}</div>
-                      <div className="text-[11px] text-muted-foreground">{session.manufacturer}</div>
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="inline-flex items-center gap-1 font-semibold text-foreground">
-                        Class {session.accuracyClass}
-                      </div>
-                      <div className="text-[11px] font-mono text-muted-foreground">
-                        Max {session.maxCapacity} | e={session.verificationInterval}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap text-muted-foreground">
-                      {session.inspector}
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span className="font-medium text-foreground">{session.stage}</span>
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <Badge variant={session.status} className="font-mono text-[11px]">
-                        {session.statusLabel}
-                      </Badge>
-                    </td>
-                    <td className="py-4 px-5 text-right whitespace-nowrap">
-                      <Link href={`/bench?session=${session.id}`}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          rightIcon={<ArrowSquareOut size={14} weight="bold" />}
-                          className="text-xs h-9 min-h-[48px] px-3 group-hover:text-primary"
-                        >
-                          Open
-                        </Button>
-                      </Link>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  effectiveSessions.map((session) => (
+                    <tr
+                      key={session.id}
+                      className="hover:bg-accent/40 transition-colors group"
+                    >
+                      <td className="py-4 px-5 font-mono font-semibold text-foreground whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span>{session.sessionNumber}</span>
+                          {session.facilityCode && (
+                            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full border border-neutral-300 dark:border-neutral-700 bg-transparent text-primary font-bold">
+                              {session.facilityCode}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground font-sans font-normal">
+                          {session.updatedAt}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <div className="font-semibold text-foreground">{session.model}</div>
+                        <div className="text-[11px] text-muted-foreground">{session.manufacturer}</div>
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1 font-semibold text-foreground">
+                          Class {session.accuracyClass}
+                        </div>
+                        <div className="text-[11px] font-mono text-muted-foreground">
+                          Max {session.maxCapacity} | e={session.verificationInterval}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap text-muted-foreground">
+                        {session.inspector}
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <span className="font-medium text-foreground">{session.stage}</span>
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <Badge variant={session.status} className="font-mono text-[11px]">
+                          {session.statusLabel}
+                        </Badge>
+                      </td>
+                      <td className="py-4 px-5 text-right whitespace-nowrap">
+                        <Link href={`/bench?session=${session.id}`}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            rightIcon={<ArrowSquareOut size={14} weight="bold" />}
+                            className="text-xs h-9 min-h-[48px] px-3 group-hover:text-primary"
+                          >
+                            Open
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
           {/* Mobile Collapsible Cards (< 640px) */}
           <div className="block sm:hidden divide-y divide-neutral-300 dark:divide-neutral-700 p-4 space-y-3">
-            {effectiveSessions.map((session) => (
-              <div
-                key={session.id}
-                className="pt-3 first:pt-0 space-y-2.5 bg-card rounded-2xl p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="font-mono font-bold text-xs text-foreground flex items-center gap-2">
-                    <span>{session.sessionNumber}</span>
-                    {session.facilityCode && (
-                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full border border-neutral-300 dark:border-neutral-700 bg-transparent text-primary font-bold">
-                        {session.facilityCode}
-                      </span>
-                    )}
+            {effectiveSessions.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground bg-card rounded-2xl p-4 border border-neutral-300 dark:border-neutral-700">
+                <Scales size={28} weight="duotone" className="mx-auto mb-2 text-muted-foreground/60" />
+                <div className="text-xs font-semibold">No active testing sessions</div>
+                <div className="text-[11px] text-muted-foreground mt-1">Start a new verification session in the bench.</div>
+                <Link href="/bench" className="block mt-3">
+                  <Button size="sm" className="w-full">Start Session</Button>
+                </Link>
+              </div>
+            ) : (
+              effectiveSessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="pt-3 first:pt-0 space-y-2.5 bg-card rounded-2xl p-3 border border-neutral-300 dark:border-neutral-700 shadow-xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-mono font-bold text-xs text-foreground flex items-center gap-2">
+                      <span>{session.sessionNumber}</span>
+                      {session.facilityCode && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full border border-neutral-300 dark:border-neutral-700 bg-transparent text-primary font-bold">
+                          {session.facilityCode}
+                        </span>
+                      )}
+                    </div>
+                    <Badge variant={session.status} className="font-mono text-[10px]">
+                      {session.statusLabel}
+                    </Badge>
                   </div>
-                  <Badge variant={session.status} className="font-mono text-[10px]">
-                    {session.statusLabel}
-                  </Badge>
-                </div>
 
-                <div>
-                  <div className="font-semibold text-sm text-foreground">{session.model}</div>
-                  <div className="text-xs text-muted-foreground">{session.manufacturer}</div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-2.5 rounded-xl">
                   <div>
-                    <div className="text-[10px] uppercase text-muted-foreground font-semibold">Class / Max</div>
-                    <div className="font-medium text-foreground">
-                      Class {session.accuracyClass} ({session.maxCapacity})
+                    <div className="font-semibold text-sm text-foreground">{session.model}</div>
+                    <div className="text-xs text-muted-foreground">{session.manufacturer}</div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-2.5 rounded-xl">
+                    <div>
+                      <div className="text-[10px] uppercase text-muted-foreground font-semibold">Class / Max</div>
+                      <div className="font-medium text-foreground">
+                        Class {session.accuracyClass} ({session.maxCapacity})
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase text-muted-foreground font-semibold">Verification Div (e)</div>
+                      <div className="font-mono text-foreground">{session.verificationInterval}</div>
                     </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] uppercase text-muted-foreground font-semibold">Verification Div (e)</div>
-                    <div className="font-mono text-foreground">{session.verificationInterval}</div>
+
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                    <span>Stage: <strong className="text-foreground font-medium">{session.stage}</strong></span>
+                    <span>{session.updatedAt}</span>
+                  </div>
+
+                  <div className="pt-2">
+                    <Link href={`/bench?session=${session.id}`} className="block">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        rightIcon={<ArrowRight size={14} weight="bold" />}
+                        className="w-full text-xs font-semibold justify-between min-h-[48px]"
+                      >
+                        Open Session Workbench
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-                  <span>Stage: <strong className="text-foreground font-medium">{session.stage}</strong></span>
-                  <span>{session.updatedAt}</span>
-                </div>
-
-                <div className="pt-2">
-                  <Link href={`/bench?session=${session.id}`} className="block">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      rightIcon={<ArrowRight size={14} weight="bold" />}
-                      className="w-full text-xs font-semibold justify-between min-h-[48px]"
-                    >
-                      Open Session Workbench
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </Card>
 

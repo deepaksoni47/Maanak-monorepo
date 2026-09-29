@@ -298,6 +298,18 @@ export const reviewApi = {
       body: JSON.stringify(payload),
     });
   },
+  getQueue: () => apiRequest("/api/v1/review/queue"),
+};
+
+export const dashboardApi = {
+  getMetrics: (facilityId?: string) => {
+    const qs = facilityId && facilityId !== "ALL" ? `?facilityId=${encodeURIComponent(facilityId)}` : "";
+    return apiRequest(`/api/v1/dashboard/metrics${qs}`);
+  },
+};
+
+export const provenanceApi = {
+  getLedger: (limit = 50) => apiRequest(`/api/v1/provenance/ledger?limit=${limit}`),
 };
 
 export const reportsApi = {

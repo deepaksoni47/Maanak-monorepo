@@ -241,6 +241,13 @@ export function createApp(options: AppOptions = {}): Express {
     ? createAdminRouter({ db: options.db })
     : adminRouter;
   app.use("/api/v1/admin", configuredAdminRouter);
+  app.use("/api/v1/dashboard", configuredAdminRouter);
+
+  // 18b. Provenance Ledger Route Alias
+  app.use("/api/v1/provenance/ledger", (req, res, next) => {
+    req.url = "/ledger/events";
+    configuredReportsRouter(req, res, next);
+  });
 
   // 19. 404 Fallback Handler
   app.use(notFoundHandler);

@@ -10,6 +10,8 @@ import {
   reviewApi,
   reportsApi,
   verifyApi,
+  dashboardApi,
+  provenanceApi,
 } from "./api.js";
 
 describe("TASK-065: Unified Live Backend API Client", () => {
@@ -28,6 +30,9 @@ describe("TASK-065: Unified Live Backend API Client", () => {
       assert.ok(instrumentsApi.classify);
       assert.ok(rulesApi.list);
       assert.ok(reviewApi.getAuditSummary);
+      assert.ok(reviewApi.getQueue);
+      assert.ok(dashboardApi.getMetrics);
+      assert.ok(provenanceApi.getLedger);
       assert.ok(reportsApi.generate);
       assert.ok(verifyApi.verifyHash);
     });

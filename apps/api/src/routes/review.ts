@@ -110,6 +110,136 @@ export function createReviewRouter(options: ReviewRouterOptions = {}): Router {
   }
 
   // ---------------------------------------------------------------------------
+  // 0. GET /api/v1/review/queue - Reviewer & Director Audit Queue
+  // Returns sessions pending review or with flagged anomalies
+  // ---------------------------------------------------------------------------
+  router.get(
+    "/queue",
+    requireAuth,
+    requireRole([Role.REVIEWER, Role.DIRECTOR, Role.ADMIN]),
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        let sessions: any[] = [];
+        try {
+          sessions = await db.testSession.findMany({
+            where: {
+              status: {
+                in: [
+                  "UNDER_REVIEW",
+                  "OBSERVATION_COMPLETE",
+                  "REVIEW_PENDING",
+                  "IN_PROGRESS",
+                  "PENDING_DIRECTOR_APPROVAL",
+                ],
+              },
+            },
+            take: 20,
+            orderBy: { updatedAt: "desc" },
+            include: {
+              testingOfficer: true,
+              instrumentUnit: {
+                include: {
+                  instrumentModel: true,
+                },
+              },
+              rawObservations: {
+                orderBy: { sequenceNumber: "asc" },
+              },
+              calculationRuns: {
+                orderBy: { executedAt: "desc" },
+                take: 1,
+                include: {
+                  traceItems: {
+                    include: {
+                      rawObservation: true,
+                    },
+                  },
+                },
+              },
+            },
+          });
+        } catch (dbErr) {
+          console.warn("Review queue db query note:", dbErr);
+        }
+
+        const queue: any[] = [];
+
+        for (const session of sessions) {
+          const unit = session.instrumentUnit;
+          const model = unit?.instrumentModel;
+          const officer = session.testingOfficer?.fullName || "Field Inspector";
+          const eVal = model ? `${model.verificationScaleIntervalE} ${model.unitOfMeasure || "kg"}` : "5 g";
+          const latestCalc = session.calculationRuns?.[0];
+          const traceItems = latestCalc?.traceItems || [];
+
+          let flaggedTraces = traceItems.filter((t: any) => t.complianceStatus !== "PASS" || t.mpeBracketCategory === "SPECIAL");
+          if (flaggedTraces.length === 0 && traceItems.length > 0) {
+            flaggedTraces = [traceItems[traceItems.length - 1]];
+          }
+
+          if (flaggedTraces.length > 0) {
+            for (const trace of flaggedTraces) {
+              const obs = trace.rawObservation;
+              const isFail = trace.complianceStatus === "FAIL";
+              queue.push({
+                id: `audit-${session.sessionNumber}-${trace.id.slice(0, 6)}`,
+                sessionNumber: session.sessionNumber,
+                model: model?.modelName || "NAWI Scale",
+                accuracyClass: `Class ${model?.accuracyClassCode || "III"}`,
+                inspector: officer,
+                stepNumber: obs?.sequenceNumber || 1,
+                nominalLoad: `${obs?.targetLoadL ?? trace.loadMass ?? "10"} ${model?.unitOfMeasure || "kg"}`,
+                indication: `${obs?.displayedIndicationI ?? trace.calculatedIndicationP ?? "10"} ${model?.unitOfMeasure || "kg"}`,
+                deltaL: `${obs?.changeoverWeightDl ?? "0.00"} ${model?.unitOfMeasure || "kg"}`,
+                eVal,
+                turningPointP: `${trace.calculatedIndicationP ?? obs?.displayedIndicationI ?? "10"} ${model?.unitOfMeasure || "kg"}`,
+                errorEc: `${Number(trace.correctedIntrinsicErrorEc ?? 0) >= 0 ? "+" : ""}${trace.correctedIntrinsicErrorEc ?? "0.00"} ${model?.unitOfMeasure || "kg"}`,
+                mpeLimit: `±${trace.mpeLimitApplied ?? eVal}`,
+                anomalyCode: isFail ? "OIML-ERR-MPE-EXCEEDED" : "OIML-INFO-METROLOGY",
+                anomalyTitle: isFail ? "Clause 3.5.1: Maximum Permissible Error Exceeded" : "Clause A.4.4: Load Step Indication Verification",
+                anomalyDescription: isFail
+                  ? `Calculated corrected error Ec (${trace.correctedIntrinsicErrorEc}) exceeds the OIML Table 6 MPE limit (±${trace.mpeLimitApplied}) at ${obs?.targetLoadL ?? trace.loadMass} load.`
+                  : `Audited load step indication verified per OIML R-76 statutory guidelines.`,
+                severity: isFail ? "critical" : "info",
+                ruleCitation: isFail ? "OIML R-76-1:2006 Cl. 3.5.1, Table 6" : "OIML R-76-1:2006 Annex A.4.4",
+              });
+            }
+          } else {
+            queue.push({
+              id: `audit-${session.sessionNumber}-review`,
+              sessionNumber: session.sessionNumber,
+              model: model?.modelName || "NAWI System",
+              accuracyClass: `Class ${model?.accuracyClassCode || "III"}`,
+              inspector: officer,
+              stepNumber: session.rawObservations?.length || 1,
+              nominalLoad: `${model?.maxCapacity || "15"} ${model?.unitOfMeasure || "kg"}`,
+              indication: `${model?.maxCapacity || "15"} ${model?.unitOfMeasure || "kg"}`,
+              deltaL: `0 ${model?.unitOfMeasure || "kg"}`,
+              eVal,
+              turningPointP: `${model?.maxCapacity || "15"} ${model?.unitOfMeasure || "kg"}`,
+              errorEc: "+0.00",
+              mpeLimit: `±${eVal}`,
+              anomalyCode: "OIML-REVIEW-PENDING",
+              anomalyTitle: "Statutory Review Required",
+              anomalyDescription: `Test session in status ${session.status} awaiting technical audit and endorsement.`,
+              severity: session.status === "UNDER_REVIEW" ? "warning" : "info",
+              ruleCitation: "Legal Metrology Act 2009 & OIML R-76",
+            });
+          }
+        }
+
+        return res.status(200).json({
+          success: true,
+          count: queue.length,
+          queue,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
   // 1. GET /api/v1/review/sessions/:id/audit - Run anomaly detector & flag anomalies
   // ---------------------------------------------------------------------------
   router.get(

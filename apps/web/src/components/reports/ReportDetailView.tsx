@@ -29,6 +29,7 @@ import {
 } from "@/components/reports/SigningPinModal";
 import { generateClientSideOimlPdf } from "@/lib/pdf-client-generator";
 import { useAuth } from "@/lib/auth-context";
+import { reportsApi } from "@/lib/api";
 
 export interface ReportDetailViewProps {
   id?: string;
@@ -36,7 +37,7 @@ export interface ReportDetailViewProps {
   initialStatus?: string;
 }
 
-const FORMS_SUMMARY = [
+const DEFAULT_FORMS_SUMMARY = [
   {
     form: "Form 1",
     title: "Weighing Performance & Hysteresis",
@@ -98,6 +99,7 @@ export function ReportDetailView({
   );
   const [isPinModalOpen, setIsPinModalOpen] = useState<boolean>(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+  const [formsSummary, setFormsSummary] = useState(DEFAULT_FORMS_SUMMARY);
 
   // Dynamic instrument specifications resolution
   const [instrumentInfo, setInstrumentInfo] = useState({
@@ -113,13 +115,58 @@ export function ReportDetailView({
   });
 
   useEffect(() => {
+    let isMounted = true;
+
+    async function loadLiveReportDetails() {
+      try {
+        const res = await reportsApi.getById(id);
+        if (isMounted && res) {
+          if (res.instrument) {
+            setInstrumentInfo({
+              model: res.instrument.model,
+              serialNumber: res.instrument.serialNumber,
+              accuracyClass: res.instrument.accuracyClass,
+              maxCapacity: res.instrument.maxCapacity,
+              e: res.instrument.verificationIntervalE,
+              d: res.instrument.actualIntervalD || res.instrument.verificationIntervalE,
+              minCapacity: res.instrument.minCapacity,
+              n: `${res.instrument.divisionCountN || 3000} divisions`,
+              certificateNumber: res.instrument.certificateNumber || `CERT-${id}`,
+            });
+          }
+          if (res.formsSummary && Array.isArray(res.formsSummary)) {
+            setFormsSummary(res.formsSummary);
+          }
+          if (res.signature) {
+            setSignature({
+              signedBy: res.signature.signerName || "Director of Legal Metrology",
+              signatoryTitle: res.signature.signerRole || "DIRECTOR",
+              issuer: "Govt of India - Directorate of Legal Metrology (e-Mudhra)",
+              algorithm: "RSA-2048 with SHA-256 (FIPS 186-4)",
+              serialNumber: res.signature.certificateSerial || "CERT-IN-2026",
+              timestampUtc: res.signature.signedAt || new Date().toISOString(),
+              signatureHash: res.signature.pdfBinaryHashSha256 || "",
+            });
+            setSessionStatus("APPROVED_LOCKED");
+          } else if (res.report?.isSigned) {
+            setSessionStatus("APPROVED_LOCKED");
+          } else if (res.session?.status) {
+            setSessionStatus(res.session.status);
+          }
+        }
+      } catch (err) {
+        console.warn("Live backend report details note:", err);
+      }
+    }
+
+    loadLiveReportDetails();
+
     if (typeof window === "undefined") return;
 
-    // Check local storage compiled reports
     try {
       const compiled = JSON.parse(localStorage.getItem("maanak_compiled_reports") || "[]");
       const match = compiled.find((r: any) => r.sessionId === id || r.id === id);
-      if (match) {
+      if (match && isMounted) {
         setInstrumentInfo((prev) => ({
           ...prev,
           model: match.instrumentModel || prev.model,
@@ -133,7 +180,7 @@ export function ReportDetailView({
       }
 
       const decisions = JSON.parse(localStorage.getItem("maanak_audit_decisions") || "{}");
-      if (decisions[id]) {
+      if (decisions[id] && isMounted) {
         const dec = decisions[id];
         setInstrumentInfo((prev) => ({
           ...prev,
@@ -148,6 +195,10 @@ export function ReportDetailView({
     } catch (e) {
       console.warn("Failed checking cached report metadata:", e);
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const { user } = useAuth();
@@ -519,7 +570,7 @@ export function ReportDetailView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700">
-                  {FORMS_SUMMARY.map((row) => (
+                  {formsSummary.map((row) => (
                     <tr key={row.form} className="hover:bg-accent/40 transition">
                       <td className="p-3 font-bold text-foreground font-mono">{row.form}</td>
                       <td className="p-3 font-medium text-foreground">{row.title}</td>
@@ -527,7 +578,7 @@ export function ReportDetailView({
                       <td className="p-3 font-mono text-foreground">{row.result}</td>
                       <td className="p-3 font-mono text-muted-foreground">{row.limit}</td>
                       <td className="p-3 text-right">
-                        <Badge variant="pass" showIcon={false} className="text-[10px] py-0 px-2 uppercase font-bold">
+                        <Badge variant={row.status === "pass" ? "pass" : "fail"} showIcon={false} className="text-[10px] py-0 px-2 uppercase font-bold">
                           {row.status}
                         </Badge>
                       </td>

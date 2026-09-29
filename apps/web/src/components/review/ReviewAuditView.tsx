@@ -145,12 +145,8 @@ function getStoredDecisions(): Array<{
 }
 
 export function ReviewAuditView() {
-  const [items, setItems] = useState<FlaggedAuditItem[]>(() => {
-    const reviewed = getReviewedSessionIds();
-    return INITIAL_AUDIT_ITEMS.filter(
-      (i) => !reviewed.has(i.id) && !reviewed.has(i.sessionNumber)
-    );
-  });
+  const [items, setItems] = useState<FlaggedAuditItem[]>(INITIAL_AUDIT_ITEMS);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [decisionsCount, setDecisionsCount] = useState<number>(0);
   const [selectedItem, setSelectedItem] = useState<FlaggedAuditItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -172,9 +168,16 @@ export function ReviewAuditView() {
     let isMounted = true;
     async function loadReviewSessions() {
       try {
+        setIsLoading(true);
         const reviewed = getReviewedSessionIds();
 
-        // 1. Fetch sessions in both UNDER_REVIEW and OBSERVATION_COMPLETE statuses from API
+        // 1. Fetch real audit queue from reviewApi
+        const queueRes = await reviewApi.getQueue().catch(() => ({ queue: [] }));
+        const queueItems: FlaggedAuditItem[] = (queueRes?.queue || []).filter(
+          (i: FlaggedAuditItem) => !reviewed.has(i.id) && !reviewed.has(i.sessionNumber)
+        );
+
+        // 2. Fetch sessions in both UNDER_REVIEW and OBSERVATION_COMPLETE statuses from API
         const [reviewRes, completeRes] = await Promise.all([
           sessionsApi.list({ status: "UNDER_REVIEW" }).catch(() => ({ sessions: [] })),
           sessionsApi.list({ status: "OBSERVATION_COMPLETE" }).catch(() => ({ sessions: [] })),
@@ -213,7 +216,7 @@ export function ReviewAuditView() {
             };
           });
 
-        // 2. Fetch offline/edge sessions from IndexedDB maanak_offline_db
+        // 3. Fetch offline/edge sessions from IndexedDB maanak_offline_db
         let offlineItems: FlaggedAuditItem[] = [];
         try {
           const cached = await getCachedSessions();
@@ -252,7 +255,7 @@ export function ReviewAuditView() {
           console.warn("IndexedDB review session load note:", err);
         }
 
-        // 3. Fetch from localStorage fast cache (maanak_audit_sessions)
+        // 4. Fetch from localStorage fast cache (maanak_audit_sessions)
         let localItems: FlaggedAuditItem[] = [];
         if (typeof window !== "undefined") {
           try {
@@ -263,34 +266,22 @@ export function ReviewAuditView() {
           } catch (e) {}
         }
 
-        // 4. Initial audit items filtered
-        const validInitial = INITIAL_AUDIT_ITEMS.filter(
-          (i) => !reviewed.has(i.id) && !reviewed.has(i.sessionNumber)
-        );
-
-        // Combine all dynamic items (local first, then offline, then API)
-        const dynamicItems = [...localItems, ...offlineItems, ...apiItems];
+        // Combine all dynamic items (queue first, then API, then offline, then local)
+        const combined = [...queueItems, ...apiItems, ...offlineItems, ...localItems];
 
         if (isMounted) {
-          setItems(() => {
-            const map = new Map<string, FlaggedAuditItem>();
-            // Prepend new submitted items
-            for (const item of dynamicItems) {
-              if (!reviewed.has(item.id) && !reviewed.has(item.sessionNumber)) {
-                map.set(item.sessionNumber, item);
-              }
+          const map = new Map<string, FlaggedAuditItem>();
+          for (const item of combined) {
+            if (!reviewed.has(item.id) && !reviewed.has(item.sessionNumber)) {
+              map.set(item.sessionNumber, item);
             }
-            // Keep existing predefined items if not superseded and not reviewed
-            for (const item of validInitial) {
-              if (!map.has(item.sessionNumber) && !reviewed.has(item.id) && !reviewed.has(item.sessionNumber)) {
-                map.set(item.sessionNumber, item);
-              }
-            }
-            return Array.from(map.values());
-          });
+          }
+          setItems(Array.from(map.values()));
         }
       } catch (err) {
         console.warn("Live review sessions load note:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     }
 

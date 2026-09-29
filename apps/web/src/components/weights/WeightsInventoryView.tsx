@@ -123,20 +123,22 @@ export function WeightsInventoryView() {
       try {
         setIsLoading(true);
         const res = await weightsApi.list();
-        if (isMounted && res?.weights && res.weights.length > 0) {
+        if (isMounted && res?.weights && Array.isArray(res.weights)) {
           const mapped: StandardWeightSet[] = res.weights.map((w: any) => {
             const cert = w.calibrationCertificates?.[0];
             const isExpired = cert?.expiryDate && new Date(cert.expiryDate) < new Date();
+            const minMass = w.nominalMassMin !== undefined ? `${w.nominalMassMin}` : "1 g";
+            const maxMass = w.nominalMassMax !== undefined ? `${w.nominalMassMax}` : "10 kg";
             return {
               id: w.id,
               code: w.identificationCode || `WS-${w.oimlClass}-01`,
               oimlClass: (w.oimlClass || "M1") as any,
-              range: w.nominalMassRange || "1 g – 10 kg",
+              range: `${minMass} – ${maxMass}`,
               nablCertNo: cert?.certificateNumber || "CC-NABL-2026-001",
-              calibratingAgency: cert?.calibratingLaboratory || w.laboratory?.name || "National Physical Laboratory",
+              calibratingAgency: cert?.calibratingAgency || cert?.calibratingLaboratory || w.laboratory?.name || "National Physical Laboratory",
               calibrationDate: cert?.calibrationDate ? new Date(cert.calibrationDate).toISOString().split("T")[0] : "2025-10-15",
               expiryDate: cert?.expiryDate ? new Date(cert.expiryDate).toISOString().split("T")[0] : "2026-10-14",
-              uncertaintyFormatted: cert?.expandedUncertaintyU ? `U ≤ ${cert.expandedUncertaintyU} kg (k=2)` : "U ≤ 0.5 mg (k=2)",
+              uncertaintyFormatted: cert?.expandedUncertaintyU ? `U ≤ ${cert.expandedUncertaintyU} ${cert.uncertaintyUnit || "mg"} (k=2)` : "U ≤ 0.5 mg (k=2)",
               status: isExpired ? "expired" : "valid",
               statusLabel: isExpired ? "EXPIRED" : "VALID",
             };
@@ -493,50 +495,70 @@ export function WeightsInventoryView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-300 dark:divide-neutral-700">
-                {filteredInventory.map((set) => (
-                  <tr key={set.id} className="hover:bg-accent/40 transition-colors group">
-                    <td className="py-4 px-5 font-mono font-bold text-foreground whitespace-nowrap">
-                      {set.code}
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-transparent text-primary border border-primary/40">
-                        Class {set.oimlClass}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 font-mono text-foreground whitespace-nowrap">
-                      {set.range}
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="font-semibold text-foreground">{set.nablCertNo}</div>
-                      <div className="text-[11px] text-muted-foreground">{set.calibratingAgency}</div>
-                    </td>
-                    <td className="py-4 px-4 font-mono text-muted-foreground whitespace-nowrap">
-                      {set.uncertaintyFormatted}
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <Badge
-                        variant={set.status === "valid" ? "pass" : "warning"}
-                        className="font-mono text-[11px]"
-                      >
-                        {set.statusLabel}
-                      </Badge>
-                      <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                        Exp: {set.expiryDate}
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <span className="text-xs">Loading standard weights repository...</span>
                       </div>
                     </td>
-                    <td className="py-4 px-5 text-right whitespace-nowrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        rightIcon={<ArrowSquareOut size={14} />}
-                        className="text-xs h-9 min-h-[48px] px-3 font-semibold"
-                        onClick={() => alert(`Inspecting calibration certificate ${set.nablCertNo}`)}
-                      >
-                        Inspect
-                      </Button>
+                  </tr>
+                ) : filteredInventory.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <ShieldCheck size={32} weight="duotone" className="text-muted-foreground/60" />
+                        <div className="text-sm font-semibold">No Reference Standard Weights Found</div>
+                        <div className="text-xs text-muted-foreground">No standard weight sets are registered in this facility repository.</div>
+                      </div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredInventory.map((set) => (
+                    <tr key={set.id} className="hover:bg-accent/40 transition-colors group">
+                      <td className="py-4 px-5 font-mono font-bold text-foreground whitespace-nowrap">
+                        {set.code}
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-transparent text-primary border border-primary/40">
+                          Class {set.oimlClass}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 font-mono text-foreground whitespace-nowrap">
+                        {set.range}
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <div className="font-semibold text-foreground">{set.nablCertNo}</div>
+                        <div className="text-[11px] text-muted-foreground">{set.calibratingAgency}</div>
+                      </td>
+                      <td className="py-4 px-4 font-mono text-muted-foreground whitespace-nowrap">
+                        {set.uncertaintyFormatted}
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <Badge
+                          variant={set.status === "valid" ? "pass" : "warning"}
+                          className="font-mono text-[11px]"
+                        >
+                          {set.statusLabel}
+                        </Badge>
+                        <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                          Exp: {set.expiryDate}
+                        </div>
+                      </td>
+                      <td className="py-4 px-5 text-right whitespace-nowrap">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          rightIcon={<ArrowSquareOut size={14} />}
+                          className="text-xs h-9 min-h-[48px] px-3 font-semibold"
+                          onClick={() => alert(`Inspecting calibration certificate ${set.nablCertNo}`)}
+                        >
+                          Inspect
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

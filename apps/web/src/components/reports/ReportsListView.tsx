@@ -136,13 +136,6 @@ export function ReportsListView() {
         }
       }
 
-      // 4. Baseline Seed Certificates (Guarantees reports are never empty)
-      REPORTS_DATA.forEach((seed) => {
-        if (!loadedReports.some((r) => r.sessionId === seed.sessionId || r.id === seed.id)) {
-          loadedReports.push(seed);
-        }
-      });
-
       // Deduplicate by reportNumber / id / sessionId
       const seen = new Set<string>();
       const deduplicated = loadedReports.filter((r) => {
