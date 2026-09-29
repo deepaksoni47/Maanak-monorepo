@@ -13,6 +13,7 @@ echo "📂 Working directory: $PROJECT_ROOT"
 
 # 2. Pull latest code from GitHub
 echo "📥 Pulling latest changes from git..."
+git checkout -- pnpm-lock.yaml 2>/dev/null || true
 git pull origin main
 
 # 3. Install dependencies using pnpm
