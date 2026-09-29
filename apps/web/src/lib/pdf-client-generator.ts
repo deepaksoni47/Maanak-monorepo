@@ -514,21 +514,22 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
     color: greenVerdict,
   });
 
-  // Footer Disclaimer
-  page.drawText("This certificate is statutorily generated and cryptographically signed under the Legal Metrology Act, 2009 & OIML R 76-2.", {
-    x: 40,
-    y: 34,
-    size: 6.5,
-    font: fontRegular,
-    color: black,
-  });
+  // Footer (Two separate lines to avoid overlap with long verification URLs)
+  page.drawText(
+    "This certificate is statutorily generated and cryptographically signed under the Legal Metrology Act, 2009 & OIML R 76-2.",
+    {
+      x: 40,
+      y: 34,
+      size: 6.5,
+      font: fontRegular,
+      color: black,
+    },
+  );
 
-  const footUrl = `Verification Portal: ${verifyUrl}`;
-  const footUrlWidth = fontMono.widthOfTextAtSize(footUrl, 6.5);
-  page.drawText(footUrl, {
-    x: width - 40 - footUrlWidth,
-    y: 34,
-    size: 6.5,
+  page.drawText(`Verification Portal: ${verifyUrl}`, {
+    x: 40,
+    y: 23,
+    size: 6.2,
     font: fontMono,
     color: black,
   });
