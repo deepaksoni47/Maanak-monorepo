@@ -28,6 +28,7 @@ import {
   type DigitalSignatureData,
 } from "@/components/reports/SigningPinModal";
 import { generateClientSideOimlPdf } from "@/lib/pdf-client-generator";
+import { useAuth } from "@/lib/auth-context";
 
 export interface ReportDetailViewProps {
   id?: string;
@@ -149,9 +150,17 @@ export function ReportDetailView({
     }
   }, [id]);
 
+  const { user } = useAuth();
+  const canSignReport = Boolean(
+    user?.role === "DIRECTOR" ||
+    user?.role === "ADMIN" ||
+    user?.role === "ROLE_ADMIN"
+  );
+
   const isApprovedLocked = sessionStatus === "APPROVED_LOCKED" || !!signature;
 
   const handleOpenPinModal = () => {
+    if (!canSignReport) return;
     setIsPinModalOpen(true);
   };
 
@@ -317,15 +326,28 @@ export function ReportDetailView({
 
           <div className="flex flex-wrap items-center gap-3">
             {!isApprovedLocked ? (
-              <Button
-                type="button"
-                onClick={handleOpenPinModal}
-                className="min-h-[48px] px-5 text-sm font-bold flex items-center gap-2 shadow-sm"
-                data-testid="sign-report-btn"
-              >
-                <Key className="h-5 w-5" weight="bold" />
-                <span>Sign &amp; Seal Report (X.509 PKI)</span>
-              </Button>
+              canSignReport ? (
+                <Button
+                  type="button"
+                  onClick={handleOpenPinModal}
+                  className="min-h-[48px] px-5 text-sm font-bold flex items-center gap-2 shadow-sm"
+                  data-testid="sign-report-btn"
+                >
+                  <Key className="h-5 w-5" weight="bold" />
+                  <span>Sign &amp; Seal Report (X.509 PKI)</span>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => triggerDownload("PDF")}
+                  className="min-h-[48px] px-4 text-xs font-bold border-border/80 hover:bg-muted/60 flex items-center gap-2"
+                  data-testid="download-draft-pdf-btn"
+                >
+                  <FilePdf className="h-5 w-5" weight="duotone" />
+                  <span>Download Draft PDF</span>
+                </Button>
+              )
             ) : (
               <div className="flex items-center gap-2">
                 <Button
@@ -632,7 +654,7 @@ export function ReportDetailView({
                   </div>
                 )}
               </div>
-            ) : (
+            ) : canSignReport ? (
               <div className="p-5 rounded-2xl bg-card border border-neutral-300 dark:border-neutral-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -653,18 +675,39 @@ export function ReportDetailView({
                   <span>Authorize &amp; Sign Report</span>
                 </Button>
               </div>
+            ) : (
+              <div className="p-5 rounded-2xl bg-card border border-neutral-300 dark:border-neutral-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <LockKey className="h-5 w-5 text-amber-500" />
+                    <span>Director Legal Metrology Signature Pending</span>
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    This OIML R 76-2 calibration certificate is pending final X.509 PKI cryptographic sealing and statutory WORM locking by Director Legal Metrology.
+                  </p>
+                </div>
+
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10 text-xs py-1.5 px-3 shrink-0"
+                >
+                  Director Authorization Required
+                </Badge>
+              </div>
             )}
           </div>
         </Card>
       </div>
 
-      {/* Director Signing PIN Modal */}
-      <SigningPinModal
-        isOpen={isPinModalOpen}
-        reportId={id}
-        onClose={() => setIsPinModalOpen(false)}
-        onSignSuccess={handleSignSuccess}
-      />
+      {/* Director Signing PIN Modal - restricted strictly to authorized signing officers */}
+      {canSignReport && (
+        <SigningPinModal
+          isOpen={isPinModalOpen}
+          reportId={id}
+          onClose={() => setIsPinModalOpen(false)}
+          onSignSuccess={handleSignSuccess}
+        />
+      )}
     </Shell>
   );
 }
