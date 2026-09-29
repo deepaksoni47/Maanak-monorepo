@@ -450,14 +450,25 @@ export async function compileOimlPdfReport(
 
   // Report Title Box (Centered)
   const repTitle = "OIML R 76-2 TEST CERTIFICATE";
+  const repTitleWidth = fontBold.widthOfTextAtSize(safeAscii(repTitle), 13);
+  const repTitleX = (PAGE_WIDTH - repTitleWidth) / 2;
   page1.drawText(repTitle, {
-    x: (PAGE_WIDTH - fontBold.widthOfTextAtSize(safeAscii(repTitle), 13)) / 2,
+    x: repTitleX,
     y,
     size: 13,
     font: fontBold,
     color: COLOR_PRIMARY,
   });
-  y -= 11;
+
+  // Underline across exact width of title
+  page1.drawLine({
+    start: { x: repTitleX, y: y - 2.5 },
+    end: { x: repTitleX + repTitleWidth, y: y - 2.5 },
+    thickness: 0.8,
+    color: COLOR_PRIMARY,
+  });
+
+  y -= 12;
   const repSubtitle = "NON-AUTOMATIC WEIGHING INSTRUMENT METROLOGICAL EVALUATION";
   page1.drawText(repSubtitle, {
     x: (PAGE_WIDTH - fontBold.widthOfTextAtSize(safeAscii(repSubtitle), 8)) / 2,

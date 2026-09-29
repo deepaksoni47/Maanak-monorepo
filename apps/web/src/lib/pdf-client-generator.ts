@@ -230,18 +230,28 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
   // ---------------------------------------------------------------------------
   let y = height - 128;
   const certTitle = "OIML R 76-2 STATUTORY TEST CERTIFICATE";
+  const certTitleWidth = fontBold.widthOfTextAtSize(certTitle, 11);
+  const certTitleX = (width - certTitleWidth) / 2;
   page.drawText(certTitle, {
-    x: (width - fontBold.widthOfTextAtSize(certTitle, 11)) / 2,
+    x: certTitleX,
     y: y,
     size: 11,
     font: fontBold,
     color: black,
   });
 
+  // Underline across exact width of title
+  page.drawLine({
+    start: { x: certTitleX, y: y - 2.5 },
+    end: { x: certTitleX + certTitleWidth, y: y - 2.5 },
+    thickness: 0.8,
+    color: black,
+  });
+
   const certSubtitle = "NON-AUTOMATIC WEIGHING INSTRUMENT (NAWI) METROLOGICAL EVALUATION";
   page.drawText(certSubtitle, {
     x: (width - fontRegular.widthOfTextAtSize(certSubtitle, 7.5)) / 2,
-    y: y - 11,
+    y: y - 12,
     size: 7.5,
     font: fontRegular,
     color: black,
