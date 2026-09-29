@@ -243,44 +243,38 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
   });
 
   y -= 25;
-  // Metadata Bar (Black border only, no background color)
-  page.drawRectangle({
-    x: 40,
-    y: y - 18,
-    width: width - 80,
-    height: 18,
-    borderColor: black,
-    borderWidth: 0.8,
-  });
-
+  // Metadata (Two clean lines without box to avoid overlapping long UUIDs / identifiers)
   page.drawText(`Certificate No: ${data.reportNumber}`, {
-    x: 48,
-    y: y - 12,
+    x: 40,
+    y: y,
     size: 8,
     font: fontMonoBold,
     color: black,
   });
 
-  page.drawText(`Test Session: ${data.sessionId}`, {
-    x: 235,
-    y: y - 12,
+  const issueDateStr = `Date Issued: ${data.issueDate || new Date().toISOString().split("T")[0]}`;
+  const issueDateWidth = fontRegular.widthOfTextAtSize(issueDateStr, 8);
+  page.drawText(issueDateStr, {
+    x: width - 40 - issueDateWidth,
+    y: y,
     size: 8,
-    font: fontMono,
+    font: fontRegular,
     color: black,
   });
 
-  page.drawText(`Date Issued: ${data.issueDate || new Date().toISOString().split("T")[0]}`, {
-    x: 420,
-    y: y - 12,
+  y -= 12;
+  page.drawText(`Test Session ID: ${data.sessionId}`, {
+    x: 40,
+    y: y,
     size: 8,
-    font: fontRegular,
+    font: fontMono,
     color: black,
   });
 
   // ---------------------------------------------------------------------------
   // E. Section 1: Instrument Under Test (IUT) Specifications
   // ---------------------------------------------------------------------------
-  y -= 32;
+  y -= 20;
   page.drawText("1. INSTRUMENT VERIFICATION SPECIFICATIONS", {
     x: 40,
     y: y,
@@ -337,7 +331,7 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
   page.drawText(data.instrument.n, { x: midCol + 95, y: specY, size: 8, font: fontMono, color: black });
 
   // ---------------------------------------------------------------------------
-  // F. Section 2: Verification Battery Summary (Black Border Table Only)
+  // F. Section 2: Verification Battery Summary (Black Border Table with Vertical Column Dividers)
   // ---------------------------------------------------------------------------
   y = y - specBoxHeight - 18;
   page.drawText("2. OIML R-76 ANNEX A TEST BATTERY SUMMARY", {
@@ -360,11 +354,22 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
     borderWidth: 1.0,
   });
 
-  page.drawText("Test Form & Clause", { x: 48, y: tableHeaderY - 13, size: 7.5, font: fontBold, color: black });
-  page.drawText("Examination Scope", { x: 170, y: tableHeaderY - 13, size: 7.5, font: fontBold, color: black });
-  page.drawText("Measured Value", { x: 330, y: tableHeaderY - 13, size: 7.5, font: fontBold, color: black });
-  page.drawText("Statutory Limit", { x: 440, y: tableHeaderY - 13, size: 7.5, font: fontBold, color: black });
-  page.drawText("Verdict", { x: 518, y: tableHeaderY - 13, size: 7.5, font: fontBold, color: black });
+  // Vertical column dividers for header
+  const colDividers = [145, 280, 425, 508];
+  colDividers.forEach((divX) => {
+    page.drawLine({
+      start: { x: divX, y: tableHeaderY },
+      end: { x: divX, y: tableHeaderY - 18 },
+      thickness: 0.8,
+      color: black,
+    });
+  });
+
+  page.drawText("Test Form & Clause", { x: 45, y: tableHeaderY - 13, size: 7.5, font: fontBold, color: black });
+  page.drawText("Examination Scope", { x: 150, y: tableHeaderY - 13, size: 7.5, font: fontBold, color: black });
+  page.drawText("Measured Value", { x: 285, y: tableHeaderY - 13, size: 7.5, font: fontBold, color: black });
+  page.drawText("Statutory Limit", { x: 430, y: tableHeaderY - 13, size: 7.5, font: fontBold, color: black });
+  page.drawText("Verdict", { x: 519, y: tableHeaderY - 13, size: 7.5, font: fontBold, color: black });
 
   const testRows = [
     { form: "Form 1 (Clause A.4.4)", scope: "Weighing Performance & Hysteresis", val: "Max error +1.15e @ 15 kg", limit: "+/-1.50e", pass: true },
@@ -388,22 +393,32 @@ export async function generateClientSideOimlPdf(data: ClientPdfReportData): Prom
       borderWidth: 0.5,
     });
 
-    page.drawText(r.form, { x: 48, y: rowY + 5.5, size: 7, font: fontBold, color: black });
-    page.drawText(r.scope, { x: 170, y: rowY + 5.5, size: 7, font: fontRegular, color: black });
-    page.drawText(r.val, { x: 330, y: rowY + 5.5, size: 7, font: fontMono, color: black });
-    page.drawText(r.limit, { x: 440, y: rowY + 5.5, size: 7, font: fontMono, color: black });
+    // Vertical column dividers for each row
+    colDividers.forEach((divX) => {
+      page.drawLine({
+        start: { x: divX, y: rowY + 19 },
+        end: { x: divX, y: rowY },
+        thickness: 0.5,
+        color: black,
+      });
+    });
+
+    page.drawText(r.form, { x: 45, y: rowY + 5.5, size: 7, font: fontBold, color: black });
+    page.drawText(r.scope, { x: 150, y: rowY + 5.5, size: 6.8, font: fontRegular, color: black });
+    page.drawText(r.val, { x: 285, y: rowY + 5.5, size: 6.5, font: fontMono, color: black });
+    page.drawText(r.limit, { x: 430, y: rowY + 5.5, size: 6.5, font: fontMono, color: black });
 
     // Verdict Badge: Black border, text in green/red (NO background fill)
     page.drawRectangle({
-      x: 512,
-      y: rowY + 2.5,
-      width: 38,
-      height: 14,
+      x: 514,
+      y: rowY + 3,
+      width: 36,
+      height: 13,
       borderColor: r.pass ? greenVerdict : redVerdict,
       borderWidth: 0.8,
     });
     page.drawText(r.pass ? "PASS" : "FAIL", {
-      x: 522,
+      x: r.pass ? 523 : 524,
       y: rowY + 5.5,
       size: 7,
       font: fontBold,
