@@ -52,3 +52,7 @@ uploads/
 **/uploads/
 reports_storage/
 **/reports_storage/
+
+# Deployment Guides
+AWS_FREE_TIER_DEPLOYMENT_GUIDE.md
+
