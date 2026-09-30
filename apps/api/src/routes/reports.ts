@@ -948,7 +948,7 @@ export function createApproveAndSignHandler(options: {
             reviewStage: "DIRECTOR_APPROVAL",
             decision: "APPROVED_AND_LOCKED",
             comments: `Director digital approval and X.509 sign-off completed. Certificate statutorily locked. Final closure hash: ${hashFinal}`,
-            automatedAnomalyFlags: [],
+            automatedAnomalyFlagsJson: [],
           },
         });
 

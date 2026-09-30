@@ -612,7 +612,7 @@ export function createSessionsRouter(
               decision: "PENDING_REVIEW",
               comments:
                 validated.comments || "Session submitted for technical review.",
-              automatedAnomalyFlags: [],
+              automatedAnomalyFlagsJson: [],
             },
           });
         } else if (nextStatus === "RETURNED_TO_OFFICER") {
@@ -627,7 +627,7 @@ export function createSessionsRouter(
               reviewStage: "SECOND_LEVEL_REVIEW",
               decision: "FLAGGED_FOR_CORRECTION",
               comments: formattedComments,
-              automatedAnomalyFlags: [],
+              automatedAnomalyFlagsJson: [],
             },
           });
         }

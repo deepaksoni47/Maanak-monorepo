@@ -53,6 +53,17 @@ uploads/
 reports_storage/
 **/reports_storage/
 
-# Deployment Guides
+# Internal Documentation, Memory & Agent Assets
+docs/
+docs/**
+MEMORY.md
 AWS_FREE_TIER_DEPLOYMENT_GUIDE.md
+.agents/
 
+# Restrict all Markdown documentation except README
+*.md
+!README.md
+!README*.md
+**/*.md
+!**/README.md
+!**/README*.md
