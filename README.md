@@ -58,35 +58,48 @@ Presently, pattern evaluation at designated national laboratories (e.g., RRSLs, 
 MAANAK was engineered specifically for statutory metrologists, RRSL testing officers, and the Department of Consumer Affairs. It is **not** a generic questionnaire or CRUD interface. It is a full-fledged **Metrological Operating System**:
 
 ```mermaid
-flowchart TB
-    subgraph CLIENT["Client & Bench Execution Layer"]
-        WEB["Next.js 16 Executive Web Portal<br/>(Dashboard, Technical Reviewer Audit, Director Sign-Off)"]
-        PWA["Offline-First Benchtop PWA<br/>(IndexedDB / SQLite WASM for Shielded Chambers)"]
+flowchart TD
+    classDef client fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef gateway fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
+    classDef engine fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#6b21a8;
+    classDef data fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#15803d;
+    classDef report fill:#ffe4e6,stroke:#e11d48,stroke-width:2px,color:#be123c;
+
+    subgraph CLIENT["1. Client & Field Execution Layer"]
+        WEB["Desktop / Tablet Web Portal<br/>(Reviewer Audit & Director Sign-Off)"]:::client
+        PWA["Offline Benchtop PWA<br/>(Shielded Labs & Weighbridges)"]:::client
     end
 
-    subgraph GATEWAY["API Gateway & Security Layer (apps/api)"]
-        API["Node.js LTS REST API Engine"]
-        SEC["Strict 3-Tier RBAC, Argon2id & JWT Authentication"]
-        TENANT["Multi-Tenant Isolation (RRSLs & Designated Labs)"]
+    subgraph GATEWAY["2. Secure API Gateway (apps/api)"]
+        API["Node.js LTS REST API Engine<br/>• Multi-Tenant Lab Isolation (RRSLs)<br/>• 3-Tier RBAC (Inspector / Reviewer / Director)"]:::gateway
     end
 
-    subgraph ENGINES["Modular Metrology Engine Ecosystem"]
-        direction TB
-        STANDARDS["Standards-as-Code Engine (@maanak/rules-engine)<br/>• Versioned OIML JSON Rule Packs (Zero Downtime Updates)<br/>• Table 3 Accuracy Classification (Class I, II, III, IIII)<br/>• Dynamic Multi-Interval Range Switching (e1, e2, e3)"]
-        MATH["100% Deterministic Metrology Core (@maanak/rules-engine)<br/>• Fixed-Point Arbitrary-Precision decimal.js (Zero Black-Box AI)<br/>• Live NABL 129 U <= 1/3 MPE Uncertainty Gatekeeper<br/>• Thermal Drift Rate Validation (<= 5.0 K/h)"]
-        REPORT["Dual Report Compilation Engine (@maanak/report-generator)<br/>• Pixel-Perfect OIML R 76-2 Official PDF (@pdf-lib)<br/>• Fully Editable Microsoft Word (.docx) Archive<br/>• High-Resolution Vector Error Curves & MPE Envelopes"]
+    subgraph CORE["3. Metrology Core & Standards-as-Code"]
+        RULES["Standards-as-Code Engine (@maanak/rules-engine)<br/>• Versioned OIML JSON Rule Packs<br/>• Table 3 Classification & Table 6 MPE Brackets"]:::engine
+        CALC["100% Deterministic Math Engine (@maanak/rules-engine)<br/>• Fixed-Point decimal.js (Zero Black-Box AI)<br/>• Live NABL 129 Uncertainty Gatekeeper"]:::engine
     end
 
-    subgraph PERSISTENCE["Cryptographic Provenance & Persistence Layer"]
-        DB[("PostgreSQL 16 Central Store<br/>(Prisma ORM, NUMERIC 16,8 Metrological Precision)")]
-        WELMEC["WELMEC 7.2 Cryptographic Hash Graph (@maanak/crypto-provenance)<br/>• Immutable SHA-256 Merkle Chaining Across Observations<br/>• Instant Detection of Row-Level Database Tampering"]
-        PKI["X.509 PKI Digital Signer & QR Verification Gateway<br/>• Director Cryptographic Sign-Off & Statutory Lock<br/>• Public Tamper-Evident QR Code Verification Portal"]
+    subgraph PROVENANCE["4. Data & Legal Provenance Layer"]
+        DB[("PostgreSQL 16 Central Store<br/>NUMERIC 16,8 Metrological Fields")]:::data
+        CHAIN["WELMEC 7.2 Hash Graph & PKI (@maanak/crypto-provenance)<br/>• Immutable SHA-256 Observation Chaining<br/>• X.509 PKI Digital Signer & QR Verifier"]:::data
     end
 
-    CLIENT -->|"HTTPS / TLS 1.3 / REST API / Zod"| GATEWAY
-    GATEWAY -->|"Orchestrates Metrological Workflow"| ENGINES
-    ENGINES -->|"Streams Validated Observations & Nodes"| PERSISTENCE
-    PERSISTENCE -.->|"Supplies Signed Data for Compilation"| REPORT
+    subgraph OUTPUT["5. Statutory Report Output"]
+        DOCS["Report Generator Engine (@maanak/report-generator)<br/>• Pixel-Perfect OIML R 76-2 Official PDF<br/>• Fully Editable Microsoft Word .docx Archive"]:::report
+    end
+
+    WEB -->|"HTTPS / REST"| API
+    PWA -->|"Sync / Conflict Queue"| API
+
+    API -->|"Execute Rule Pack"| RULES
+    RULES -->|"Compute P, E, Ec, MPE"| CALC
+
+    CALC -->|"Persist Observations"| DB
+    CALC -->|"Chained Audit Event"| CHAIN
+    CHAIN -->|"Cryptographic Seal"| DB
+
+    DB -->|"Export Certified Data"| DOCS
+    CHAIN -->|"Embedded PKI Signature & QR"| DOCS
 ```
 
 ### 🌟 Key Differentiators:
