@@ -247,6 +247,7 @@ export default function HomePage() {
                   "Enter model details and capacity. The system automatically verifies scale division limits (n = Max/e).",
                 highlight: "Auto n-verification",
                 tag: "OIML R-76",
+                objectFit: "contain" as const,
               },
               {
                 stepNumber: "02",
@@ -287,12 +288,18 @@ export default function HomePage() {
                 className="group rounded-xs bg-card border border-neutral-300 dark:border-neutral-700 overflow-hidden flex flex-col transition-all duration-300 hover:shadow-md hover:border-primary/50 shadow-xs"
               >
                 {/* Flow Illustration Header */}
-                <div className="relative aspect-[16/10] w-full bg-neutral-100 dark:bg-neutral-900 overflow-hidden border-b border-neutral-200 dark:border-neutral-800">
+                <div className="relative aspect-[16/10] w-full bg-neutral-900 overflow-hidden border-b border-neutral-200 dark:border-neutral-800">
                   <Image
                     src={step.image}
                     alt={step.alt}
                     fill
-                    className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className={cn(
+                      "transition-transform duration-500 ease-out group-hover:scale-105",
+                      step.objectFit === "contain"
+                        ? "object-contain p-1.5"
+                        : "object-cover object-center"
+                    )}
                   />
                   {/* Step Number Badge */}
                   <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-background/95 backdrop-blur-md border border-neutral-300 dark:border-neutral-700 text-[11px] font-bold text-foreground font-mono shadow-xs">
