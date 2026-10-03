@@ -259,6 +259,7 @@ export default function HomePage() {
                   "Picks certified test weights and checks uncertainty. Blocks testing if reference weights are not accurate enough.",
                 highlight: "NABL 129 Gatekeeper",
                 tag: "Class E2–M1",
+                objectFit: "contain" as const,
               },
               {
                 stepNumber: "03",
