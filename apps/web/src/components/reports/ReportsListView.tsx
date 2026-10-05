@@ -390,7 +390,7 @@ export function ReportsListView() {
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link href={`/verify/${item.sha256Hash.slice(0, 16)}`}>
+                            <Link href={`/verify/${item.sessionId || item.sha256Hash}`}>
                               <Button
                                 variant="outline"
                                 size="sm"
