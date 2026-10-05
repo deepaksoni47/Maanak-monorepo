@@ -4,8 +4,11 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Globe, MapTrifold, PaperPlaneTilt } from "@phosphor-icons/react";
+import { useLanguage } from "@/lib/language-context";
 
 export function Footer() {
+  const { dict } = useLanguage();
+
   return (
     <footer className="bg-primary text-primary-foreground py-10 sm:py-12 border-t border-primary/20 shadow-inner">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,29 +34,29 @@ export function Footer() {
             </div>
           </div>
           <p className="text-xs sm:text-sm text-white/85 font-medium max-w-2xl">
-            Department of Consumer Affairs • Ministry of Consumer Affairs, Food &amp; Public Distribution • Government of India
+            {dict.footer.ministry}
           </p>
         </div>
 
         {/* Tier 2: Centered Navigation Links & Quick Action Badges */}
         <div className="py-6 flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 gap-y-3.5 text-xs sm:text-sm font-medium text-white/90">
           <Link href="/" className="hover:text-white hover:underline underline-offset-4 transition-all">
-            Home
+            {dict.nav.home}
           </Link>
           <Link href="/dashboard" className="hover:text-white hover:underline underline-offset-4 transition-all">
-            Console
+            {dict.nav.dashboard}
           </Link>
           <Link href="/bench" className="hover:text-white hover:underline underline-offset-4 transition-all">
             Bench Testing
           </Link>
           <Link href="/instruments" className="hover:text-white hover:underline underline-offset-4 transition-all">
-            Instruments
+            {dict.nav.instruments}
           </Link>
           <Link href="/reports" className="hover:text-white hover:underline underline-offset-4 transition-all">
-            Reports
+            {dict.nav.reports}
           </Link>
           <Link href="/verify" className="hover:text-white hover:underline underline-offset-4 transition-all">
-            Public Verification
+            {dict.nav.verifyReport}
           </Link>
 
           {/* Centered Site Map & Feedback Action Badges */}
@@ -62,20 +65,20 @@ export function Footer() {
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xs border border-white/40 bg-white/10 text-white hover:bg-white/25 transition-all text-xs font-semibold shadow-xs"
           >
             <MapTrifold size={14} weight="bold" />
-            <span>Site Map</span>
+            <span>{dict.footer.siteMap}</span>
           </Link>
           <Link
             href="/verify"
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xs text-white/90 hover:text-white transition-all text-xs font-semibold"
           >
             <PaperPlaneTilt size={14} weight="bold" />
-            <span>Feedback</span>
+            <span>{dict.footer.feedback}</span>
           </Link>
         </div>
 
         {/* Tier 3: Centered Suggestions & Public Channel Icons */}
         <div className="flex flex-col items-center justify-center gap-2.5 pb-6 text-center">
-          <span className="text-xs text-white/80 font-medium">Have suggestions?</span>
+          <span className="text-xs text-white/80 font-medium">{dict.footer.suggestions}</span>
           <div className="flex items-center justify-center gap-3">
             <a
               href="https://consumeraffairs.nic.in"
@@ -116,7 +119,7 @@ export function Footer() {
         {/* Tier 4: Centered Copyright & Standards Strip */}
         <div className="pt-5 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/80 text-center sm:text-left">
           <p className="max-w-2xl leading-relaxed">
-            Copyright © 2026 MAANAK. All rights reserved | Designed &amp; Developed for Statutory Verification under Section 22 of the Legal Metrology Act, 2009 &amp; Legal Metrology Rules.
+            {dict.footer.copyright}
           </p>
           <div className="flex items-center justify-center gap-2 text-[11px] font-mono shrink-0">
             <span className="px-2 py-0.5 rounded-xs bg-white/15 border border-white/20 text-white font-semibold">

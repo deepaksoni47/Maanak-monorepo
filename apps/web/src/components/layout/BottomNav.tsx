@@ -11,18 +11,20 @@ import {
   QrCode,
 } from "@phosphor-icons/react";
 
+import { useLanguage } from "@/lib/language-context";
+
 export interface BottomNavItem {
-  label: string;
+  labelKey: keyof typeof import("@/lib/translations").translations.en.nav;
   href: string;
   icon: React.ComponentType<{ size?: number; weight?: "bold" | "regular" | "duotone" | "fill"; className?: string }>;
 }
 
 export const LANDING_BOTTOM_NAV_ITEMS: BottomNavItem[] = [
-  { label: "Home", href: "/", icon: House },
-  { label: "Dashboard", href: "/dashboard", icon: ChartLineUp },
-  { label: "Instruments", href: "/instruments", icon: Scales },
-  { label: "Reports", href: "/reports", icon: FileText },
-  { label: "Verify", href: "/verify", icon: QrCode },
+  { labelKey: "home", href: "/", icon: House },
+  { labelKey: "dashboard", href: "/dashboard", icon: ChartLineUp },
+  { labelKey: "instruments", href: "/instruments", icon: Scales },
+  { labelKey: "reports", href: "/reports", icon: FileText },
+  { labelKey: "verifyReport", href: "/verify", icon: QrCode },
 ];
 
 export interface BottomNavProps {
@@ -35,6 +37,7 @@ export interface BottomNavProps {
  */
 export function BottomNav({ className = "" }: BottomNavProps) {
   const pathname = usePathname() || "/";
+  const { dict } = useLanguage();
 
   return (
     <nav
@@ -48,6 +51,7 @@ export function BottomNav({ className = "" }: BottomNavProps) {
             item.href === "/"
               ? pathname === "/"
               : pathname.startsWith(item.href);
+          const label = dict.nav[item.labelKey] || item.labelKey;
 
           return (
             <Link
@@ -71,7 +75,7 @@ export function BottomNav({ className = "" }: BottomNavProps) {
                   isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                 }`}
               />
-              <span className="text-[10px] tracking-tight leading-none">{item.label}</span>
+              <span className="text-[10px] tracking-tight leading-none">{label}</span>
             </Link>
           );
         })}

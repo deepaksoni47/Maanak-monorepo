@@ -27,39 +27,42 @@ import {
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Navbar, Footer } from "@/components/layout";
-
-// Carousel Banners Metadata
-const CAROUSEL_SLIDES = [
-  {
-    src: "/assets/carousel/Banner1b.d80b8a0b4ce3d22c648e.jpg",
-    alt: "MAANAK Legal Metrology Banner 1",
-    badge: "OIML R-76 Statutory Workbench",
-    title: "Automated Non-Automatic Weighing Instrument Testing",
-    subtitle: "Government of India Legal Metrology Portal under Section 22 of the Legal Metrology Act, 2009.",
-    primaryAction: { label: "Open Testing Console", href: "/dashboard" },
-    secondaryAction: { label: "Verify Certificate", href: "/verify" },
-  },
-  {
-    src: "/assets/carousel/Banner2b.bf77a947cab6007a419a.jpg",
-    alt: "MAANAK Legal Metrology Banner 2",
-    badge: "NABL 129 Standard Weights Gatekeeper",
-    title: "Precision Error Calculation & Class I–IIII Evaluation",
-    subtitle: "Zero-error turning point calculations, MPE compliance enforcement, and real-time tolerance safety margins.",
-    primaryAction: { label: "Start Test Battery", href: "/bench" },
-    secondaryAction: { label: "Standard Weights", href: "/weights" },
-  },
-  {
-    src: "/assets/carousel/Banner3b.48c75ac3c59b300d3193.jpg",
-    alt: "MAANAK Legal Metrology Banner 3",
-    badge: "Cryptographic Merkle Provenance",
-    title: "Tamper-Evident Digital Certificates & QR Verification",
-    subtitle: "Every observation is cryptographically sealed with SHA-256 Merkle provenance chains and e-Sign PIN authorization.",
-    primaryAction: { label: "Public QR Verification", href: "/verify" },
-    secondaryAction: { label: "View Reports", href: "/reports" },
-  },
-];
+import { useLanguage } from "@/lib/language-context";
 
 export default function HomePage() {
+  const { dict } = useLanguage();
+
+  // Carousel Banners Metadata dynamically bound to language context
+  const CAROUSEL_SLIDES = [
+    {
+      src: "/assets/carousel/Banner1b.d80b8a0b4ce3d22c648e.jpg",
+      alt: "MAANAK Legal Metrology Banner 1",
+      badge: dict.carousel.slide1.badge,
+      title: dict.carousel.slide1.title,
+      subtitle: dict.carousel.slide1.subtitle,
+      primaryAction: { label: dict.carousel.slide1.primaryBtn, href: "/dashboard" },
+      secondaryAction: { label: dict.carousel.slide1.secondaryBtn, href: "/verify" },
+    },
+    {
+      src: "/assets/carousel/Banner2b.bf77a947cab6007a419a.jpg",
+      alt: "MAANAK Legal Metrology Banner 2",
+      badge: dict.carousel.slide2.badge,
+      title: dict.carousel.slide2.title,
+      subtitle: dict.carousel.slide2.subtitle,
+      primaryAction: { label: dict.carousel.slide2.primaryBtn, href: "/bench" },
+      secondaryAction: { label: dict.carousel.slide2.secondaryBtn, href: "/weights" },
+    },
+    {
+      src: "/assets/carousel/Banner3b.48c75ac3c59b300d3193.jpg",
+      alt: "MAANAK Legal Metrology Banner 3",
+      badge: dict.carousel.slide3.badge,
+      title: dict.carousel.slide3.title,
+      subtitle: dict.carousel.slide3.subtitle,
+      primaryAction: { label: dict.carousel.slide3.primaryBtn, href: "/verify" },
+      secondaryAction: { label: dict.carousel.slide3.secondaryBtn, href: "/reports" },
+    },
+  ];
+
   // Simple interactive demonstration for load evaluation
   const [selectedLoad, setSelectedLoad] = useState<number>(2.5); // 2.5 kg = 500e for Class III (e=5g)
   const [currentSlide, setCurrentSlide] = useState<number>(0);
@@ -72,7 +75,7 @@ export default function HomePage() {
       setCurrentSlide((prev) => (prev + 1) % CAROUSEL_SLIDES.length);
     }, 5500);
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, CAROUSEL_SLIDES.length]);
 
   const handlePrevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + CAROUSEL_SLIDES.length) % CAROUSEL_SLIDES.length);
@@ -226,12 +229,12 @@ export default function HomePage() {
       <section className="py-14 lg:py-20 border-y border-border/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-2 mb-12 lg:mb-14">
-            <span className="text-xs font-bold uppercase tracking-wider text-primary">Simple 4-Step Process</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-primary">{dict.landing.workflowTitle}</span>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              How a test session works
+              {dict.landing.workflowTitle}
             </h2>
             <p className="text-sm text-muted-foreground">
-              From scale intake to digitally signed certificate in minutes.
+              {dict.landing.workflowSubtitle}
             </p>
           </div>
 
@@ -239,45 +242,41 @@ export default function HomePage() {
             {[
               {
                 stepNumber: "01",
-                title: "Scale Intake",
+                title: dict.landing.step1Title,
                 image: "/assets/flow/scale_intake.png",
                 alt: "Step 1: Scale Intake & Division Verification",
                 icon: Scales,
-                description:
-                  "Enter model details and capacity. The system automatically verifies scale division limits (n = Max/e).",
+                description: dict.landing.step1Desc,
                 highlight: "Auto n-verification",
                 tag: "OIML R-76",
               },
               {
                 stepNumber: "02",
-                title: "Weight Check",
+                title: dict.landing.step2Title,
                 image: "/assets/flow/weight-check.png",
                 alt: "Step 2: Reference Standard Weight Selection",
                 icon: ShieldCheck,
-                description:
-                  "Picks certified test weights and checks uncertainty. Blocks testing if reference weights are not accurate enough.",
+                description: dict.landing.step2Desc,
                 highlight: "NABL 129 Gatekeeper",
                 tag: "Class E2–M1",
               },
               {
                 stepNumber: "03",
-                title: "Log Readings",
+                title: dict.landing.step3Title,
                 image: "/assets/flow/Log Readings.png",
                 alt: "Step 3: Log Turning Point & Small Weight Observations",
                 icon: Flask,
-                description:
-                  "Enter reading and small changeover weights on tablet or phone. Pre-rounding error is calculated instantly.",
+                description: dict.landing.step3Desc,
                 highlight: "Zero-error Turn Points",
                 tag: "Live MPE",
               },
               {
                 stepNumber: "04",
-                title: "Sign & Export",
+                title: dict.landing.step4Title,
                 image: "/assets/flow/sign-report.png",
                 alt: "Step 4: Tamper-evident Digital Signature & QR Certificate",
                 icon: FilePdf,
-                description:
-                  "Review automated derivation trees, apply digital signature, and export official OIML PDF with verification QR.",
+                description: dict.landing.step4Desc,
                 highlight: "Merkle Provenance",
                 tag: "QR Verify",
               },
