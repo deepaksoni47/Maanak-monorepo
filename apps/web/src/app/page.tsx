@@ -271,6 +271,7 @@ export default function HomePage() {
                   "Enter reading and small changeover weights on tablet or phone. Pre-rounding error is calculated instantly.",
                 highlight: "Zero-error Turn Points",
                 tag: "Live MPE",
+                objectFit: "contain" as const,
               },
               {
                 stepNumber: "04",
