@@ -49,8 +49,8 @@ const CAROUSEL_SLIDES = [
     secondaryAction: { label: "Standard Weights", href: "/weights" },
   },
   {
-    src: "/assets/carousel/Banner3b.48c75ac3c59b300d3193.jpg",
-    alt: "MAANAK Legal Metrology Banner 3",
+    src: "/assets/carousel/Banner3b.png",
+    alt: "MAANAK Legal Metrology Banner 3 - Verification Workflow & Certificate",
     badge: "Cryptographic Merkle Provenance",
     title: "Tamper-Evident Digital Certificates & QR Verification",
     subtitle: "Every observation is cryptographically sealed with SHA-256 Merkle provenance chains and e-Sign PIN authorization.",
