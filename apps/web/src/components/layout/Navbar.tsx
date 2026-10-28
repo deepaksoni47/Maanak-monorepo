@@ -12,6 +12,7 @@ import {
   SignOut,
 } from "@phosphor-icons/react";
 import { useAuth } from "@/lib/auth-context";
+import { useLanguage } from "@/lib/language-context";
 import { BottomNav } from "./BottomNav";
 
 export interface NavbarProps {
@@ -20,15 +21,14 @@ export interface NavbarProps {
 
 export function Navbar({ showMobileBottomNav }: NavbarProps) {
   const pathname = usePathname() || "/";
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("English");
+  const { language, setLanguage, dict } = useLanguage();
   const { user, isAuthenticated, logout } = useAuth();
 
-  // Desktop navigation links - redundant "Verify" and internal "Bench Testing" removed to prevent horizontal scroll
   const NAV_LINKS = [
-    { label: "Home", href: "/" },
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Instruments", href: "/instruments" },
-    { label: "Reports", href: "/reports" },
+    { label: dict.nav.home, href: "/" },
+    { label: dict.nav.dashboard, href: "/dashboard" },
+    { label: dict.nav.instruments, href: "/instruments" },
+    { label: dict.nav.reports, href: "/reports" },
   ];
 
   const shouldShowBottomNav =
@@ -40,8 +40,8 @@ export function Navbar({ showMobileBottomNav }: NavbarProps) {
         {/* Tier 1: Department of Consumer Affairs Government Utility Bar */}
         <div className="bg-slate-100 dark:bg-slate-900 border-b border-border/80 px-3 sm:px-6 py-1 flex items-center justify-between text-[11px] sm:text-xs gap-2">
           <span className="font-bold tracking-wider text-slate-800 dark:text-slate-200 uppercase truncate">
-            <span className="sm:hidden">DCA | GOVT OF INDIA</span>
-            <span className="hidden sm:inline">DEPARTMENT OF CONSUMER AFFAIRS | GOVERNMENT OF INDIA</span>
+            <span className="sm:hidden">{dict.nav.deptNameShort}</span>
+            <span className="hidden sm:inline">{dict.nav.deptNameFull}</span>
           </span>
 
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
@@ -49,7 +49,7 @@ export function Navbar({ showMobileBottomNav }: NavbarProps) {
               href="#main-content"
               className="hidden md:inline-flex items-center rounded-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
-              Skip to Main
+              {dict.nav.skipToMain}
             </a>
 
             {/* Accessibility Icon */}
@@ -67,13 +67,13 @@ export function Navbar({ showMobileBottomNav }: NavbarProps) {
             {/* Language Selector */}
             <div className="relative inline-flex items-center">
               <select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                aria-label="Select Language"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as "en" | "hi")}
+                aria-label={dict.nav.selectLanguage}
                 className="bg-transparent text-[10px] sm:text-xs font-semibold text-slate-800 dark:text-slate-200 pr-4 sm:pr-5 py-0.5 rounded-xs cursor-pointer border-none focus:outline-none focus:ring-1 focus:ring-primary appearance-none"
               >
-                <option value="English" className="bg-background text-foreground">English</option>
-                <option value="Hindi" className="bg-background text-foreground">हिन्दी (Hindi)</option>
+                <option value="en" className="bg-background text-foreground">English</option>
+                <option value="hi" className="bg-background text-foreground">हिन्दी (Hindi)</option>
               </select>
               <CaretDown size={11} weight="bold" className="absolute right-0 pointer-events-none text-slate-600 dark:text-slate-300" />
             </div>
@@ -114,13 +114,13 @@ export function Navbar({ showMobileBottomNav }: NavbarProps) {
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    <span className="font-extrabold text-lg sm:text-xl tracking-tight text-foreground leading-none">MAANAK</span>
+                    <span className="font-extrabold text-lg sm:text-xl tracking-tight text-foreground leading-none">{dict.nav.portalName}</span>
                     <span className="hidden md:inline font-semibold text-[10px] sm:text-[11px] text-amber-600 dark:text-amber-500 bg-amber-500/10 px-1.5 py-0.2 rounded-xs border border-amber-500/20">
                       मानक
                     </span>
                   </div>
                   <span className="text-[10px] sm:text-[11px] text-muted-foreground font-medium hidden md:inline leading-tight mt-0.5">
-                    Legal Metrology Testing Portal
+                    {dict.nav.portalSub}
                   </span>
                 </div>
               </div>
@@ -168,7 +168,7 @@ export function Navbar({ showMobileBottomNav }: NavbarProps) {
               className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 sm:px-3.5 py-1.5 text-xs font-semibold hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all shadow-xs"
             >
               <QrCode size={15} weight="bold" />
-              <span>Verify Report</span>
+              <span>{dict.nav.verifyReport}</span>
             </Link>
 
             {isAuthenticated && user ? (
@@ -183,9 +183,9 @@ export function Navbar({ showMobileBottomNav }: NavbarProps) {
                 <button
                   type="button"
                   onClick={logout}
-                  title="Sign Out"
+                  title={dict.nav.signOut}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                  aria-label="Sign Out"
+                  aria-label={dict.nav.signOut}
                 >
                   <SignOut size={16} weight="bold" />
                 </button>
@@ -195,7 +195,7 @@ export function Navbar({ showMobileBottomNav }: NavbarProps) {
                 href="/dashboard"
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary text-primary-foreground px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold hover:bg-primary/90 active:scale-95 transition-all shadow-xs"
               >
-                <span>Start Session</span>
+                <span>{dict.nav.startSession}</span>
                 <ArrowRight size={14} weight="bold" />
               </Link>
             )}

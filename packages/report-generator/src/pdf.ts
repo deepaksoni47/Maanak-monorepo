@@ -640,7 +640,7 @@ export async function compileOimlPdfReport(
     },
   );
   page1.drawText(
-    `Verified at: ${reportData.provenance.verifyBaseUrl}/verify/${reportData.provenance.sessionHash.slice(0, 12)}`,
+    `Verified at: ${reportData.provenance.verifyBaseUrl}/verify/${reportData.provenance.sessionHash}`,
     {
       x: MARGIN + 14,
       y: y - 72,

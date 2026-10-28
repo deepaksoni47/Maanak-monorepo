@@ -37,6 +37,7 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from "@/lib/auth-context";
 import { FacilityProvider } from "@/lib/facility-context";
+import { LanguageProvider } from "@/lib/language-context";
 
 export default function RootLayout({
   children,
@@ -46,11 +47,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <body className="min-h-full bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary">
-        <AuthProvider>
-          <FacilityProvider>
-            {children}
-          </FacilityProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <FacilityProvider>
+              {children}
+            </FacilityProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
